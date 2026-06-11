@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#0d0c0a"/>
+  <text
+    x="5"
+    y="46"
+    font-family="'Georgia', 'Times New Roman', serif"
+    font-style="italic"
+    font-size="36"
+    font-weight="400"
+    fill="#ece7df"
+    letter-spacing="-0.5"
+  >mb<tspan fill="#ff4d17">.</tspan></text>
+</svg>

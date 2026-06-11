@@ -1,0 +1,164 @@
+@import '@fontsource/instrument-serif/400.css';
+@import '@fontsource/instrument-serif/400-italic.css';
+@import '@fontsource-variable/archivo';
+@import '@fontsource/fragment-mono/400.css';
+
+@import 'tailwindcss';
+
+@theme {
+  /* ─── Signal & Ink palette ─────────────────────────────── */
+  --color-ink: #0d0c0a;
+  --color-ink-soft: #161412;
+  --color-bone: #ece7df;
+  --color-bone-dim: #b5afa4;
+  --color-smoke: #7a7368;
+  --color-ember: #ff4d17;
+  --color-ember-deep: #c23005;
+  --color-line: #2a2723;
+
+  /* ─── Typography ───────────────────────────────────────── */
+  --font-display: 'Instrument Serif', 'Georgia', serif;
+  --font-sans: 'Archivo Variable', 'Helvetica Neue', sans-serif;
+  --font-mono: 'Fragment Mono', 'Courier New', monospace;
+
+  /* ─── Motion ───────────────────────────────────────────── */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+
+  /* ─── Fluid display scale ──────────────────────────────── */
+  --text-giant: clamp(4.5rem, 14vw, 13rem);
+  --text-mega: clamp(3rem, 9vw, 8.5rem);
+  --text-editorial: clamp(1.75rem, 4.2vw, 3.75rem);
+
+  --animate-marquee: marquee 28s linear infinite;
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+}
+
+/* ─── Base ──────────────────────────────────────────────── */
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) var(--color-ink);
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+body {
+  @apply bg-ink text-bone font-sans antialiased;
+  font-variation-settings: 'wdth' 100;
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--color-ember);
+  color: var(--color-ink);
+}
+
+/* Custom cursor takes over on precise pointers only */
+@media (pointer: fine) {
+  .cursor-takeover,
+  .cursor-takeover a,
+  .cursor-takeover button,
+  .cursor-takeover [role='button'] {
+    cursor: none;
+  }
+}
+
+/* ─── Utilities ─────────────────────────────────────────── */
+
+@utility font-display-italic {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+}
+
+@utility text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px
+    color-mix(in srgb, var(--color-bone) 38%, transparent);
+}
+
+@utility text-outline-ember {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--color-ember);
+}
+
+@utility wdth-expanded {
+  font-variation-settings: 'wdth' 125;
+}
+
+@utility wdth-condensed {
+  font-variation-settings: 'wdth' 75;
+}
+
+/* Grain overlay — single fixed layer, GPU-cheap */
+@utility grain {
+  position: fixed;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  animation: grain-shift 0.9s steps(4) infinite;
+}
+
+@keyframes grain-shift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-2%, 1.5%);
+  }
+  50% {
+    transform: translate(1.5%, -2%);
+  }
+  75% {
+    transform: translate(-1%, -1%);
+  }
+}
+
+/* SplitType line masking */
+.split-line-mask .line {
+  overflow: hidden;
+}
+
+/* Reveal targets start hidden only once JS is in charge */
+[data-reveal] {
+  visibility: hidden;
+}
+
+html.no-js [data-reveal],
+html.reduced-motion [data-reveal] {
+  visibility: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

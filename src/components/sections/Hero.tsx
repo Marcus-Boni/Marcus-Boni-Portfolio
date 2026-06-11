@@ -1,0 +1,126 @@
+import { Suspense, lazy } from 'react'
+
+import { profile } from '@/data/profile'
+import { useScrollReveal, useGsapScope } from '@/hooks/useScrollReveal'
+import { useLanguage } from '@/i18n/LanguageContext'
+import { gsap } from '@/animations/gsap'
+
+const InkFieldScene = lazy(() =>
+  import('@/components/canvas/InkFieldScene').then((module) => ({
+    default: module.InkFieldScene,
+  })),
+)
+
+/**
+ * Full-viewport hero: WebGL ink field behind a massive typographic lockup.
+ * The name splits into characters and pours in; metadata fades after.
+ */
+export function Hero() {
+  const { t } = useLanguage()
+  const firstNameRef = useScrollReveal<HTMLSpanElement>({
+    mode: 'chars',
+    stagger: 0.035,
+    immediate: true,
+    delay: 0.45,
+  })
+  const lastNameRef = useScrollReveal<HTMLSpanElement>({
+    mode: 'chars',
+    stagger: 0.045,
+    immediate: true,
+    delay: 0.75,
+  })
+
+  const scopeRef = useGsapScope<HTMLElement>(({ root }) => {
+    gsap.from('[data-hero-fade]', {
+      opacity: 0,
+      y: 24,
+      duration: 1.1,
+      stagger: 0.12,
+      delay: 1.3,
+    })
+    gsap.to('[data-hero-meta]', {
+      opacity: 0,
+      y: -40,
+      scrollTrigger: {
+        trigger: root,
+        start: 'top top',
+        end: '60% top',
+        scrub: true,
+      },
+    })
+  })
+
+  return (
+    <section
+      id="hero"
+      ref={scopeRef}
+      className="relative flex h-svh flex-col justify-end overflow-hidden"
+      aria-label="Apresentação"
+    >
+      <Suspense fallback={<div className="absolute inset-0 bg-ink" />}>
+        <InkFieldScene />
+      </Suspense>
+
+      {/* metadata strip pinned near the top */}
+      <div
+        data-hero-meta
+        className="pointer-events-none absolute top-24 right-5 left-5 flex justify-between font-mono text-[10px] tracking-[0.25em] text-bone-dim uppercase md:top-28 md:right-8 md:left-24"
+      >
+        <span data-hero-fade>
+          {t.hero.portfolio} — {new Date().getFullYear()}
+        </span>
+        <span data-hero-fade>{t.hero.available}</span>
+      </div>
+
+      <div className="relative z-10 px-5 pb-10 md:px-8 md:pb-14 lg:pl-24">
+        <p
+          data-hero-fade
+          className="mb-4 max-w-md font-mono text-[11px] leading-relaxed tracking-[0.18em] text-bone-dim uppercase md:mb-6"
+        >
+          {t.hero.intro}
+        </p>
+
+        <h1 className="flex flex-col" aria-label={profile.name}>
+          <span
+            ref={firstNameRef}
+            data-reveal
+            className="wdth-expanded font-sans text-giant leading-[0.86] font-bold tracking-tight uppercase"
+          >
+            Marcus
+          </span>
+          <span className="flex items-baseline gap-[0.12em]">
+            <span
+              ref={lastNameRef}
+              data-reveal
+              className="font-display-italic text-giant leading-[0.92] text-ember"
+            >
+              Boni
+            </span>
+            <span
+              data-hero-fade
+              className="hidden font-mono text-xs tracking-[0.2em] text-smoke sm:inline"
+            >
+              ©{new Date().getFullYear()}
+            </span>
+          </span>
+        </h1>
+
+        <div
+          data-hero-fade
+          className="mt-8 flex items-end justify-between border-t border-line pt-5"
+        >
+          <p className="max-w-xs font-sans text-sm leading-relaxed text-bone-dim md:max-w-sm md:text-base">
+            {t.hero.tagline}
+          </p>
+          <div className="flex flex-col items-end gap-1 font-mono text-[10px] tracking-[0.25em] text-smoke uppercase">
+            <span>{t.hero.scrollLine1}</span>
+            <span className="flex items-center gap-2">
+              {t.hero.scrollLine2}
+              <span className="inline-block animate-bounce text-ember">↓</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
