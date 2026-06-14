@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react'
 
 import { profile, sectionIds, socials } from '@/data/profile'
 import { useMagnetic } from '@/hooks/useMagnetic'
+import { useScrollHeader } from '@/hooks/useScrollHeader'
 import { useLanguage } from '@/i18n/LanguageContext'
 import type { Locale } from '@/i18n/translations'
+import { HoverItalic } from '@/components/ui/HoverItalic'
 import { cn } from '@/lib/utils'
 
 function LiveClock() {
@@ -70,6 +72,7 @@ export function Header() {
   const [open, setOpen] = useState(false)
   const lenis = useLenis()
   const { t } = useLanguage()
+  const { scrolled, hidden } = useScrollHeader(open)
   const menuButtonRef = useMagnetic<HTMLButtonElement>(0.3)
 
   useEffect(() => {
@@ -90,7 +93,21 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 mix-blend-difference">
+      <motion.header
+        initial={false}
+        animate={{ y: hidden ? '-115%' : '0%' }}
+        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed inset-x-0 top-0 z-50"
+      >
+        {/* glass layer — fades in once scrolled past the fold */}
+        <div
+          aria-hidden
+          className={cn(
+            'absolute inset-0 -z-10 border-b backdrop-blur-xl transition-opacity duration-500',
+            'border-line/60 bg-ink/55 shadow-[0_12px_44px_-22px_rgba(0,0,0,0.85)]',
+            scrolled && !open ? 'opacity-100' : 'opacity-0',
+          )}
+        />
         <div className="flex items-center justify-between px-5 py-4 md:px-8">
           <button
             onClick={() => goTo('hero')}
@@ -132,7 +149,7 @@ export function Header() {
             </button>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       <AnimatePresence>
         {open && (
@@ -166,11 +183,18 @@ export function Header() {
                     data-cursor="link"
                     className="group flex items-baseline gap-4 py-1 text-left"
                   >
-                    <span className="font-mono text-xs text-smoke">
+                    <span className="font-mono text-xs text-smoke transition-colors duration-300 group-hover:text-ember">
                       0{index + 1}
                     </span>
-                    <span className="font-display text-[clamp(2.5rem,8vw,5.5rem)] leading-[1.05] text-bone transition-colors duration-300 group-hover:font-display-italic group-hover:text-ember">
-                      {t.sections[id]}
+                    <HoverItalic
+                      text={t.sections[id]}
+                      className="text-[clamp(2.5rem,8vw,5.5rem)] leading-[1.05] text-bone transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-3"
+                    />
+                    <span
+                      aria-hidden
+                      className="-translate-x-4 font-display-italic text-2xl text-ember opacity-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0 group-hover:opacity-100 md:text-4xl"
+                    >
+                      ↗
                     </span>
                   </button>
                 </motion.li>
@@ -190,9 +214,11 @@ export function Header() {
                     href={social.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="transition-colors hover:text-ember"
+                    data-cursor="link"
+                    className="group relative transition-colors hover:text-ember"
                   >
                     {social.label.toUpperCase()}
+                    <span className="absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 bg-ember transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-x-100" />
                   </a>
                 ))}
               </div>

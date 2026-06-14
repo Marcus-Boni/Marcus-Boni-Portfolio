@@ -14,6 +14,25 @@ export interface TechItem {
   category: 'frontend' | 'backend' | 'data' | 'ops'
 }
 
+export interface ExperienceProject {
+  id: string
+  client: string
+  title: Record<Locale, string>
+  sector: Record<Locale, string>
+  scope: Record<Locale, string>
+  stack: string[]
+}
+
+export interface Experience {
+  role: string
+  company: string
+  /** ISO-ish `YYYY-MM` start, used for the timeline anchor. */
+  start: string
+  /** `null` ⇒ still ongoing ("Present"). */
+  end: string | null
+  projects: ExperienceProject[]
+}
+
 export interface SocialLink {
   label: string
   handle: string
@@ -91,6 +110,92 @@ export const projects: Project[] = [
   },
 ]
 
+export const experience: Experience = {
+  role: 'Software Developer',
+  company: 'Optsolv',
+  start: '2024-06',
+  end: null,
+  projects: [
+    {
+      id: 'unimed',
+      client: 'Unimed Sul Capixaba',
+      title: { pt: 'Gestão de Guias', en: 'Medical Guide Management' },
+      sector: { pt: 'Saúde', en: 'Healthcare' },
+      scope: {
+        pt: 'Plataforma de gestão de guias médicas — integração com serviços autenticados via AD, ajustes de CORS em ambiente IIS e rastreabilidade do ciclo de guias de intercâmbio entre operadoras.',
+        en: 'Medical-guide management platform — AD-authenticated service integration, CORS tuning on IIS, and full traceability of the inter-operator exchange-guide cycle.',
+      },
+      stack: ['React', 'REST APIs', 'IIS', 'AD Auth'],
+    },
+    {
+      id: 'hidrauvit',
+      client: 'Hidrauvit',
+      title: { pt: 'Gestão da Produção', en: 'Production Management' },
+      sector: { pt: 'Indústria', en: 'Industry' },
+      scope: {
+        pt: 'Sistema de gestão da produção em entrega faseada — refino de interface responsiva, alinhamento técnico contínuo com o cliente e integração via WebService.',
+        en: 'Phased-delivery production-management system — responsive UI refinement, ongoing technical alignment with the client, and WebService integration.',
+      },
+      stack: ['React', 'WebService', 'ASP.Net'],
+    },
+    {
+      id: 'eav',
+      client: 'EAV - Escola Americana de Vitória',
+      title: { pt: 'Assistente Virtual', en: 'Virtual Assistant' },
+      sector: { pt: 'Atendimento', en: 'Customer Care' },
+      scope: {
+        pt: 'Assistente virtual com identidade visual padronizada — design system em Tailwind com cores institucionais e assets públicos no Firebase Storage para e-mails transacionais.',
+        en: 'Virtual assistant with a standardized identity — a Tailwind design system in brand colors and public assets on Firebase Storage for transactional emails.',
+      },
+      stack: ['N8N', 'Firebase', 'Design System', 'AI'],
+    },
+    {
+      id: 'cedisa',
+      client: 'Cedisa',
+      title: { pt: 'Gestão de Materiais', en: 'Materials Management' },
+      sector: { pt: 'Suprimentos', en: 'Supply' },
+      scope: {
+        pt: 'Gestão de materiais integrada a uma base PostgreSQL legada — APIs REST de consulta, arquitetura de tela e levantamento técnico junto ao time de TI do cliente.',
+        en: 'Materials management wired into a legacy PostgreSQL base — REST query APIs, screen architecture, and technical discovery alongside the client IT team.',
+      },
+      stack: ['Flutter', 'REST APIs', 'Backend', 'Mobile'],
+    },
+    {
+      id: 'gab',
+      client: 'GAB - Grupo Águia Branca',
+      title: { pt: 'Embarque Já', en: 'Embarque Já' },
+      sector: { pt: 'Logística', en: 'Logistics' },
+      scope: {
+        pt: 'Plataforma operacional de embarque B2B — ambientes de homologação, fluxos administrativos e notificações por e-mail com auditoria e monitoramento de logs.',
+        en: 'B2B boarding-operations platform — staging environments, administrative workflows, and email notifications with auditing and log monitoring.',
+      },
+      stack: ['React', 'Workflow', 'B2B'],
+    },
+    {
+      id: 'marca-ambiental',
+      client: 'Marca Ambiental',
+      title: { pt: 'Portal do Cliente', en: 'Customer Portal' },
+      sector: { pt: 'Meio Ambiente', en: 'Environment' },
+      scope: {
+        pt: 'Portal web/PWA multi-perfil integrado ao ERP Sankhya — módulos de contratos, financeiro de boletos e notas, medições e documentos, validados com usuários-chave.',
+        en: 'Multi-profile web/PWA portal integrated with the Sankhya ERP — contracts, billing & invoices, measurements and documents, validated with key users.',
+      },
+      stack: ['Node', 'PWA', 'Sankhya ERP', 'PostgreSQL'],
+    },
+    {
+      id: 'galwan',
+      client: 'Galwan',
+      title: { pt: 'Plano de Pagamento', en: 'Payment Plan' },
+      sector: { pt: 'Imobiliário', en: 'Real Estate' },
+      scope: {
+        pt: 'Motor de plano de pagamento imobiliário com regras de negócio sensíveis — cálculos de parcelamento, múltiplos compradores, KPIs financeiros e simulações com IA (V2).',
+        en: 'Real-estate payment-plan engine with sensitive business rules — installment math, multiple buyers, financial KPIs, and AI-assisted simulations (V2).',
+      },
+      stack: ['Backend', 'Business Rules', 'AI'],
+    },
+  ],
+}
+
 export const techStack: TechItem[] = [
   { name: 'React', category: 'frontend' },
   { name: 'Next.js', category: 'frontend' },
@@ -128,6 +233,13 @@ export const socials: SocialLink[] = [
   },
 ]
 
-export const sectionIds = ['hero', 'about', 'work', 'craft', 'contact'] as const
+export const sectionIds = [
+  'hero',
+  'about',
+  'work',
+  'experience',
+  'craft',
+  'contact',
+] as const
 
 export type SectionId = (typeof sectionIds)[number]

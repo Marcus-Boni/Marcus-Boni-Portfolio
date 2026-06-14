@@ -5,6 +5,8 @@
 
 @import 'tailwindcss';
 
+@variant lg-short (@media (min-width: 1024px) and (max-height: 820px));
+
 @theme {
   /* ─── Signal & Ink palette ─────────────────────────────── */
   --color-ink: #0d0c0a;

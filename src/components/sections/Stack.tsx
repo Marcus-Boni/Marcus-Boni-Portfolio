@@ -36,7 +36,7 @@ export function Stack() {
       className="px-5 py-28 md:px-8 md:py-40 lg:pl-24"
       aria-label={t.craft.label}
     >
-      <SectionHeading number="03" label={t.craft.label} />
+      <SectionHeading number="05" label={t.craft.label} />
 
       <div className="mt-14 grid gap-12 lg:grid-cols-12">
         <p className="font-display text-editorial leading-[1.15] lg:col-span-5">

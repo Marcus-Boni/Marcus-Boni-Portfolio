@@ -8,7 +8,14 @@ export interface Fact {
 }
 
 export interface Translation {
-  sections: { hero: string; about: string; work: string; craft: string; contact: string }
+  sections: {
+    hero: string
+    about: string
+    work: string
+    experience: string
+    craft: string
+    contact: string
+  }
   header: {
     menu: string
     close: string
@@ -26,7 +33,7 @@ export interface Translation {
   }
   about: {
     label: string
-    statement: ReactNode
+    statement: (age: number) => ReactNode
     p1: string
     p2: string
     figcaption: string
@@ -41,6 +48,24 @@ export interface Translation {
     others: (count: number) => string
     archive: string
   }
+  experience: {
+    label: string
+    title: string
+    role: string
+    company: string
+    period: string
+    lead: ReactNode
+    scopeLabel: string
+    stackLabel: string
+    sectorLabel: string
+    hint: string
+    downloadCv: string
+    current: string
+    moreSector: string
+    moreTitle: string
+    moreSubtitle: string
+    moreText: string
+  }
   craft: {
     label: string
     statement: ReactNode
@@ -51,7 +76,6 @@ export interface Translation {
     title: ReactNode
     cta: string
     blurb: string
-    madeIn: string
   }
   marquee: string[]
   cursor: { view: string; drag: string }
@@ -63,6 +87,7 @@ export const translations: Record<Locale, Translation> = {
       hero: 'Início',
       about: 'Sobre',
       work: 'Projetos',
+      experience: 'Carreira',
       craft: 'Stack',
       contact: 'Contato',
     },
@@ -85,9 +110,9 @@ export const translations: Record<Locale, Translation> = {
     },
     about: {
       label: 'Sobre',
-      statement: (
+      statement: (age) => (
         <>
-          Desenvolvedor brasileiro de <em className="text-ember">21 anos</em>,
+          Desenvolvedor brasileiro de <em className="text-ember">{age} anos</em>,
           obcecado por transformar problemas reais em software <em>robusto</em>{' '}
           — de planilhas que viram produtos a agentes de IA que viram rotina.
         </>
@@ -110,6 +135,32 @@ export const translations: Record<Locale, Translation> = {
       viewOnGithub: 'Ver no GitHub',
       others: (count) => `+ ${count} outros experimentos`,
       archive: 'Arquivo completo →',
+    },
+    experience: {
+      label: 'Experiência profissional',
+      title: 'Trajetória',
+      role: 'Desenvolvedor de Software',
+      company: 'Optsolv',
+      period: 'Jun 2024 — Presente',
+      lead: (
+        <>
+          Construo aplicações web corporativas de ponta a ponta — do
+          entendimento do requisito ao <em className="text-ember">deploy</em> e à
+          evolução contínua — para clientes de saúde, indústria, logística, meio
+          ambiente e mercado imobiliário.
+        </>
+      ),
+      scopeLabel: 'Escopo',
+      stackLabel: 'Stack',
+      sectorLabel: 'Setor',
+      hint: 'Arraste — a linha do tempo anda para o lado',
+      downloadCv: 'Baixar CV',
+      current: 'Atual',
+      moreSector: 'Em andamento',
+      moreTitle: 'E muito mais',
+      moreSubtitle: 'em construção · evolução · organização',
+      moreText:
+        'A trajetória continua — novos produtos, experimentos e clientes em desenvolvimento constante. Isto é só o começo.',
     },
     craft: {
       label: 'Ferramentas do ofício',
@@ -135,7 +186,6 @@ export const translations: Record<Locale, Translation> = {
       cta: 'Escreva para mim',
       blurb:
         'Aberto a projetos, colaborações e boas conversas sobre engenharia de software — em português ou inglês.',
-      madeIn: 'feito no Brasil',
     },
     marquee: ['Construir', 'Aprender', 'Iterar', 'Repetir'],
     cursor: { view: 'VER', drag: 'ARRASTE' },
@@ -146,6 +196,7 @@ export const translations: Record<Locale, Translation> = {
       hero: 'Home',
       about: 'About',
       work: 'Work',
+      experience: 'Career',
       craft: 'Stack',
       contact: 'Contact',
     },
@@ -168,9 +219,9 @@ export const translations: Record<Locale, Translation> = {
     },
     about: {
       label: 'About',
-      statement: (
+      statement: (age) => (
         <>
-          A <em className="text-ember">21-year-old</em> Brazilian developer
+          A <em className="text-ember">{age}-year-old</em> Brazilian developer
           obsessed with turning real problems into <em>robust</em> software —
           from spreadsheets that became products to AI agents that became
           routine.
@@ -194,6 +245,32 @@ export const translations: Record<Locale, Translation> = {
       viewOnGithub: 'View on GitHub',
       others: (count) => `+ ${count} other experiments`,
       archive: 'Full archive →',
+    },
+    experience: {
+      label: 'Professional experience',
+      title: 'Trajectory',
+      role: 'Software Developer',
+      company: 'Optsolv',
+      period: 'Jun 2024 — Present',
+      lead: (
+        <>
+          I build corporate web applications end to end — from requirement to{' '}
+          <em className="text-ember">deploy</em> and continuous evolution — for
+          clients across healthcare, industry, logistics, environment and real
+          estate.
+        </>
+      ),
+      scopeLabel: 'Scope',
+      stackLabel: 'Stack',
+      sectorLabel: 'Sector',
+      hint: 'Scroll — the timeline moves sideways',
+      downloadCv: 'Download CV',
+      current: 'Current',
+      moreSector: 'Ongoing',
+      moreTitle: 'And more',
+      moreSubtitle: 'in progress · evolving · organizing',
+      moreText:
+        'The trajectory continues — new products, experiments and clients in constant development. This is only the beginning.',
     },
     craft: {
       label: 'Tools of the trade',
@@ -219,7 +296,6 @@ export const translations: Record<Locale, Translation> = {
       cta: 'Write to me',
       blurb:
         'Open to projects, collaborations and good conversations about software engineering — in Portuguese or English.',
-      madeIn: 'made in Brazil',
     },
     marquee: ['Build', 'Learn', 'Iterate', 'Repeat'],
     cursor: { view: 'VIEW', drag: 'DRAG' },

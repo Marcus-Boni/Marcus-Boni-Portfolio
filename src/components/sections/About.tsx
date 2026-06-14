@@ -2,6 +2,7 @@ import { profile } from '@/data/profile'
 import { useGsapScope, useScrollReveal } from '@/hooks/useScrollReveal'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { gsap } from '@/animations/gsap'
+import { BIRTH_DATE, calculateAge } from '@/lib/age'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 
 /**
@@ -10,6 +11,7 @@ import { SectionHeading } from '@/components/ui/SectionHeading'
  */
 export function About() {
   const { t } = useLanguage()
+  const age = calculateAge(BIRTH_DATE)
   const statementRef = useScrollReveal<HTMLParagraphElement>({
     mode: 'lines',
     stagger: 0.1,
@@ -49,7 +51,7 @@ export function About() {
       className="relative px-5 py-28 md:px-8 md:py-40 lg:pl-24"
       aria-label={t.about.label}
     >
-      <SectionHeading number="01" label={t.about.label} />
+      <SectionHeading number="02" label={t.about.label} />
 
       <div className="mt-14 grid gap-16 lg:grid-cols-12 lg:gap-8">
         <div className="lg:col-span-8">
@@ -58,7 +60,7 @@ export function About() {
             data-reveal
             className="font-display text-editorial leading-[1.12] text-bone"
           >
-            {t.about.statement}
+            {t.about.statement(age)}
           </p>
 
           <div className="mt-16 max-w-xl space-y-5 text-base leading-relaxed text-bone-dim lg:ml-[20%]">
