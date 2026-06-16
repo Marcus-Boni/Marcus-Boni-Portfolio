@@ -1,6 +1,8 @@
 import { Suspense, lazy } from 'react'
 
 import { profile } from '@/data/profile'
+import { useDeferredActivation } from '@/hooks/useDeferredActivation'
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { useScrollReveal, useGsapScope } from '@/hooks/useScrollReveal'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { gsap } from '@/animations/gsap'
@@ -11,12 +13,18 @@ const InkFieldScene = lazy(() =>
   })),
 )
 
+/** Painted instantly behind the hero — the loading + reduced-motion state. */
+const HERO_BACKDROP =
+  'radial-gradient(120% 90% at 70% 20%, #1c1815 0%, #0d0c0a 60%)'
+
 /**
  * Full-viewport hero: WebGL ink field behind a massive typographic lockup.
  * The name splits into characters and pours in; metadata fades after.
  */
 export function Hero() {
   const { t } = useLanguage()
+  const reduced = usePrefersReducedMotion()
+  const showCanvas = useDeferredActivation() && !reduced
   const firstNameRef = useScrollReveal<HTMLSpanElement>({
     mode: 'chars',
     stagger: 0.035,
@@ -57,9 +65,14 @@ export function Hero() {
       className="relative flex h-svh flex-col justify-end overflow-hidden"
       aria-label="Apresentação"
     >
-      <Suspense fallback={<div className="absolute inset-0 bg-ink" />}>
-        <InkFieldScene />
-      </Suspense>
+      {/* static backdrop, painted immediately — the WebGL canvas mounts over
+          it only after first interaction / idle so it never blocks load */}
+      <div aria-hidden className="absolute inset-0" style={{ background: HERO_BACKDROP }} />
+      {showCanvas && (
+        <Suspense fallback={null}>
+          <InkFieldScene />
+        </Suspense>
+      )}
 
       {/* metadata strip pinned near the top */}
       <div

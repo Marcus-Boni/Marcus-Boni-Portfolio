@@ -47,7 +47,7 @@ export const profile = {
   locationShort: 'ES — BRA',
   email: 'mgalvaoboni@gmail.com',
   github: 'https://github.com/Marcus-Boni',
-  avatar: 'https://github.com/Marcus-Boni.png',
+  avatar: 'https://github.com/Marcus-Boni.png?size=480',
   bio: 'Desenvolvedor web brasileiro apaixonado por construir aplicações robustas e modernas.',
   repoCount: 66,
 } as const

@@ -1,8 +1,9 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 
 import { inkFieldFragment, inkFieldVertex } from '@/animations/glsl/inkField'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { pointerState } from '@/hooks/usePointer'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { scrollState } from '@/lib/scroll-state'
@@ -69,11 +70,27 @@ function InkPlane() {
 }
 
 /**
- * Full-bleed WebGL ink field behind the hero. Static fallback gradient when
- * the user prefers reduced motion.
+ * Full-bleed WebGL ink field behind the hero. The render loop is suspended
+ * (`frameloop="never"`) whenever the hero leaves the viewport, so it costs
+ * nothing once scrolled past. DPR is capped lower on touch/mobile. A static
+ * gradient stands in under reduced motion.
  */
 export function InkFieldScene() {
   const reduced = usePrefersReducedMotion()
+  const isDesktop = useIsDesktop()
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [active, setActive] = useState(true)
+
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setActive(entry.isIntersecting),
+      { threshold: 0 },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   if (reduced) {
     return (
@@ -89,19 +106,22 @@ export function InkFieldScene() {
   }
 
   return (
-    <Canvas
-      className="absolute inset-0"
-      dpr={[1, 1.75]}
-      gl={{
-        antialias: false,
-        powerPreference: 'high-performance',
-        alpha: false,
-      }}
-      orthographic
-      camera={{ position: [0, 0, 1], zoom: 1 }}
-      style={{ position: 'absolute' }}
-    >
-      <InkPlane />
-    </Canvas>
+    <div ref={wrapRef} className="absolute inset-0">
+      <Canvas
+        className="absolute inset-0"
+        frameloop={active ? 'always' : 'never'}
+        dpr={[1, isDesktop ? 1.5 : 1]}
+        gl={{
+          antialias: false,
+          powerPreference: 'high-performance',
+          alpha: false,
+        }}
+        orthographic
+        camera={{ position: [0, 0, 1], zoom: 1 }}
+        style={{ position: 'absolute' }}
+      >
+        <InkPlane />
+      </Canvas>
+    </div>
   )
 }

@@ -76,6 +76,7 @@ export function About() {
               src={profile.avatar}
               alt={t.about.portraitAlt}
               loading="lazy"
+              decoding="async"
               width={480}
               height={480}
               className="h-[116%] w-full object-cover grayscale transition-all duration-700 hover:grayscale-0"
