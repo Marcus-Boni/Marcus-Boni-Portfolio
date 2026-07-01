@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { techStack } from '@/data/profile'
+import { useSiteContent } from '@/content/SiteContentContext'
 import { gsap } from '@/animations/gsap'
 import { useGsapScope } from '@/hooks/useScrollReveal'
 import { useLanguage } from '@/i18n/LanguageContext'
@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils'
  */
 export function Stack() {
   const { t } = useLanguage()
+  const { content } = useSiteContent()
+  const { techStack } = content
   const [hovered, setHovered] = useState<string | null>(null)
 
   const scopeRef = useGsapScope<HTMLElement>(({ root }) => {

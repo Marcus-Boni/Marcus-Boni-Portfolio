@@ -1,9 +1,11 @@
-import { experience, type ExperienceProject } from '@/data/profile'
+import { useSiteContent } from '@/content/SiteContentContext'
+import type { ExperienceProject } from '@/data/profile'
 import { gsap } from '@/animations/gsap'
 import { useMagnetic } from '@/hooks/useMagnetic'
 import { useScramble } from '@/hooks/useScramble'
 import { useGsapScope } from '@/hooks/useScrollReveal'
 import { useLanguage } from '@/i18n/LanguageContext'
+import { trackEvent } from '@/lib/analytics'
 import { Button } from '@/components/ui/button'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 
@@ -120,8 +122,27 @@ function OngoingNode() {
  * spine-and-node timeline. The layout is split into a compact intro zone and a
  * flex-1 track zone so the pinned content always fits one viewport height.
  */
+/** "Jun 2024 — Presente/Present" from ISO-ish `YYYY-MM` bounds. */
+function formatPeriod(start: string, end: string | null, locale: 'pt' | 'en'): string {
+  const fmt = (value: string) => {
+    const [year, month] = value.split('-')
+    if (!year) return value
+    if (!month) return year
+    const date = new Date(Number(year), Number(month) - 1, 1)
+    const label = new Intl.DateTimeFormat(locale === 'pt' ? 'pt-BR' : 'en', {
+      month: 'short',
+      year: 'numeric',
+    }).format(date)
+    return label.charAt(0).toUpperCase() + label.slice(1)
+  }
+  const present = locale === 'pt' ? 'Presente' : 'Present'
+  return `${fmt(start)} — ${end ? fmt(end) : present}`
+}
+
 export function Experience() {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
+  const { content } = useSiteContent()
+  const { experience } = content
   const magneticRef = useMagnetic<HTMLDivElement>(0.3)
   const { ref: cvRef, scramble: scrambleCv } = useScramble<HTMLSpanElement>(
     t.experience.downloadCv,
@@ -189,10 +210,13 @@ export function Experience() {
                 {t.experience.title}
               </h2>
               <p className="mt-3 lg-short:mt-2 font-mono text-[11px] tracking-[0.22em] uppercase">
-                <span className="text-bone">{t.experience.role}</span>
+                <span className="text-bone">{experience.role}</span>
                 <span className="text-smoke"> · </span>
-                <span className="text-ember">{t.experience.company}</span>
-                <span className="text-smoke"> · {t.experience.period}</span>
+                <span className="text-ember">{experience.company}</span>
+                <span className="text-smoke">
+                  {' '}
+                  · {formatPeriod(experience.start, experience.end, locale)}
+                </span>
               </p>
             </div>
 
@@ -206,7 +230,11 @@ export function Experience() {
                 onPointerEnter={() => scrambleCv()}
               >
                 <Button asChild variant="ember" size="pill" data-cursor="link">
-                  <a href="/marcus-boni-cv.pdf" download>
+                  <a
+                    href="/marcus-boni-cv.pdf"
+                    download
+                    onClick={() => trackEvent('cv_download')}
+                  >
                     <span ref={cvRef}>{t.experience.downloadCv}</span>
                     <span aria-hidden>↓</span>
                   </a>

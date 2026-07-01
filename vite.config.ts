@@ -26,6 +26,12 @@ export default defineConfig({
           ) {
             return 'motion'
           }
+          if (/node_modules[\\/](@firebase|firebase)[\\/]/.test(id)) {
+            return 'firebase'
+          }
+          if (/node_modules[\\/]react-router[\\/]/.test(id)) {
+            return 'router'
+          }
         },
       },
     },

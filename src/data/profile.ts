@@ -1,6 +1,8 @@
 import type { Locale } from '@/i18n/translations'
 
 export interface Project {
+  /** Stable client id (used as React key in the admin editor). */
+  id?: string
   index: string
   title: string
   description: Record<Locale, string>
@@ -10,6 +12,7 @@ export interface Project {
 }
 
 export interface TechItem {
+  id?: string
   name: string
   category: 'frontend' | 'backend' | 'data' | 'ops'
 }
@@ -34,6 +37,7 @@ export interface Experience {
 }
 
 export interface SocialLink {
+  id?: string
   label: string
   handle: string
   url: string

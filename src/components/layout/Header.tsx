@@ -2,7 +2,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useLenis } from 'lenis/react'
 import { useEffect, useState } from 'react'
 
-import { profile, sectionIds, socials } from '@/data/profile'
+import { useSiteContent } from '@/content/SiteContentContext'
+import { sectionIds } from '@/data/profile'
 import { useMagnetic } from '@/hooks/useMagnetic'
 import { useScrollHeader } from '@/hooks/useScrollHeader'
 import { useLanguage } from '@/i18n/LanguageContext'
@@ -72,6 +73,8 @@ export function Header() {
   const [open, setOpen] = useState(false)
   const lenis = useLenis()
   const { t } = useLanguage()
+  const { content } = useSiteContent()
+  const { profile, socials } = content
   const { scrolled, hidden } = useScrollHeader(open)
   const menuButtonRef = useMagnetic<HTMLButtonElement>(0.3)
 

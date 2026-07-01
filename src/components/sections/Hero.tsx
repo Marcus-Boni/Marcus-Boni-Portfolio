@@ -1,6 +1,6 @@
 import { Suspense, lazy } from 'react'
 
-import { profile } from '@/data/profile'
+import { useSiteContent } from '@/content/SiteContentContext'
 import { useDeferredActivation } from '@/hooks/useDeferredActivation'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { useScrollReveal, useGsapScope } from '@/hooks/useScrollReveal'
@@ -23,6 +23,8 @@ const HERO_BACKDROP =
  */
 export function Hero() {
   const { t } = useLanguage()
+  const { content } = useSiteContent()
+  const { profile } = content
   const reduced = usePrefersReducedMotion()
   const showCanvas = useDeferredActivation() && !reduced
   const firstNameRef = useScrollReveal<HTMLSpanElement>({
@@ -82,7 +84,7 @@ export function Hero() {
         <span data-hero-fade>
           {t.hero.portfolio} — {new Date().getFullYear()}
         </span>
-        <span data-hero-fade>{t.hero.available}</span>
+        {profile.available && <span data-hero-fade>{t.hero.available}</span>}
       </div>
 
       <div className="relative z-10 px-5 pb-10 md:px-8 md:pb-14 lg:pl-24">

@@ -29,6 +29,24 @@
 | Scroll | Lenis (`lenis/react`, driven by the GSAP ticker) |
 | Animation | GSAP (ScrollTrigger, CustomEase) · SplitType · Framer Motion |
 | 3D / Shaders | Three.js · React Three Fiber · @react-three/drei · custom GLSL |
+| Admin / Data | React Router · Firebase Auth + Firestore (lazy, env-gated) |
+
+## Admin area (`/admin`)
+
+A full back-office for the portfolio, behind Firebase Auth:
+
+- **Dashboard & Audience** — first-party, cookie-less analytics: visits, unique
+  visitors, devices/browsers/OS, country (by timezone), referrers, most-viewed
+  sections, peak hours and a live activity feed.
+- **Messages** — inbox for the site's contact form (Firestore-backed).
+- **Content editing** — full CRUD over profile, projects, career timeline, tech
+  stack and socials. The public site hydrates from Firestore, falling back to the
+  static `src/data/profile.ts` data when Firebase is absent.
+
+Firebase is **optional and lazy**: without env config the public site runs on the
+static data and `/admin` shows a demo mode; when configured, the SDK is loaded on
+demand so it never enters the public site's initial bundle. Full setup steps live
+in [`ADMIN_SETUP.md`](./ADMIN_SETUP.md).
 
 ## Architecture
 
@@ -43,10 +61,12 @@ src/
 │   ├── layout/              # SmoothScroll (Lenis), Header, SectionRail
 │   ├── sections/            # Hero, About, Work, Stack, Contact
 │   └── ui/                  # button (shadcn-style), Marquee, SectionHeading
+├── admin/                   # /admin SPA: auth, layout, pages, charts, services
+├── content/                 # SiteContent types/defaults + Firestore hydration
 ├── data/profile.ts          # structural content (projects, stack, socials)
 ├── i18n/                    # LanguageContext + typed PT/EN translations
 ├── hooks/                   # useScrollReveal, useMagnetic, usePointer, …
-├── lib/                     # cn(), scroll-state (Lenis → WebGL bridge)
+├── lib/                     # cn(), scroll-state, firebase, analytics, messages
 └── styles/index.css         # Tailwind v4 tokens + base + utilities
 ```
 

@@ -1,10 +1,12 @@
 import { useLayoutEffect, useRef, type PointerEvent } from 'react'
 
-import { projects, profile, type Project } from '@/data/profile'
+import { useSiteContent } from '@/content/SiteContentContext'
+import type { Project } from '@/data/profile'
 import { gsap } from '@/animations/gsap'
 import { useGsapScope } from '@/hooks/useScrollReveal'
 import { useScramble } from '@/hooks/useScramble'
 import { useLanguage } from '@/i18n/LanguageContext'
+import { trackEvent } from '@/lib/analytics'
 import { HoverItalic } from '@/components/ui/HoverItalic'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 
@@ -55,6 +57,7 @@ function ProjectPanel({ project }: { project: Project }) {
       onPointerEnter={onEnter}
       onPointerMove={onMove}
       onPointerLeave={onLeave}
+      onClick={() => trackEvent('outbound_click', { label: project.title })}
       className="group relative flex w-[86vw] shrink-0 flex-col justify-between border-l border-line px-6 py-10 md:w-[44rem] md:px-12 md:py-14"
     >
       <span
@@ -93,6 +96,8 @@ function ProjectPanel({ project }: { project: Project }) {
  */
 export function Work() {
   const { t } = useLanguage()
+  const { content } = useSiteContent()
+  const { projects, profile } = content
 
   const scopeRef = useGsapScope<HTMLElement>(({ root }) => {
     const track = root.querySelector<HTMLElement>('[data-track]')
@@ -147,6 +152,7 @@ export function Work() {
             target="_blank"
             rel="noreferrer"
             data-cursor="view"
+            onClick={() => trackEvent('outbound_click', { label: 'GitHub archive' })}
             className="group flex w-[86vw] shrink-0 flex-col items-start justify-center gap-6 border-l border-line px-6 py-10 md:w-[36rem] md:px-12"
           >
             <span className="font-mono text-[10px] tracking-[0.25em] text-smoke uppercase">

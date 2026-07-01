@@ -1,9 +1,11 @@
-import { profile, socials } from '@/data/profile'
+import { useSiteContent } from '@/content/SiteContentContext'
 import { useMagnetic } from '@/hooks/useMagnetic'
 import { useScramble } from '@/hooks/useScramble'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 import { useLanguage } from '@/i18n/LanguageContext'
+import { trackEvent } from '@/lib/analytics'
 import { Button } from '@/components/ui/button'
+import { ContactForm } from '@/components/sections/ContactForm'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 
 /**
@@ -12,6 +14,8 @@ import { SectionHeading } from '@/components/ui/SectionHeading'
  */
 export function Contact() {
   const { t } = useLanguage()
+  const { content } = useSiteContent()
+  const { profile, socials } = content
   const titleRef = useScrollReveal<HTMLHeadingElement>({
     mode: 'lines',
     stagger: 0.12,
@@ -54,6 +58,10 @@ export function Contact() {
             {t.contact.blurb}
           </p>
         </div>
+
+        <div className="mt-16 md:mt-20">
+          <ContactForm />
+        </div>
       </div>
 
       <footer className="mt-28 border-t border-line py-8">
@@ -66,6 +74,9 @@ export function Contact() {
                   target="_blank"
                   rel="noreferrer"
                   data-cursor="link"
+                  onClick={() =>
+                    trackEvent('outbound_click', { label: social.label })
+                  }
                   className="group flex flex-col gap-1"
                 >
                   <span className="font-mono text-[10px] tracking-[0.25em] text-smoke uppercase">

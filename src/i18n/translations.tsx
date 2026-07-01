@@ -76,6 +76,17 @@ export interface Translation {
     title: ReactNode
     cta: string
     blurb: string
+    form: {
+      heading: string
+      name: string
+      email: string
+      message: string
+      send: string
+      sending: string
+      success: string
+      error: string
+      offline: string
+    }
   }
   marquee: string[]
   cursor: { view: string; drag: string }
@@ -186,6 +197,18 @@ export const translations: Record<Locale, Translation> = {
       cta: 'Escreva para mim',
       blurb:
         'Aberto a projetos, colaborações e boas conversas sobre engenharia de software — em português ou inglês.',
+      form: {
+        heading: 'Ou mande uma mensagem direto por aqui',
+        name: 'Nome',
+        email: 'E-mail',
+        message: 'Mensagem',
+        send: 'Enviar mensagem',
+        sending: 'Enviando…',
+        success: 'Mensagem enviada — retorno em breve. Obrigado!',
+        error: 'Algo deu errado. Tente novamente ou use o e-mail acima.',
+        offline:
+          'Formulário indisponível no momento — use o botão de e-mail acima.',
+      },
     },
     marquee: ['Construir', 'Aprender', 'Iterar', 'Repetir'],
     cursor: { view: 'VER', drag: 'ARRASTE' },
@@ -296,6 +319,17 @@ export const translations: Record<Locale, Translation> = {
       cta: 'Write to me',
       blurb:
         'Open to projects, collaborations and good conversations about software engineering — in Portuguese or English.',
+      form: {
+        heading: 'Or send a message right here',
+        name: 'Name',
+        email: 'Email',
+        message: 'Message',
+        send: 'Send message',
+        sending: 'Sending…',
+        success: "Message sent — I'll get back to you soon. Thanks!",
+        error: 'Something went wrong. Try again or use the email above.',
+        offline: 'Form unavailable right now — use the email button above.',
+      },
     },
     marquee: ['Build', 'Learn', 'Iterate', 'Repeat'],
     cursor: { view: 'VIEW', drag: 'DRAG' },

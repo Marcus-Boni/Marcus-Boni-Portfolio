@@ -1,4 +1,4 @@
-import { profile } from '@/data/profile'
+import { useSiteContent } from '@/content/SiteContentContext'
 import { useGsapScope, useScrollReveal } from '@/hooks/useScrollReveal'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { gsap } from '@/animations/gsap'
@@ -11,6 +11,8 @@ import { SectionHeading } from '@/components/ui/SectionHeading'
  */
 export function About() {
   const { t } = useLanguage()
+  const { content } = useSiteContent()
+  const { profile } = content
   const age = calculateAge(BIRTH_DATE)
   const statementRef = useScrollReveal<HTMLParagraphElement>({
     mode: 'lines',

@@ -1,0 +1,39 @@
+rules_version = '2';
+
+// Security model for the portfolio admin:
+//  • `content/site` — the editable portfolio content. Public read (the site
+//    hydrates from it), authenticated write (only the admin can edit).
+//  • `messages` — contact-form submissions. Anyone can create, only the admin
+//    can read / update / delete.
+//  • `analytics` — visit + interaction events. Anyone can create, only the
+//    admin can read. Never updated or deleted from the client.
+//  • `settings/site` — site-wide toggles. Public read, admin write.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    match /content/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /messages/{docId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /analytics/{docId} {
+      allow create: if true;
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+  }
+}
