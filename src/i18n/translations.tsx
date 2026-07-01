@@ -34,11 +34,11 @@ export interface Translation {
   about: {
     label: string
     statement: (age: number) => ReactNode
-    p1: string
+    p1: (repoCount: number) => string
     p2: string
     figcaption: string
     portraitAlt: string
-    facts: Fact[]
+    facts: (repoCount: number) => Fact[]
   }
   work: {
     label: string
@@ -128,14 +128,15 @@ export const translations: Record<Locale, Translation> = {
           — de planilhas que viram produtos a agentes de IA que viram rotina.
         </>
       ),
-      p1: 'Do primeiro projeto de pizzaria em HTML puro ao trabalho diário com React, TypeScript e Azure DevOps, o caminho foi o mesmo: aprender construindo. Hoje são mais de 66 repositórios públicos de experimentos, cursos e produtos reais.',
+      p1: (repoCount) =>
+        `Do primeiro projeto de pizzaria em HTML puro ao trabalho diário com React, TypeScript e Azure DevOps, o caminho foi o mesmo: aprender construindo. Hoje são mais de ${repoCount} repositórios públicos de experimentos, cursos e produtos reais.`,
       p2: 'Acredito em código limpo, interfaces honestas e na ideia de que boa engenharia se mede pelo que ela simplifica na vida de quem usa.',
       figcaption: 'fig. 01 — o autor',
       portraitAlt: 'Retrato de Marcus Boni',
-      facts: [
+      facts: (repoCount) => [
         { label: 'Base', value: 'Espírito Santo, BR' },
         { label: 'Foco', value: 'Web Engineering' },
-        { label: 'Repositórios', value: '66+' },
+        { label: 'Repositórios', value: `${repoCount}+` },
         { label: 'Status', value: 'Construindo' },
       ],
     },
@@ -250,14 +251,15 @@ export const translations: Record<Locale, Translation> = {
           routine.
         </>
       ),
-      p1: 'From a first pizza-shop project in plain HTML to daily work with React, TypeScript and Azure DevOps, the path has been the same: learn by building. Today that adds up to 66+ public repositories of experiments, coursework and real products.',
+      p1: (repoCount) =>
+        `From a first pizza-shop project in plain HTML to daily work with React, TypeScript and Azure DevOps, the path has been the same: learn by building. Today that adds up to ${repoCount}+ public repositories of experiments, coursework and real products.`,
       p2: 'I believe in clean code, honest interfaces, and the idea that good engineering is measured by what it simplifies in the lives of the people who use it.',
       figcaption: 'fig. 01 — the author',
       portraitAlt: 'Portrait of Marcus Boni',
-      facts: [
+      facts: (repoCount) => [
         { label: 'Based in', value: 'Espírito Santo, BR' },
         { label: 'Focus', value: 'Web Engineering' },
-        { label: 'Repositories', value: '66+' },
+        { label: 'Repositories', value: `${repoCount}+` },
         { label: 'Status', value: 'Building' },
       ],
     },

@@ -53,7 +53,7 @@ export const profile = {
   github: 'https://github.com/Marcus-Boni',
   avatar: 'https://github.com/Marcus-Boni.png?size=480',
   bio: 'Desenvolvedor web brasileiro apaixonado por construir aplicações robustas e modernas.',
-  repoCount: 66,
+  repoCount: 67,
 } as const
 
 export const projects: Project[] = [

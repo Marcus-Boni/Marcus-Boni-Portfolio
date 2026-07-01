@@ -66,7 +66,7 @@ export function About() {
           </p>
 
           <div className="mt-16 max-w-xl space-y-5 text-base leading-relaxed text-bone-dim lg:ml-[20%]">
-            <p>{t.about.p1}</p>
+            <p>{t.about.p1(profile.repoCount)}</p>
             <p>{t.about.p2}</p>
           </div>
         </div>
@@ -94,7 +94,7 @@ export function About() {
         data-facts
         className="mt-24 grid grid-cols-2 gap-px border border-line bg-line md:grid-cols-4"
       >
-        {t.about.facts.map((fact) => (
+        {t.about.facts(profile.repoCount).map((fact) => (
           <div key={fact.label} data-fact className="bg-ink p-5 md:p-6">
             <dt className="font-mono text-[10px] tracking-[0.25em] text-smoke uppercase">
               {fact.label}
