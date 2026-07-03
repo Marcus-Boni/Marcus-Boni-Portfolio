@@ -1,5 +1,7 @@
 # Marcus Boni — Portfolio
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/748366c2-9f80-4f75-8656-f33bd0131b0a/deploy-status)](https://app.netlify.com/projects/marcusboni/deploys)
+
 > **Signal & Ink** — an avant-garde, editorial-brutalist portfolio for a Brazilian
 > software engineer. Warm near-black canvas, bone-white typography, a single
 > burnt-ember accent, and a WebGL ink field that reacts to your pointer and
