@@ -76,11 +76,17 @@ export function About() {
             <img
               data-portrait
               src={profile.avatar}
+              srcSet={
+                profile.avatar === '/portrait-640.webp'
+                  ? '/portrait-320.webp 320w, /portrait-640.webp 640w'
+                  : undefined
+              }
+              sizes="(min-width: 640px) 320px, 80vw"
               alt={t.about.portraitAlt}
               loading="lazy"
               decoding="async"
-              width={480}
-              height={480}
+              width={640}
+              height={640}
               className="h-[116%] w-full object-cover grayscale transition-all duration-700 hover:grayscale-0"
             />
             <span className="absolute bottom-3 left-3 bg-ink/80 px-3 py-1 font-mono text-[10px] tracking-[0.25em] text-ember uppercase">

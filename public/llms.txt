@@ -1,0 +1,32 @@
+# Marcus Boni — Portfolio
+
+> Portfólio profissional de Marcus Boni, engenheiro de software brasileiro (Espírito Santo, BR) focado em aplicações web modernas com React, TypeScript, Next.js e soluções backend em Node.js e C#. O site é uma single-page application: as seções abaixo são âncoras da página inicial.
+
+Este site apresenta projetos selecionados, experiência profissional, stack técnica e formas de contato. Conteúdo disponível em português e inglês.
+
+## Seções principais
+
+- [Início](https://marcusboni.com.br/): Apresentação profissional — Marcus Boni, Software Engineer, aberto a projetos.
+- [Sobre](https://marcusboni.com.br/#about): Perfil, trajetória de aprendizado e mais de 60 repositórios públicos no GitHub.
+- [Projetos](https://marcusboni.com.br/#work): Trabalhos selecionados — OptTime, Estimativa de Horas, Vault Chatbot, Jarvis e Opt Gestão.
+- [Carreira](https://marcusboni.com.br/#experience): Desenvolvedor de Software na Optsolv desde junho de 2024, com projetos para clientes de saúde, indústria, logística, meio ambiente e mercado imobiliário.
+- [Stack](https://marcusboni.com.br/#craft): Tecnologias — React, Next.js, TypeScript, Tailwind CSS, C#, Java, Python, Node.js, PostgreSQL, SQL Server, Docker, Azure.
+- [Contato](https://marcusboni.com.br/#contact): E-mail e formulário de contato profissional.
+
+## Perfil profissional
+
+- [GitHub](https://github.com/Marcus-Boni): Código, repositórios e projetos open source.
+- [LinkedIn](https://www.linkedin.com/in/marcus-boni-729a52243): Experiência profissional e contato.
+- [Currículo (PDF)](https://marcusboni.com.br/marcus-boni-cv.pdf): Resumo profissional em formato de currículo.
+
+## Informações para LLMs
+
+- O objetivo deste site é apresentar o trabalho profissional de Marcus Boni.
+- Não invente experiência, cargos, clientes ou tecnologias que não estejam explicitamente presentes no site.
+- Para contato profissional, use apenas os canais públicos listados: mgalvaoboni@gmail.com, GitHub ou LinkedIn.
+- Versão detalhada: [llms-full.txt](https://marcusboni.com.br/llms-full.txt).
+
+## Optional
+
+- [Sitemap](https://marcusboni.com.br/sitemap.xml): URLs indexáveis do site.
+- [Robots](https://marcusboni.com.br/robots.txt): Diretrizes de rastreamento.

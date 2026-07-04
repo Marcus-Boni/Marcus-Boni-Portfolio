@@ -5,7 +5,14 @@
       "name": "portfolio",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["dev"],
-      "port": 5173
+      "port": 5173,
+      "autoPort": true
+    },
+    {
+      "name": "portfolio-prod",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["preview"],
+      "port": 4173
     }
   ]
 }

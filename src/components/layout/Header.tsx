@@ -163,9 +163,9 @@ export function Header() {
             exit="closed"
             variants={overlayVariants}
             transition={{ duration: 0.7, ease: [0.76, 0, 0.24, 1] }}
-            className="fixed inset-0 z-40 flex flex-col justify-between bg-ink-soft px-5 pb-10 pt-28 md:px-8"
+            className="fixed inset-0 z-40 flex flex-col justify-between overflow-y-auto bg-ink-soft px-5 pb-10 pt-28 md:px-8 lg-short:pt-20 lg-short:pb-6"
           >
-            <ul className="flex flex-col gap-1">
+            <ul className="flex flex-col gap-1 lg-short:gap-0">
               {sectionIds.map((id, index) => (
                 <motion.li
                   key={id}
@@ -184,14 +184,14 @@ export function Header() {
                   <button
                     onClick={() => goTo(id)}
                     data-cursor="link"
-                    className="group flex items-baseline gap-4 py-1 text-left"
+                    className="group flex items-baseline gap-4 py-1 text-left lg-short:py-0.5"
                   >
                     <span className="font-mono text-xs text-smoke transition-colors duration-300 group-hover:text-ember">
                       0{index + 1}
                     </span>
                     <HoverItalic
                       text={t.sections[id]}
-                      className="text-[clamp(2.5rem,8vw,5.5rem)] leading-[1.05] text-bone transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-3"
+                      className="text-[clamp(2.5rem,8vw,5.5rem)] leading-[1.05] text-bone transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-3 lg-short:text-[clamp(2rem,7vh,3.5rem)]"
                     />
                     <span
                       aria-hidden

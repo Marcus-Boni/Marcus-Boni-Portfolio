@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 
+import { onFirstInteraction } from '@/lib/defer'
 import { isFirebaseConfigured } from '@/lib/firebase-config'
 
 import { cloneDefaultContent } from './defaults'
@@ -29,19 +30,24 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
     if (!isFirebaseConfigured) return
     let unsubscribe = () => {}
     let cancelled = false
-    // Dynamic import keeps the Firestore SDK out of the initial public bundle.
-    void import('./service').then(({ subscribeSiteContent }) => {
-      if (cancelled) return
-      unsubscribe = subscribeSiteContent(
-        (next) => {
-          setContent(next)
-          setLoading(false)
-        },
-        () => setLoading(false),
-      )
+    // The bundled defaults render instantly; the live Firestore copy only
+    // matters once someone is actually reading, so the SDK download + connect
+    // waits for the first interaction and stays out of the load window.
+    const cancelDefer = onFirstInteraction(() => {
+      void import('./service').then(({ subscribeSiteContent }) => {
+        if (cancelled) return
+        unsubscribe = subscribeSiteContent(
+          (next) => {
+            setContent(next)
+            setLoading(false)
+          },
+          () => setLoading(false),
+        )
+      })
     })
     return () => {
       cancelled = true
+      cancelDefer()
       unsubscribe()
     }
   }, [])

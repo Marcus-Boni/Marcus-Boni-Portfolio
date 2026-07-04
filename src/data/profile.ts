@@ -51,7 +51,9 @@ export const profile = {
   locationShort: 'ES — BRA',
   email: 'mgalvaoboni@gmail.com',
   github: 'https://github.com/Marcus-Boni',
-  avatar: 'https://github.com/Marcus-Boni.png?size=480',
+  // Self-hosted, WebP-optimized copy of the GitHub avatar (~22 KB vs the
+  // 632 KB PNG GitHub serves) — no redirect chain, long-lived cache.
+  avatar: '/portrait-640.webp',
   bio: 'Desenvolvedor web brasileiro apaixonado por construir aplicações robustas e modernas.',
   repoCount: 67,
 } as const

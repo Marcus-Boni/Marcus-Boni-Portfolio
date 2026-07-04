@@ -74,7 +74,60 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!--
+        Static hero shell: painted from HTML+CSS alone so the largest text
+        (the LCP element) renders long before the JS bundle executes on slow
+        devices. React replaces this entire subtree on mount and re-runs the
+        intro animation over it. Keep classes in sync with Hero.tsx.
+      -->
+      <section
+        class="relative flex h-svh flex-col justify-end overflow-hidden"
+        aria-label="Apresentação"
+      >
+        <div
+          aria-hidden="true"
+          class="absolute inset-0"
+          style="
+            background: radial-gradient(
+              120% 90% at 70% 20%,
+              #1c1815 0%,
+              #0d0c0a 60%
+            );
+          "
+        ></div>
+        <div class="relative z-10 px-5 pb-10 md:px-8 md:pb-14 lg:pl-24">
+          <p
+            class="mb-4 max-w-md font-mono text-[11px] leading-relaxed tracking-[0.18em] text-bone-dim uppercase md:mb-6"
+          >
+            Engenheiro de software construindo aplicações web robustas e
+            modernas
+          </p>
+          <h1 class="flex flex-col" aria-label="Marcus Boni">
+            <span
+              class="wdth-expanded font-sans text-giant leading-[0.86] font-bold tracking-tight uppercase"
+              >Marcus</span
+            >
+            <span class="flex items-baseline gap-[0.12em]">
+              <span
+                class="font-display-italic text-giant leading-[0.92] text-ember"
+                >Boni</span
+              >
+            </span>
+          </h1>
+          <div
+            class="mt-8 flex items-end justify-between border-t border-line pt-5"
+          >
+            <p
+              class="max-w-xs font-sans text-sm leading-relaxed text-bone-dim md:max-w-sm md:text-base"
+            >
+              React · TypeScript · Next.js — e a disciplina de quem trata cada
+              projeto como produto.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -6,6 +6,7 @@ import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { useScrollReveal, useGsapScope } from '@/hooks/useScrollReveal'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { gsap } from '@/animations/gsap'
+import { shouldSkipIntro } from '@/lib/defer'
 
 const InkFieldScene = lazy(() =>
   import('@/components/canvas/InkFieldScene').then((module) => ({
@@ -41,13 +42,17 @@ export function Hero() {
   })
 
   const scopeRef = useGsapScope<HTMLElement>(({ root }) => {
-    gsap.from('[data-hero-fade]', {
-      opacity: 0,
-      y: 24,
-      duration: 1.1,
-      stagger: 0.12,
-      delay: 1.3,
-    })
+    // On slow loads the static shell already painted this content — don't
+    // hide it again just to fade it back in (see shouldSkipIntro).
+    if (!shouldSkipIntro()) {
+      gsap.from('[data-hero-fade]', {
+        opacity: 0,
+        y: 24,
+        duration: 1.1,
+        stagger: 0.12,
+        delay: 1.3,
+      })
+    }
     gsap.to('[data-hero-meta]', {
       opacity: 0,
       y: -40,
@@ -68,7 +73,7 @@ export function Hero() {
       aria-label="Apresentação"
     >
       {/* static backdrop, painted immediately — the WebGL canvas mounts over
-          it only after first interaction / idle so it never blocks load */}
+          it only after the first user interaction so it never blocks load */}
       <div aria-hidden className="absolute inset-0" style={{ background: HERO_BACKDROP }} />
       {showCanvas && (
         <Suspense fallback={null}>
@@ -79,7 +84,7 @@ export function Hero() {
       {/* metadata strip pinned near the top */}
       <div
         data-hero-meta
-        className="pointer-events-none absolute top-24 right-5 left-5 flex justify-between font-mono text-[10px] tracking-[0.25em] text-bone-dim uppercase md:top-28 md:right-8 md:left-24"
+        className="pointer-events-none absolute top-24 right-5 left-5 flex justify-between font-mono text-[10px] tracking-[0.25em] text-bone-dim uppercase md:top-28 md:right-8 md:left-24 lg-short:top-14"
       >
         <span data-hero-fade>
           {t.hero.portfolio} — {new Date().getFullYear()}
@@ -87,10 +92,10 @@ export function Hero() {
         {profile.available && <span data-hero-fade>{t.hero.available}</span>}
       </div>
 
-      <div className="relative z-10 px-5 pb-10 md:px-8 md:pb-14 lg:pl-24">
+      <div className="relative z-10 px-5 pb-10 md:px-8 md:pb-14 lg:pl-24 lg-short:pb-6">
         <p
           data-hero-fade
-          className="mb-4 max-w-md font-mono text-[11px] leading-relaxed tracking-[0.18em] text-bone-dim uppercase md:mb-6"
+          className="mb-4 max-w-md font-mono text-[11px] leading-relaxed tracking-[0.18em] text-bone-dim uppercase md:mb-6 lg-short:mb-2"
         >
           {t.hero.intro}
         </p>
@@ -99,7 +104,7 @@ export function Hero() {
           <span
             ref={firstNameRef}
             data-reveal
-            className="wdth-expanded font-sans text-giant leading-[0.86] font-bold tracking-tight uppercase"
+            className="wdth-expanded font-sans text-giant leading-[0.86] font-bold tracking-tight uppercase lg-short:text-[clamp(3.5rem,15vh,7rem)]"
           >
             Marcus
           </span>
@@ -107,7 +112,7 @@ export function Hero() {
             <span
               ref={lastNameRef}
               data-reveal
-              className="font-display-italic text-giant leading-[0.92] text-ember"
+              className="font-display-italic text-giant leading-[0.92] text-ember lg-short:text-[clamp(3.5rem,15vh,7rem)]"
             >
               Boni
             </span>
@@ -122,7 +127,7 @@ export function Hero() {
 
         <div
           data-hero-fade
-          className="mt-8 flex items-end justify-between border-t border-line pt-5"
+          className="mt-8 flex items-end justify-between border-t border-line pt-5 lg-short:mt-4 lg-short:pt-3"
         >
           <p className="max-w-xs font-sans text-sm leading-relaxed text-bone-dim md:max-w-sm md:text-base">
             {t.hero.tagline}

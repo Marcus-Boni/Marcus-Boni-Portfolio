@@ -3,6 +3,7 @@ import SplitType from 'split-type'
 
 import { gsap, ScrollTrigger } from '@/animations/gsap'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
+import { shouldSkipIntro } from '@/lib/defer'
 
 type RevealMode = 'lines' | 'chars' | 'words'
 
@@ -41,7 +42,10 @@ export function useScrollReveal<T extends HTMLElement = HTMLHeadingElement>(
     const el = ref.current
     if (!el) return
 
-    if (reduced) {
+    if (reduced || (immediate && shouldSkipIntro())) {
+      // Reduced motion — or the page got interactive so late that hiding the
+      // already-painted static shell to replay the intro would hurt more
+      // than the animation is worth (and would push LCP to animation end).
       el.style.visibility = 'visible'
       return
     }

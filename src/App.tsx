@@ -15,6 +15,7 @@ import { sectionIds } from '@/data/profile'
 import { usePointerTracking } from '@/hooks/usePointer'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { trackEvent } from '@/lib/analytics'
+import { onFirstInteraction } from '@/lib/defer'
 
 const techMarquee = [
   'React',
@@ -31,7 +32,11 @@ const techMarquee = [
 /** Fire one pageview, then a one-time `section_view` as each section appears. */
 function usePageTracking() {
   useEffect(() => {
-    trackEvent('pageview')
+    // Deferred so the Firestore SDK never loads during the load window; the
+    // hide flush still records visitors who bounce without interacting.
+    const cancelPageview = onFirstInteraction(() => trackEvent('pageview'), {
+      flushOnHide: true,
+    })
 
     const seen = new Set<string>()
     const observer = new IntersectionObserver(
@@ -51,7 +56,10 @@ function usePageTracking() {
       const el = document.getElementById(id)
       if (el) observer.observe(el)
     })
-    return () => observer.disconnect()
+    return () => {
+      cancelPageview()
+      observer.disconnect()
+    }
   }, [])
 }
 

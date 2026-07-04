@@ -11,19 +11,26 @@ const INTERACTION_EVENTS = [
 
 /**
  * Returns `false` on first paint, flipping to `true` on the first user
- * interaction — or, for a visitor who never interacts, after `fallbackDelay`.
+ * interaction (pointer, touch, wheel, key or scroll).
  *
- * Used to defer heavy, non-critical work (the WebGL hero) out of the initial
- * load window: parsing the three.js chunk and compiling shaders then happens
- * *after* the page is interactive, so it no longer inflates Total Blocking
- * Time. The static fallback covers the gap. The delay is a fixed timer rather
- * than `requestIdleCallback` so the work lands predictably after TTI (an idle
- * callback can fire while the load is still being measured).
+ * Used to keep heavy, non-critical work — the WebGL hero above all — out of
+ * the load window entirely: parsing the three.js chunk and compiling shaders
+ * only happens once the visitor actually engages with the page, so it can
+ * never inflate Total Blocking Time or delay Time to Interactive. A visitor
+ * who never interacts simply keeps the static backdrop, which is also the
+ * reduced-motion experience.
+ *
+ * An optional `fallbackDelay` (ms) can force activation on a timer for cases
+ * where the deferred work must eventually run without input — but note that
+ * any timer short enough to matter tends to land back inside the load trace,
+ * so the default is interaction-only.
  */
-export function useDeferredActivation(fallbackDelay = 2000): boolean {
+export function useDeferredActivation(fallbackDelay?: number): boolean {
   const [active, setActive] = useState(false)
 
   useEffect(() => {
+    let timerId: number | undefined
+
     const activate = () => {
       cleanup()
       setActive(true)
@@ -33,13 +40,15 @@ export function useDeferredActivation(fallbackDelay = 2000): boolean {
       for (const event of INTERACTION_EVENTS) {
         window.removeEventListener(event, activate)
       }
-      window.clearTimeout(timerId)
+      if (timerId !== undefined) window.clearTimeout(timerId)
     }
 
     for (const event of INTERACTION_EVENTS) {
       window.addEventListener(event, activate, { passive: true, once: true })
     }
-    const timerId = window.setTimeout(activate, fallbackDelay)
+    if (fallbackDelay !== undefined) {
+      timerId = window.setTimeout(activate, fallbackDelay)
+    }
 
     return cleanup
   }, [fallbackDelay])
