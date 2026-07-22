@@ -145,6 +145,18 @@ body {
   overflow: hidden;
 }
 
+/* Experience ledger — scroll spotlight. The class is added by the GSAP
+   scope, so no-JS / reduced-motion readers keep full-contrast entries. */
+.exp-focus [data-entry] {
+  opacity: 0.35;
+  transition: opacity 0.55s var(--ease-out-expo);
+}
+
+.exp-focus [data-entry].is-active,
+.exp-focus [data-entry]:hover {
+  opacity: 1;
+}
+
 /* Reveal targets start hidden only once JS is in charge */
 [data-reveal] {
   visibility: hidden;
