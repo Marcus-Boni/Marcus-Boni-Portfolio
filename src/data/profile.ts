@@ -239,6 +239,15 @@ export const socials: SocialLink[] = [
   },
 ]
 
+/**
+ * Résumé PDFs served from `/public` under stable names (one per locale).
+ * Editable sources (.docx) live in `docs/cv/` and are not shipped.
+ */
+export const cvFiles: Record<Locale, string> = {
+  pt: '/marcus-boni-cv-pt.pdf',
+  en: '/marcus-boni-resume-en.pdf',
+}
+
 export const sectionIds = [
   'hero',
   'about',

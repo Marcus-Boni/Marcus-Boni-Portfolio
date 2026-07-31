@@ -1,1 +1,5 @@
+# Legacy single-language CV URL, kept alive for links shared before the PT/EN split.
+/marcus-boni-cv.pdf    /marcus-boni-cv-pt.pdf    301!
+
+# SPA fallback — must stay last.
 /*    /index.html   200

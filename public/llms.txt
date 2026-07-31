@@ -17,7 +17,8 @@ Este site apresenta projetos selecionados, experiência profissional, stack téc
 
 - [GitHub](https://github.com/Marcus-Boni): Código, repositórios e projetos open source.
 - [LinkedIn](https://www.linkedin.com/in/marcus-boni-729a52243): Experiência profissional e contato.
-- [Currículo (PDF)](https://marcusboni.com.br/marcus-boni-cv.pdf): Resumo profissional em formato de currículo.
+- [Currículo em português (PDF)](https://marcusboni.com.br/marcus-boni-cv-pt.pdf): Resumo profissional em formato de currículo.
+- [Resume in English (PDF)](https://marcusboni.com.br/marcus-boni-resume-en.pdf): Versão em inglês do mesmo currículo.
 
 ## Informações para LLMs
 

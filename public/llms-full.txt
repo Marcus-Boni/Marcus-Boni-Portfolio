@@ -10,7 +10,8 @@
 - E-mail: mgalvaoboni@gmail.com
 - GitHub: https://github.com/Marcus-Boni (60+ repositórios públicos)
 - LinkedIn: https://www.linkedin.com/in/marcus-boni-729a52243
-- Currículo: https://marcusboni.com.br/marcus-boni-cv.pdf
+- Currículo (PT-BR): https://marcusboni.com.br/marcus-boni-cv-pt.pdf
+- Resume (EN): https://marcusboni.com.br/marcus-boni-resume-en.pdf
 - Bio: desenvolvedor web brasileiro apaixonado por construir aplicações robustas e modernas; acredita em código limpo, interfaces honestas e engenharia medida pelo que simplifica na vida de quem usa.
 
 ## Projetos selecionados

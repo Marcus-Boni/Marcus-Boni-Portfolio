@@ -1,5 +1,5 @@
 import { useSiteContent } from '@/content/SiteContentContext'
-import type { ExperienceProject } from '@/data/profile'
+import { cvFiles, type ExperienceProject } from '@/data/profile'
 import { gsap, ScrollTrigger } from '@/animations/gsap'
 import { useMagnetic } from '@/hooks/useMagnetic'
 import { useScramble } from '@/hooks/useScramble'
@@ -315,8 +315,9 @@ export function Experience() {
                 >
                   <Button asChild variant="ember" size="pill" data-cursor="link">
                     <a
-                      href="/marcus-boni-cv.pdf"
+                      href={cvFiles[locale]}
                       download
+                      hrefLang={locale}
                       onClick={() => trackEvent('cv_download')}
                     >
                       <span ref={cvRef}>{t.experience.downloadCv}</span>
