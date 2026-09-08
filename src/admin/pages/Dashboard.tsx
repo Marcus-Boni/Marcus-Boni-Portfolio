@@ -1,47 +1,66 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useAdminContent } from '@/admin/AdminContentContext'
-import { AreaChart, BarList, Donut } from '@/admin/components/charts'
-import {
-  Banner,
-  Card,
-  PageHeader,
-  SectionLabel,
-  Spinner,
-  Stat,
-} from '@/admin/components/ui'
+import { ChartCard, MetricTile } from '@/admin/components/analytics-ui'
+import { BarList, TimeSeries } from '@/admin/components/charts'
+import { Banner, PageHeader, Spinner } from '@/admin/components/ui'
 import { useAnalytics, useMessages } from '@/admin/hooks'
 import { isFirebaseConfigured } from '@/lib/firebase'
 
-function trend(today: number, avgPrev: number): string {
-  if (avgPrev <= 0) return today > 0 ? '+100%' : '—'
-  const delta = Math.round(((today - avgPrev) / avgPrev) * 100)
-  return `${delta >= 0 ? '+' : ''}${delta}% vs. média`
-}
-
+/**
+ * The at-a-glance view. Deliberately narrower than `/admin/analytics`: the
+ * seven-day window, the headline numbers, and the two breakdowns worth acting
+ * on. Anything that needs a filter row lives on the Audiência page.
+ */
 export function Dashboard() {
-  const { summary, loading } = useAnalytics()
+  const { summary, loading, error } = useAnalytics('7d')
   const { messages, unread } = useMessages()
   const { draft } = useAdminContent()
 
-  const avgDaily =
-    summary.byDay.length > 0
-      ? summary.byDay.reduce((s, d) => s + d.views, 0) / summary.byDay.length
-      : 0
+  const viewsTrend = useMemo(
+    () => summary.byDay.map((d) => d.views),
+    [summary.byDay],
+  )
 
   return (
     <>
       <PageHeader
         title="Painel"
-        subtitle="Visão geral em tempo real da audiência e do conteúdo do portfólio."
+        subtitle="Os últimos 7 dias, comparados com os 7 anteriores."
+        actions={
+          <Link
+            to="/admin/analytics"
+            className="font-mono text-[10px] tracking-[0.2em] text-ember uppercase hover:underline"
+          >
+            Audiência completa →
+          </Link>
+        }
       />
 
       {!isFirebaseConfigured && (
         <div className="mb-8">
           <Banner tone="warn">
-            Modo demonstração — Firebase não configurado. As métricas aparecerão
-            assim que você conectar um projeto Firebase (veja{' '}
-            <span className="font-mono">ADMIN_SETUP.md</span>).
+            Modo demonstração — Firebase não configurado. As métricas aparecem
+            assim que você conectar um projeto.
+          </Banner>
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-8">
+          <Banner tone="error">
+            <p className="font-mono text-[11px] tracking-[0.16em] uppercase">
+              Falha ao carregar as métricas · {error.code}
+            </p>
+            <p className="mt-1.5 text-xs text-bone-dim">
+              O diagnóstico completo, com o link de correção quando houver, está
+              em{' '}
+              <Link to="/admin/analytics" className="text-ember hover:underline">
+                Audiência
+              </Link>
+              .
+            </p>
           </Banner>
         </div>
       )}
@@ -50,85 +69,88 @@ export function Dashboard() {
         <Spinner label="Carregando métricas" />
       ) : (
         <div className="flex flex-col gap-6">
-          {/* ─── KPI row ──────────────────────────────────────── */}
-          <div className="grid grid-cols-2 gap-px bg-line md:grid-cols-4">
-            <Stat
-              label="Visitas hoje"
-              value={summary.viewsToday}
-              hint={trend(summary.viewsToday, avgDaily)}
+          <div className="grid grid-cols-2 gap-px bg-line lg:grid-cols-4">
+            <MetricTile
+              label="Visitas"
+              metric={summary.pageviews}
+              trend={viewsTrend}
               accent
             />
-            <Stat
+            <MetricTile
               label="Visitantes únicos"
-              value={summary.uniqueVisitors}
+              metric={summary.visitors}
               hint={`${summary.newVisitors} novos · ${summary.returningVisitors} recorrentes`}
             />
-            <Stat
-              label="Visitas (7 dias)"
-              value={summary.viewsLast7}
-              hint={`${summary.avgViewsPerSession} págs./sessão`}
+            <MetricTile
+              label="Taxa de rejeição"
+              metric={summary.bounceRate}
+              unit="percent"
+              higherIsBetter={false}
             />
-            <Stat
+            <MetricTile
               label="Mensagens"
-              value={messages.length}
+              metric={{ current: messages.length, previous: messages.length }}
               hint={unread > 0 ? `${unread} não lida(s)` : 'tudo lido'}
               accent={unread > 0}
             />
           </div>
 
-          {/* ─── Traffic chart ────────────────────────────────── */}
-          <Card>
-            <div className="mb-2 flex items-center justify-between">
-              <SectionLabel>Tráfego — últimos 14 dias</SectionLabel>
-              <Link
-                to="/admin/analytics"
-                className="font-mono text-[10px] tracking-[0.2em] text-ember uppercase hover:underline"
-              >
-                Detalhes →
-              </Link>
-            </div>
-            <AreaChart data={summary.byDay} />
-          </Card>
+          <ChartCard
+            title="Visitas por dia — 7 dias"
+            hint="A linha cinza é a semana anterior."
+            table={{
+              columns: ['Dia', 'Visitas', 'Visitantes', 'Semana anterior'],
+              rows: summary.byDay.map((d) => [
+                d.date,
+                d.views,
+                d.visitors,
+                d.previousViews,
+              ]),
+            }}
+          >
+            <TimeSeries data={summary.byDay} />
+          </ChartCard>
 
-          {/* ─── Breakdown row ────────────────────────────────── */}
           <div className="grid gap-6 lg:grid-cols-3">
-            <Card>
-              <SectionLabel>Dispositivos</SectionLabel>
-              <Donut data={summary.byDevice} />
-            </Card>
-            <Card>
-              <SectionLabel>Países (por fuso)</SectionLabel>
-              <BarList data={summary.byCountry} />
-            </Card>
-            <Card>
-              <SectionLabel>Origem do tráfego</SectionLabel>
-              <BarList data={summary.byReferrer} />
-            </Card>
-          </div>
-
-          {/* ─── Engagement + content snapshot ────────────────── */}
-          <div className="grid gap-6 lg:grid-cols-3">
-            <Card className="lg:col-span-2">
-              <SectionLabel>Seções mais vistas</SectionLabel>
+            <ChartCard title="Páginas mais vistas">
               <BarList
-                data={summary.bySection}
-                emptyLabel="Sem dados de rolagem ainda"
+                data={summary.byPath}
+                max={5}
+                formatName={(name) => (name === '/' ? '/ (home)' : name)}
               />
-            </Card>
-            <Card>
-              <SectionLabel>Conteúdo publicado</SectionLabel>
+            </ChartCard>
+            <ChartCard title="Origem do tráfego">
+              <BarList data={summary.byReferrer} max={5} />
+            </ChartCard>
+            <ChartCard title="Conteúdo publicado">
               <ul className="flex flex-col divide-y divide-line">
-                <ContentRow to="/admin/projects" label="Projetos" value={draft.projects.length} />
-                <ContentRow to="/admin/experience" label="Experiências" value={draft.experience.projects.length} />
-                <ContentRow to="/admin/profile" label="Tecnologias" value={draft.techStack.length} />
-                <ContentRow to="/admin/profile" label="Redes sociais" value={draft.socials.length} />
+                <ContentRow
+                  to="/admin/blog"
+                  label="Posts do blog"
+                  value={summary.posts.length}
+                  hint="com visitas no período"
+                />
+                <ContentRow
+                  to="/admin/projects"
+                  label="Projetos"
+                  value={draft.projects.length}
+                />
+                <ContentRow
+                  to="/admin/experience"
+                  label="Experiências"
+                  value={draft.experience.projects.length}
+                />
+                <ContentRow
+                  to="/admin/profile"
+                  label="Tecnologias"
+                  value={draft.techStack.length}
+                />
               </ul>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="font-mono text-[10px] tracking-[0.18em] text-smoke uppercase">
-                  CV baixado {summary.cvDownloads}× · contato {summary.contactSubmits}×
-                </span>
-              </div>
-            </Card>
+              <p className="mt-4 font-mono text-[10px] tracking-[0.16em] text-smoke uppercase">
+                CV baixado {summary.cvDownloads.current}× · contato{' '}
+                {summary.contactSubmits.current}×
+              </p>
+            </ChartCard>
           </div>
         </div>
       )}
@@ -140,18 +162,21 @@ function ContentRow({
   to,
   label,
   value,
+  hint,
 }: {
   to: string
   label: string
   value: number
+  hint?: string
 }) {
   return (
-    <li className="flex items-center justify-between py-3">
+    <li className="flex items-center justify-between gap-3 py-3">
       <Link
         to={to}
         className="text-sm text-bone-dim transition-colors hover:text-ember"
       >
         {label}
+        {hint && <span className="ml-1 text-xs text-smoke">({hint})</span>}
       </Link>
       <span className="font-display text-2xl text-bone">{value}</span>
     </li>

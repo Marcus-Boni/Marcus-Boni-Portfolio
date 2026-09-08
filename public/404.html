@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>404 — Página não encontrada | Marcus Boni</title>
+    <meta
+      name="description"
+      content="Esta URL não existe em marcusboni.com.br. O site tem três páginas: início, blog e /developers. O sitemap lista todas."
+    />
+    <meta name="robots" content="noindex, follow" />
+    <meta name="theme-color" content="#0d0c0a" />
+    <!--
+      Served by Netlify for every path not listed in `public/_redirects`, with a
+      real 404 status. Deliberately standalone: no bundle, no fonts, no
+      JavaScript — an error page that waits on 900 KB of app to tell you the URL
+      is wrong is worse than no error page. The palette below is a copy of the
+      `@theme` tokens in src/styles/index.css, using the same font fallbacks
+      those tokens declare.
+
+      The prose matters as much as the styling: this is the page agents land on
+      when they probe for endpoints, so it names the real ones instead of just
+      apologising. The same content is available as Markdown — request this URL
+      with `Accept: text/markdown` (see netlify/edge-functions/agents.ts).
+    -->
+    <style>
+      :root {
+        --ink: #0d0c0a;
+        --bone: #ece7df;
+        --bone-dim: #b5afa4;
+        --smoke: #7a7368;
+        --ember: #ff4d17;
+        --line: #2a2723;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 3rem;
+        padding: 4rem 1.25rem;
+        /* Flat colour first: the gradient is decoration, and bone-on-white is
+           unreadable if it is the only thing painting the background. */
+        background-color: var(--ink);
+        background-image: radial-gradient(
+          120% 90% at 70% 20%,
+          #1c1815 0%,
+          #0d0c0a 60%
+        );
+        color: var(--bone);
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        width: 100%;
+        max-width: 62rem;
+        margin: 0 auto;
+      }
+      .label {
+        margin: 0 0 1.5rem;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.6875rem;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--ember);
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(4.5rem, 14vw, 11rem);
+        line-height: 0.86;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      h1 em {
+        font-family: Georgia, 'Times New Roman', serif;
+        font-style: italic;
+        font-weight: 400;
+        color: var(--ember);
+      }
+      .lead {
+        max-width: 46ch;
+        margin: 2rem 0 0;
+        font-size: 1.0625rem;
+        line-height: 1.65;
+        color: var(--bone-dim);
+      }
+      .lead code {
+        font-family: 'Courier New', Courier, monospace;
+        color: var(--bone);
+        word-break: break-all;
+      }
+      .lead-en {
+        max-width: 46ch;
+        margin: 0.75rem 0 0;
+        font-size: 0.9375rem;
+        line-height: 1.6;
+        color: var(--smoke);
+      }
+      h2 {
+        margin: 0 0 1.25rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--line);
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.6875rem;
+        font-weight: 400;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--smoke);
+      }
+      nav {
+        margin-top: 3.5rem;
+        display: grid;
+        gap: 2.5rem;
+      }
+      @media (min-width: 48rem) {
+        nav {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      li + li {
+        margin-top: 1rem;
+      }
+      a {
+        color: var(--bone);
+        text-decoration: none;
+        border-bottom: 1px solid var(--line);
+        transition: color 0.2s, border-color 0.2s;
+      }
+      a:hover,
+      a:focus-visible {
+        color: var(--ember);
+        border-color: var(--ember);
+      }
+      li span {
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        color: var(--smoke);
+      }
+      li a {
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.9375rem;
+      }
+      footer {
+        width: 100%;
+        max-width: 62rem;
+        margin: 0 auto;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--line);
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.6875rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--smoke);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="label">Erro 404 · Not found</p>
+      <h1>Sem <em>rota</em></h1>
+
+      <p class="lead">
+        Esta URL não existe em <code>marcusboni.com.br</code>. O site é um
+        portfólio pessoal com três páginas — a inicial, o blog e a documentação
+        para desenvolvedores. O <a href="/sitemap.xml">sitemap</a> é a lista
+        completa e autoritativa de endereços; não existe API, nem
+        <code>/docs</code>, nem área autenticada além de <code>/admin</code>.
+      </p>
+      <p class="lead-en">
+        This URL does not exist. This site is a personal portfolio: home, blog,
+        and developer documentation. The sitemap is the authoritative list of
+        every URL. There is no API to discover.
+      </p>
+
+      <nav>
+        <div>
+          <h2>Páginas / Pages</h2>
+          <ul>
+            <li>
+              <a href="/">/</a>
+              <span
+                >Perfil, projetos, trajetória profissional, stack e contato.</span
+              >
+            </li>
+            <li>
+              <a href="/blog">/blog</a>
+              <span>Notas técnicas, estudos e bastidores de projeto.</span>
+            </li>
+            <li>
+              <a href="/developers">/developers</a>
+              <span
+                >Todos os endpoints legíveis por máquina, com exemplos em
+                <code>curl</code>.</span
+              >
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h2>Para agentes / For agents</h2>
+          <ul>
+            <li>
+              <a href="/sitemap.xml">/sitemap.xml</a>
+              <span>Lista completa de URLs indexáveis.</span>
+            </li>
+            <li>
+              <a href="/llms.txt">/llms.txt</a>
+              <span>Guia condensado do site, formato llmstxt.org.</span>
+            </li>
+            <li>
+              <a href="/agent-instructions.md">/agent-instructions.md</a>
+              <span>Quando usar este site, e como chamá-lo.</span>
+            </li>
+            <li>
+              <a href="/rss.xml">/rss.xml</a>
+              <span>Feed dos posts publicados.</span>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </main>
+
+    <footer>
+      Marcus Boni — Software Engineer · Espírito Santo, Brasil ·
+      <a href="mailto:mgalvaoboni@gmail.com">mgalvaoboni@gmail.com</a>
+    </footer>
+  </body>
+</html>

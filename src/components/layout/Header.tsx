@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLenis } from 'lenis/react'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { useSiteContent } from '@/content/SiteContentContext'
 import { sectionIds } from '@/data/profile'
@@ -126,6 +127,12 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-6 md:gap-8">
+            <Link
+              to="/blog"
+              className="hidden font-mono text-[11px] tracking-[0.18em] text-bone-dim uppercase transition-colors hover:text-ember sm:block"
+            >
+              {t.blog.nav}
+            </Link>
             <LanguageToggle />
             <button
               ref={menuButtonRef}
@@ -202,6 +209,37 @@ export function Header() {
                   </button>
                 </motion.li>
               ))}
+              {/* The blog is a route, not a section of this page, so it sits
+                  below the section list with its own rule above it. */}
+              <motion.li
+                initial={{ y: 80, opacity: 0 }}
+                animate={{
+                  y: 0,
+                  opacity: 1,
+                  transition: {
+                    delay: 0.25 + sectionIds.length * 0.07,
+                    duration: 0.7,
+                    ease: [0.16, 1, 0.3, 1],
+                  },
+                }}
+                exit={{ opacity: 0, transition: { duration: 0.2 } }}
+                className="mt-6 border-t border-line pt-6 lg-short:mt-3 lg-short:pt-3"
+              >
+                <Link
+                  to="/blog"
+                  onClick={() => setOpen(false)}
+                  data-cursor="link"
+                  className="group flex items-baseline gap-4 py-1 text-left lg-short:py-0.5"
+                >
+                  <span className="font-mono text-xs text-smoke transition-colors duration-300 group-hover:text-ember">
+                    ↗
+                  </span>
+                  <HoverItalic
+                    text={t.blog.label}
+                    className="text-[clamp(2.5rem,8vw,5.5rem)] leading-[1.05] text-bone transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-3 lg-short:text-[clamp(2rem,7vh,3.5rem)]"
+                  />
+                </Link>
+              </motion.li>
             </ul>
 
             <motion.div

@@ -176,3 +176,220 @@ html.reduced-motion [data-reveal] {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ─── Blog: article typography ──────────────────────────────
+   Scoped to `.post-prose` so it can never leak into the portfolio sections,
+   which have their own bespoke type. Sized for reading: ~19px body, 1.75
+   leading, and a measure capped by the article column (68ch) rather than here.
+*/
+
+.post-prose {
+  color: var(--color-bone-dim);
+  font-size: 1.0625rem;
+  line-height: 1.78;
+}
+
+@media (min-width: 768px) {
+  .post-prose {
+    font-size: 1.1875rem;
+  }
+}
+
+.post-prose > * + * {
+  margin-top: 1.5em;
+}
+
+.post-prose p {
+  text-wrap: pretty;
+}
+
+/* Headings step down in weight, not just size — the mono eyebrow scale of the
+   rest of the site would be too loud inside running prose. */
+.post-prose h2,
+.post-prose h3,
+.post-prose h4 {
+  color: var(--color-bone);
+  font-family: var(--font-display);
+  line-height: 1.15;
+  text-wrap: balance;
+  scroll-margin-top: 7rem;
+}
+
+.post-prose h2 {
+  margin-top: 2.4em;
+  border-top: 1px solid var(--color-line);
+  padding-top: 0.9em;
+  font-size: clamp(1.75rem, 3.4vw, 2.5rem);
+}
+
+.post-prose h3 {
+  margin-top: 2em;
+  font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+}
+
+.post-prose h4 {
+  margin-top: 1.8em;
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-bone-dim);
+}
+
+.post-prose strong {
+  color: var(--color-bone);
+  font-weight: 600;
+}
+
+.post-prose em {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.06em;
+}
+
+/* Links carry the ember underline the rest of the site uses for emphasis. */
+.post-prose a {
+  color: var(--color-bone);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-ember) 55%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  transition: color 0.3s var(--ease-out-expo),
+    text-decoration-color 0.3s var(--ease-out-expo);
+}
+
+.post-prose a:hover {
+  color: var(--color-ember);
+  text-decoration-color: var(--color-ember);
+}
+
+/* Tailwind's preflight sets `list-style: none` on both. The `ul` rule below
+   paints its own em-dash via ::marker, but `ol` needs its numbers restored
+   explicitly or ordered lists render with no markers at all. */
+.post-prose ul,
+.post-prose ol {
+  padding-left: 1.35em;
+}
+
+.post-prose ol {
+  list-style: decimal outside;
+}
+
+.post-prose ol ol {
+  list-style: lower-alpha outside;
+}
+
+.post-prose li + li {
+  margin-top: 0.5em;
+}
+
+.post-prose ul > li::marker {
+  color: var(--color-ember);
+  content: '—  ';
+}
+
+.post-prose ol > li::marker {
+  color: var(--color-ember);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+.post-prose blockquote {
+  border-left: 1px solid var(--color-ember);
+  padding-left: 1.25em;
+  color: var(--color-bone);
+  font-family: var(--font-display);
+  font-size: 1.15em;
+  line-height: 1.45;
+}
+
+.post-prose hr {
+  margin-block: 3em;
+  border: 0;
+  border-top: 1px solid var(--color-line);
+}
+
+.post-prose th,
+.post-prose td {
+  border-bottom: 1px solid var(--color-line);
+  padding: 0.7em 1em;
+  text-align: left;
+}
+
+.post-prose th {
+  color: var(--color-bone);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.post-prose td {
+  font-size: 0.95em;
+}
+
+/* GFM task lists read as checklists, not bullets. */
+.post-prose input[type='checkbox'] {
+  margin-right: 0.5em;
+  accent-color: var(--color-ember);
+}
+
+/* Blocks that bring their own frame must not inherit the prose rhythm. */
+.post-prose figure,
+.post-prose aside {
+  margin-inline: 0;
+}
+
+/* Gallery. Markdown wraps consecutive image lines in a single <p>, which would
+   leave the grid with one child and the images stacked. `display: contents`
+   dissolves that wrapper so each figure becomes a grid item, and the figures'
+   own vertical margins are dropped in favour of the grid gap. */
+.post-prose .gallery-grid > p {
+  display: contents;
+}
+
+.post-prose .gallery-grid :is(figure, span, img) {
+  margin: 0;
+}
+
+/* Callout bodies are already inside a frame — tighten their internal rhythm. */
+.callout-body > * + * {
+  margin-top: 0.8em;
+}
+
+.callout-body :is(p, li) {
+  font-size: inherit;
+}
+
+/* ─── Blog: Shiki surface ───────────────────────────────────
+   Shiki emits inline colors from the `signal-ink` theme; everything structural
+   (padding, scroll, line height) is set here so the highlighted and the
+   not-yet-highlighted `<pre>` occupy identical space and the swap is invisible.
+*/
+
+.shiki-host,
+.shiki-host pre {
+  margin: 0;
+  background: transparent !important;
+}
+
+.shiki-host pre,
+.shiki-host > code {
+  display: block;
+  padding: 1.15rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.7;
+  tab-size: 2;
+}
+
+.shiki-host code {
+  background: none;
+  color: inherit;
+}
+
+.shiki-host .line {
+  display: block;
+  min-height: 1.7em;
+}

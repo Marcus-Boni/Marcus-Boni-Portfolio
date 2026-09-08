@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <title>Developers — Marcus Boni</title>
+    <meta name="title" content="Developers — Marcus Boni" />
+    <meta
+      name="description"
+      content="Every machine-readable endpoint on marcusboni.com.br: llms.txt, agent instructions, Markdown content negotiation, sitemap and RSS — with curl examples. No API keys required."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://marcusboni.com.br/developers" />
+    <link rel="alternate" type="text/markdown" href="https://marcusboni.com.br/developers" />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="Marcus Boni — Notas de campo"
+      href="/rss.xml"
+    />
+    <meta name="theme-color" content="#0d0c0a" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://marcusboni.com.br/developers" />
+    <meta property="og:title" content="Developers — Marcus Boni" />
+    <meta
+      property="og:description"
+      content="Machine-readable endpoints, Markdown content negotiation and curl examples for marcusboni.com.br."
+    />
+    <meta property="og:image" content="https://marcusboni.com.br/og-image.png" />
+    <meta property="og:site_name" content="Marcus Boni — Portfolio" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://marcusboni.com.br/developers" />
+    <meta property="twitter:title" content="Developers — Marcus Boni" />
+    <meta
+      property="twitter:description"
+      content="Machine-readable endpoints, Markdown content negotiation and curl examples for marcusboni.com.br."
+    />
+    <meta property="twitter:image" content="https://marcusboni.com.br/og-image.png" />
+
+    <!--
+      A standalone document, not a route of the React app.
+      ────────────────────────────────────────────────────
+      Reference documentation is the one thing on this site with no reason to
+      wait for a bundle: no animation, no data fetching, nothing interactive.
+      Serving it as a file means an agent — or a person on a hotel connection —
+      gets the whole thing in one round trip, and that the delivered HTML has
+      its own `<title>` and canonical instead of inheriting the home page's
+      from the SPA shell.
+      The palette and font fallbacks below mirror the `@theme` tokens in
+      src/styles/index.css so it reads as the same site.
+
+      The Markdown twin of this page lives in
+      netlify/edge-functions/_agent-docs.ts (`developersMarkdown`) and is
+      served from this same URL under `Accept: text/markdown`.
+      `tests/agent-docs.test.ts` asserts every endpoint named in one appears in
+      the other.
+    -->
+    <style>
+      :root {
+        --ink: #0d0c0a;
+        --ink-soft: #161412;
+        --bone: #ece7df;
+        --bone-dim: #b5afa4;
+        --smoke: #7a7368;
+        --ember: #ff4d17;
+        --line: #2a2723;
+        --sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        --mono: 'Courier New', Courier, monospace;
+        --serif: Georgia, 'Times New Roman', serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--ink);
+        color: var(--bone);
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap {
+        max-width: 60rem;
+        margin: 0 auto;
+        padding: 2rem 1.25rem 6rem;
+      }
+      @media (min-width: 48rem) {
+        .wrap {
+          padding: 2rem 2rem 8rem;
+        }
+      }
+
+      /* ── Header ─────────────────────────────────────────── */
+      .topbar {
+        display: flex;
+        align-items: baseline;
+        gap: 1.5rem;
+        padding-bottom: 3rem;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-style: italic;
+        font-size: 1.5rem;
+        line-height: 1;
+        color: var(--bone);
+        text-decoration: none;
+        border: 0;
+      }
+      .wordmark span {
+        color: var(--ember);
+      }
+      .topbar nav {
+        display: flex;
+        gap: 1.5rem;
+        font-family: var(--mono);
+        font-size: 0.625rem;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+      }
+      .topbar nav a {
+        color: var(--smoke);
+        border: 0;
+      }
+      .topbar nav a:hover {
+        color: var(--bone);
+      }
+
+      .label {
+        margin: 0;
+        font-family: var(--mono);
+        font-size: 0.6875rem;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--ember);
+      }
+      h1 {
+        margin: 1.25rem 0 0;
+        font-size: clamp(3rem, 9vw, 6.5rem);
+        line-height: 0.9;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        text-transform: uppercase;
+      }
+      .lead {
+        max-width: 52ch;
+        margin: 1.75rem 0 0;
+        font-size: 1.0625rem;
+        color: var(--bone-dim);
+      }
+      @media (min-width: 48rem) {
+        .lead {
+          font-size: 1.125rem;
+        }
+      }
+      header.page {
+        padding-bottom: 2.5rem;
+        border-bottom: 1px solid var(--line);
+      }
+
+      /* ── Sections ───────────────────────────────────────── */
+      section {
+        margin-top: 4rem;
+      }
+      h2 {
+        display: flex;
+        align-items: baseline;
+        gap: 1rem;
+        margin: 0 0 1.75rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--line);
+        font-family: var(--mono);
+        font-size: 0.6875rem;
+        font-weight: 400;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--smoke);
+      }
+      h2 b {
+        color: var(--ember);
+        font-weight: 400;
+      }
+      h3 {
+        margin: 2.5rem 0 0.75rem;
+        font-size: 1.0625rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      p {
+        max-width: 68ch;
+        margin: 0 0 1rem;
+        color: var(--bone-dim);
+      }
+      p strong {
+        color: var(--bone);
+      }
+      a {
+        color: var(--bone);
+        text-decoration: none;
+        border-bottom: 1px solid var(--line);
+        transition: color 0.2s, border-color 0.2s;
+      }
+      a:hover,
+      a:focus-visible {
+        color: var(--ember);
+        border-color: var(--ember);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.9em;
+        color: var(--bone);
+        background: var(--ink-soft);
+        border: 1px solid var(--line);
+        border-radius: 2px;
+        padding: 0.1em 0.35em;
+      }
+      pre {
+        margin: 0 0 1.5rem;
+        padding: 1.25rem;
+        overflow-x: auto;
+        background: var(--ink-soft);
+        border: 1px solid var(--line);
+        border-radius: 3px;
+      }
+      pre code {
+        padding: 0;
+        border: 0;
+        background: none;
+        font-size: 0.8125rem;
+        line-height: 1.8;
+        color: var(--bone-dim);
+        white-space: pre;
+      }
+      pre code .c {
+        color: var(--smoke);
+      }
+      pre code .k {
+        color: var(--ember);
+      }
+
+      /* ── Tables ─────────────────────────────────────────── */
+      .scroller {
+        margin: 0 0 1.5rem;
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        min-width: 34rem;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+        text-align: left;
+      }
+      th {
+        padding: 0 1rem 0.75rem 0;
+        border-bottom: 1px solid var(--line);
+        font-family: var(--mono);
+        font-size: 0.625rem;
+        font-weight: 400;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--smoke);
+        white-space: nowrap;
+      }
+      td {
+        padding: 0.9rem 1rem 0.9rem 0;
+        border-bottom: 1px solid var(--line);
+        color: var(--bone-dim);
+        vertical-align: top;
+      }
+      td:first-child {
+        white-space: nowrap;
+        color: var(--bone);
+      }
+      ul {
+        max-width: 68ch;
+        margin: 0 0 1rem;
+        padding-left: 1.1rem;
+        color: var(--bone-dim);
+      }
+      li {
+        margin-bottom: 0.6rem;
+      }
+
+      footer {
+        margin-top: 5rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--line);
+        font-family: var(--mono);
+        font-size: 0.6875rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--smoke);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="topbar">
+        <a class="wordmark" href="/" aria-label="Marcus Boni — home"
+          >mb<span>.</span></a
+        >
+        <nav>
+          <a href="/">Portfolio</a>
+          <a href="/blog">Blog</a>
+        </nav>
+      </div>
+
+      <header class="page">
+        <p class="label">Developers</p>
+        <h1>Read it<br />with code</h1>
+        <p class="lead">
+          Everything on <code>marcusboni.com.br</code> that is meant to be read
+          by a program rather than a person: the machine-readable files, the
+          content-negotiation contract, and copy-pasteable <code>curl</code> for
+          each one.
+        </p>
+      </header>
+
+      <section id="scope">
+        <h2><b>00</b> Scope</h2>
+        <p>
+          This is a personal portfolio and technical blog. It is a
+          <strong>read-only public site</strong>: there is no private API, no
+          authentication, no rate limit, and therefore
+          <strong>no API keys to issue and no sandbox to provision</strong>.
+          Every endpoint below is the production endpoint, and calling it needs
+          no credentials — which makes the whole site its own sandbox.
+        </p>
+        <p>
+          If you are an agent deciding whether this site answers your question,
+          read <a href="/agent-instructions.md"><code>/agent-instructions.md</code></a>
+          first. It says plainly what this site is and is not good for.
+        </p>
+      </section>
+
+      <section id="quickstart">
+        <h2><b>01</b> Quickstart</h2>
+        <pre><code><span class="c"># The site's own guide for language models</span>
+curl -s https://marcusboni.com.br/llms.txt
+
+<span class="c"># Any page, as Markdown instead of HTML</span>
+curl -s -H <span class="k">'Accept: text/markdown'</span> https://marcusboni.com.br/
+
+<span class="c"># When to reach for this site, and how</span>
+curl -s https://marcusboni.com.br/agent-instructions.md
+
+<span class="c"># Blog feed</span>
+curl -s https://marcusboni.com.br/rss.xml</code></pre>
+      </section>
+
+      <section id="markdown">
+        <h2><b>02</b> Markdown content negotiation</h2>
+        <p>
+          Every HTML document on this site is also available as Markdown from
+          the same URL, following the
+          <a href="https://acceptmarkdown.com">acceptmarkdown.com</a>
+          convention. Blog posts are <em>written</em> in Markdown and stored
+          that way, so their Markdown representation is the original source, not
+          a conversion of the rendered HTML.
+        </p>
+        <pre><code>curl -sI -H <span class="k">'Accept: text/markdown'</span> https://marcusboni.com.br/
+<span class="c">#  content-type: text/markdown; charset=utf-8</span>
+<span class="c">#  vary: Accept, Accept-Encoding</span></code></pre>
+
+        <div class="scroller">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Request <code>Accept</code></th>
+                <th scope="col">Response</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><em>absent</em></td>
+                <td><code>text/html</code> — the default representation</td>
+              </tr>
+              <tr>
+                <td><code>*/*</code></td>
+                <td><code>text/html</code></td>
+              </tr>
+              <tr>
+                <td><code>text/html</code></td>
+                <td><code>text/html</code></td>
+              </tr>
+              <tr>
+                <td><code>text/markdown</code></td>
+                <td><code>text/markdown; charset=utf-8</code></td>
+              </tr>
+              <tr>
+                <td><code>text/markdown;q=0.9, text/html;q=0.8</code></td>
+                <td><code>text/markdown</code> — highest q wins</td>
+              </tr>
+              <tr>
+                <td><code>text/markdown;q=0</code></td>
+                <td>
+                  <code>text/html</code> — an explicit refusal of Markdown, not
+                  a 406
+                </td>
+              </tr>
+              <tr>
+                <td><code>application/pdf</code></td>
+                <td>
+                  <code>406 Not Acceptable</code>, with a body listing both
+                  representations
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          Quality values and wildcard specificity are honoured;
+          <code>text/x-markdown</code> and <code>text/mdx</code> are accepted as
+          aliases. Every negotiated response carries
+          <code>Vary: Accept</code> so a shared cache cannot hand an agent the
+          HTML variant.
+        </p>
+        <p>
+          Negotiable paths: <code>/</code>, <code>/blog</code>,
+          <code>/blog/{slug}</code>, <code>/developers</code>, and any unknown
+          path — which answers <code>404</code> in both representations.
+        </p>
+      </section>
+
+      <section id="files">
+        <h2><b>03</b> Machine-readable files</h2>
+        <div class="scroller">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Endpoint</th>
+                <th scope="col">Content type</th>
+                <th scope="col">What it is</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><a href="/llms.txt">/llms.txt</a></td>
+                <td><code>text/plain</code></td>
+                <td>
+                  Condensed site guide in
+                  <a href="https://llmstxt.org">llmstxt.org</a> format,
+                  including a "when to use this" section.
+                </td>
+              </tr>
+              <tr>
+                <td><a href="/llms-full.txt">/llms-full.txt</a></td>
+                <td><code>text/plain</code></td>
+                <td>
+                  Full profile: bio, every project, every client engagement, the
+                  whole stack.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="/agent-instructions.md">/agent-instructions.md</a>
+                </td>
+                <td><code>text/markdown</code></td>
+                <td>
+                  Best-fit tasks, how to call this site, and what not to infer
+                  from it.
+                </td>
+              </tr>
+              <tr>
+                <td><a href="/sitemap.xml">/sitemap.xml</a></td>
+                <td><code>application/xml</code></td>
+                <td>
+                  Indexable URLs, generated per request so a new post is
+                  discoverable without a rebuild.
+                </td>
+              </tr>
+              <tr>
+                <td><a href="/rss.xml">/rss.xml</a></td>
+                <td><code>application/xml</code></td>
+                <td>RSS 2.0 feed of published posts.</td>
+              </tr>
+              <tr>
+                <td><a href="/robots.txt">/robots.txt</a></td>
+                <td><code>text/plain</code></td>
+                <td>
+                  Crawl directives. Everything is allowed except
+                  <code>/admin</code>.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="/marcus-boni-cv-pt.pdf">/marcus-boni-cv-pt.pdf</a>
+                </td>
+                <td><code>application/pdf</code></td>
+                <td>Résumé, Portuguese.</td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="/marcus-boni-resume-en.pdf"
+                    >/marcus-boni-resume-en.pdf</a
+                  >
+                </td>
+                <td><code>application/pdf</code></td>
+                <td>Résumé, English.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="structured-data">
+        <h2><b>04</b> Structured data</h2>
+        <p>
+          The home page carries a schema.org <code>Person</code> in JSON-LD;
+          every blog post carries a <code>BlogPosting</code>, injected into the
+          delivered HTML at the edge so it is present without executing
+          JavaScript.
+        </p>
+        <pre><code>curl -s https://marcusboni.com.br/ | grep -A2 <span class="k">'application/ld+json'</span></code></pre>
+      </section>
+
+      <section id="http">
+        <h2><b>05</b> HTTP behaviour</h2>
+        <ul>
+          <li>
+            <strong>404</strong> — unknown paths return a genuine
+            <code>404</code>, never the app shell with a <code>200</code>. The
+            body points back at this page, <code>/sitemap.xml</code> and
+            <code>/llms.txt</code>. A <code>/blog/{slug}</code> with no such
+            post returns <code>404</code> as well.
+          </li>
+          <li>
+            <strong>406</strong> — returned only when an <code>Accept</code>
+            header rules out both <code>text/html</code> and
+            <code>text/markdown</code>.
+          </li>
+          <li>
+            <strong>301</strong> — <code>/marcus-boni-cv.pdf</code> redirects to
+            the Portuguese résumé, kept alive for links shared before the PT/EN
+            split.
+          </li>
+          <li>
+            <strong>CORS</strong> — not enabled. These are documents, fetched
+            server-side; nothing here is designed to be read from another site's
+            JavaScript.
+          </li>
+          <li>
+            <strong>Rate limits</strong> — none published. Be reasonable; the
+            whole site is a few hundred kilobytes and changes weekly at most.
+          </li>
+        </ul>
+      </section>
+
+      <section id="licence">
+        <h2><b>06</b> Reusing the content</h2>
+        <p>
+          The prose, résumés and images are © Marcus Boni. Quote and link
+          freely, with attribution to
+          <a href="https://marcusboni.com.br">marcusboni.com.br</a>. Code in the
+          linked <a href="https://github.com/Marcus-Boni">GitHub repositories</a>
+          carries its own licence per repository.
+        </p>
+        <p>
+          Something wrong or missing on this page? Email
+          <a href="mailto:mgalvaoboni@gmail.com">mgalvaoboni@gmail.com</a>.
+        </p>
+      </section>
+
+      <footer>
+        Marcus Boni — Software Engineer · Espírito Santo, Brasil ·
+        <a href="/">Portfolio</a> · <a href="/blog">Blog</a> ·
+        <a href="https://github.com/Marcus-Boni">GitHub</a>
+      </footer>
+    </div>
+  </body>
+</html>

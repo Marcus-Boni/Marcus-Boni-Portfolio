@@ -41,6 +41,27 @@ export default defineConfig({
           if (/node_modules[\\/](@firebase|firebase)[\\/]/.test(id)) {
             return 'firebase'
           }
+          // Shiki. Only reached from <CodeBlock>, so a post without code fences
+          // never downloads a highlighter. Language grammars are dynamically
+          // imported and stay in their own on-demand chunks.
+          // `@shikijs/langs` and `@shikijs/themes` are deliberately excluded:
+          // naming a chunk for a module forces it in even when it is only
+          // reached by dynamic import, which would collapse every grammar into
+          // one 1.2 MB chunk and undo the per-language loading.
+          if (
+            /node_modules[\\/](shiki|oniguruma-to-es|regex|regex-recursion|regex-utilities)[\\/]/.test(
+              id,
+            ) ||
+            /node_modules[\\/]@shikijs[\\/](?!langs|themes)/.test(id)
+          ) {
+            return 'shiki'
+          }
+          // NOTE: do NOT add a manualChunks rule for the unified/remark/rehype
+          // pipeline. Naming a chunk for it makes Rolldown treat it as a
+          // *static* dependency and it lands as a modulepreload on the home
+          // page — the same failure mode as the `scheduler`-in-`three` bug.
+          // The renderer is kept off the index by lazy-loading `BlogPost`
+          // inside `BlogApp` instead, which is where the boundary belongs.
           if (/node_modules[\\/]react-router[\\/]/.test(id)) {
             return 'router'
           }

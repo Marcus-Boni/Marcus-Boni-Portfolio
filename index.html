@@ -4,7 +4,22 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="Marcus Boni — Notas de campo"
+      href="/rss.xml"
+    />
     
+    <!--
+      SEO:START / SEO:END delimit everything the blog's Netlify edge function
+      swaps out per post (netlify/edge-functions/blog-meta.ts). Social crawlers
+      never run JS, so these are the tags that decide what a shared /blog link
+      looks like in Slack, LinkedIn and WhatsApp. Replacing a marked block is
+      deterministic in a way that pattern-matching individual tags is not — if
+      you add a tag here that varies per post, put it inside the markers.
+    -->
+    <!-- SEO:START -->
     <!-- Primary Meta Tags -->
     <title>Marcus Boni — Software Engineer</title>
     <meta name="title" content="Marcus Boni — Software Engineer" />
@@ -14,6 +29,7 @@
     />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://marcusboni.com.br/" />
+    <link rel="alternate" type="text/markdown" href="https://marcusboni.com.br/" />
     <meta name="theme-color" content="#0d0c0a" />
 
     <!-- Open Graph / Facebook -->
@@ -38,6 +54,7 @@
       content="Brazilian software engineer crafting robust, modern web applications."
     />
     <meta property="twitter:image" content="https://marcusboni.com.br/og-image.png" />
+    <!-- SEO:END -->
 
     <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json">
@@ -82,6 +99,7 @@
         intro animation over it. Keep classes in sync with Hero.tsx.
       -->
       <section
+        id="hero-shell"
         class="relative flex h-svh flex-col justify-end overflow-hidden"
         aria-label="Apresentação"
       >
@@ -127,6 +145,155 @@
           </div>
         </div>
       </section>
+      <!--
+        Static page content: the portfolio's substance in plain HTML, below the
+        fold.
+
+        The hero shell above is one headline and two lines of dek — about 200
+        characters, which is what a crawler that does not execute JavaScript
+        used to see of this entire site. Everything else (projects, seven client
+        engagements, the stack, contact) lived only in the React tree.
+
+        This block fixes that without changing what anyone sees. `#hero-shell`
+        is `h-svh`, so this sits a full viewport below the top: React replaces
+        the whole `#root` subtree on mount, long before a visitor could scroll
+        to it. Without JavaScript it simply stays — which is a better answer
+        than a blank page.
+
+        Keep the copy true to src/i18n/translations.tsx and src/data/profile.ts.
+        The Markdown twin of it is `homeMarkdown()` in
+        netlify/edge-functions/_agent-docs.ts, and tests/agent-docs.test.ts
+        checks both against profile.ts.
+      -->
+      <!--
+        Tailwind's preflight strips link styling, and a no-JS visitor still has
+        to be able to see what is clickable — hence the one-place `[&_a]`
+        rules rather than a class on every anchor.
+      -->
+      <div
+        id="static-content"
+        class="mx-auto max-w-5xl px-5 pb-24 md:px-8 [&_a]:text-bone [&_a]:underline [&_a]:decoration-line [&_a]:underline-offset-4 [&_a:hover]:text-ember"
+      >
+        <h2
+          class="border-t border-line pt-4 font-mono text-[11px] tracking-[0.3em] text-smoke uppercase"
+        >
+          Sobre
+        </h2>
+        <p class="mt-5 max-w-2xl text-base leading-relaxed text-bone-dim">
+          Marcus Boni é engenheiro de software brasileiro, baseado no Espírito
+          Santo, e Desenvolvedor de Software na Optsolv desde junho de 2024.
+          Constrói aplicações web corporativas de ponta a ponta — interface,
+          serviços e integração — com React, TypeScript, Next.js, Node.js e C#.
+          Acredita em código limpo, interfaces honestas e engenharia medida pelo
+          que simplifica na vida de quem usa. Mantém 67 repositórios públicos no
+          GitHub.
+        </p>
+
+        <h2
+          class="mt-14 border-t border-line pt-4 font-mono text-[11px] tracking-[0.3em] text-smoke uppercase"
+        >
+          Projetos selecionados
+        </h2>
+        <ul class="mt-5 max-w-2xl space-y-4 text-base leading-relaxed text-bone-dim">
+          <li>
+            <a href="https://github.com/Marcus-Boni/OptTime">OptTime</a> (2026,
+            TypeScript · React · AI Agents) — produto nascido em hackathon
+            explorando fluxos de desenvolvimento orquestrados por agentes de IA.
+          </li>
+          <li>
+            <a href="https://github.com/Marcus-Boni/Ferramenta-Estimativa-Horas"
+              >Estimativa de Horas</a
+            >
+            (2026, TypeScript · Azure DevOps · React) — ferramenta web que
+            substituiu planilhas frágeis de Excel na estimativa de horas.
+          </li>
+          <li>
+            <a href="https://github.com/Marcus-Boni/chatbot-template"
+              >Vault Chatbot</a
+            >
+            (2026, TypeScript · LLM · RAG) — chatbot ancorado em vaults do
+            Obsidian, respondendo perguntas sobre transcrições de reuniões.
+          </li>
+          <li>
+            <a href="https://github.com/Marcus-Boni/Jarvis">Jarvis</a> (2026,
+            Python · Automation) — assistente pessoal que automatiza as rotinas
+            diárias de um desenvolvedor.
+          </li>
+          <li>
+            <a href="https://github.com/Marcus-Boni/Opt-Gestao-Projetos"
+              >Opt Gestão</a
+            >
+            (2026, TypeScript · React · PostgreSQL) — aplicação de gestão de
+            projetos para uso real em empresa.
+          </li>
+        </ul>
+
+        <h2
+          class="mt-14 border-t border-line pt-4 font-mono text-[11px] tracking-[0.3em] text-smoke uppercase"
+        >
+          Trajetória
+        </h2>
+        <p class="mt-5 max-w-2xl text-base leading-relaxed text-bone-dim">
+          Na Optsolv, entregas para clientes em sete setores: Unimed Sul
+          Capixaba (saúde — plataforma de gestão de guias médicas), Hidrauvit
+          (indústria — gestão da produção), EAV — Escola Americana de Vitória
+          (atendimento — assistente virtual), Cedisa (suprimentos — gestão de
+          materiais sobre PostgreSQL legado), GAB — Grupo Águia Branca
+          (logística — plataforma de embarque B2B), Marca Ambiental (meio
+          ambiente — portal do cliente web/PWA integrado ao ERP Sankhya) e
+          Galwan (imobiliário — motor de plano de pagamento com simulações
+          assistidas por IA).
+        </p>
+
+        <h2
+          class="mt-14 border-t border-line pt-4 font-mono text-[11px] tracking-[0.3em] text-smoke uppercase"
+        >
+          Stack
+        </h2>
+        <p class="mt-5 max-w-2xl text-base leading-relaxed text-bone-dim">
+          Interface: React, Next.js, TypeScript, Tailwind CSS, React Native.
+          Serviços: C#, Java, Python, Node.js. Dados: PostgreSQL, SQL Server,
+          Supabase, Firebase. Infraestrutura: Docker, Azure, Azure DevOps.
+        </p>
+
+        <h2
+          class="mt-14 border-t border-line pt-4 font-mono text-[11px] tracking-[0.3em] text-smoke uppercase"
+        >
+          Contato
+        </h2>
+        <p class="mt-5 max-w-2xl text-base leading-relaxed text-bone-dim">
+          E-mail
+          <a href="mailto:mgalvaoboni@gmail.com">mgalvaoboni@gmail.com</a> para
+          trabalho freelance ou efetivo, consultoria técnica ou uma segunda
+          opinião sobre um problema de front-end ou integração. Também no
+          <a href="https://github.com/Marcus-Boni">GitHub</a> e no
+          <a href="https://www.linkedin.com/in/marcus-boni-729a52243"
+            >LinkedIn</a
+          >. Currículo em
+          <a href="/marcus-boni-cv-pt.pdf">português</a> e
+          <a href="/marcus-boni-resume-en.pdf">inglês</a>.
+        </p>
+
+        <p
+          class="mt-14 border-t border-line pt-4 font-mono text-[11px] leading-relaxed tracking-[0.18em] text-smoke uppercase"
+        >
+          <a href="/blog">Blog</a> · <a href="/developers">Developers</a> ·
+          <a href="/llms.txt">llms.txt</a> ·
+          <a href="/agent-instructions.md">agent-instructions.md</a> ·
+          <a href="/sitemap.xml">sitemap</a> · <a href="/rss.xml">RSS</a>
+        </p>
+      </div>
+
+      <script>
+        // The shell above is the *portfolio's* LCP element. Every route is
+        // served this same HTML by the SPA fallback, so on /blog and /admin it
+        // would flash the wrong content before React mounts. Dropping it here,
+        // synchronously, means it never paints off-route.
+        if (location.pathname !== '/') {
+          document.getElementById('hero-shell')?.remove()
+          document.getElementById('static-content')?.remove()
+        }
+      </script>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

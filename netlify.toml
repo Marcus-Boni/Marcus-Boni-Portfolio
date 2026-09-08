@@ -1,0 +1,68 @@
+# Netlify configuration.
+#
+# Added for the blog's edge functions. Caching and the SPA fallback stay where
+# they already were — `public/_headers` and `public/_redirects` — so there is
+# one place per concern rather than two competing sources of truth.
+#
+# Edge functions declare their own routes via `export const config` in each
+# file; they are listed here as well so the routing is visible without opening
+# the source, and so the order is explicit.
+
+[build]
+  # Tests first, so a failure costs seconds instead of a full build. Most of
+  # what they cover cannot be checked any other way: the routing table, the
+  # `_redirects` rules and the Markdown representations are configuration and
+  # strings, not code the type checker or the bundler ever looks at. A deploy
+  # that ships a broken `_redirects` builds perfectly and 404s the site.
+  command = "pnpm test && pnpm build"
+  publish = "dist"
+
+# Netlify's secrets scanner flags any repo file or build artifact containing the
+# *value* of a configured environment variable. It caught VITE_FIREBASE_PROJECT_ID
+# in `.firebaserc`, which is the Firebase CLI's own project-alias file.
+#
+# The Firebase web config is public by design, and this project proves it twice
+# over: every one of these is `VITE_`-prefixed, so Vite inlines it into the
+# client bundle (grep dist/assets for the project id), and Google documents the
+# web API key as safe to ship — it identifies the project, it does not authorise
+# anything. Deleting `.firebaserc` would not even silence the scanner, because
+# the same value is in the built JavaScript.
+#
+# So these are declared not-secret, key by key. Deliberately NOT
+# `SECRETS_SCAN_ENABLED = false`: that would stop the scanner noticing a real
+# credential — a service-account JSON, a server-side token — the day one gets
+# committed. `tests/netlify-config.test.ts` keeps this list in step with
+# src/lib/firebase-config.ts and fails if anyone reaches for the blunt switch.
+#
+# ⚠ Because the config is public, the ONLY thing protecting the data is
+# firestore.rules / storage.rules. Both currently treat any authenticated user
+# as admin (`request.auth != null`) — see docs/AGENTS.md.
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "VITE_FIREBASE_API_KEY,VITE_FIREBASE_AUTH_DOMAIN,VITE_FIREBASE_PROJECT_ID,VITE_FIREBASE_STORAGE_BUCKET,VITE_FIREBASE_MESSAGING_SENDER_ID,VITE_FIREBASE_APP_ID,VITE_FIREBASE_MEASUREMENT_ID"
+
+# `agents` (Markdown content negotiation, `Vary: Accept`, 406, and the Markdown
+# half of the 404) is deliberately NOT listed here. It matches `/*` and relies
+# on `excludedPattern` to stay off hashed assets and `/admin`, and a
+# declaration in this file would be merged with — not replaced by — the inline
+# one, re-adding the paths it excludes. Its routing lives in
+# `export const config` at the bottom of netlify/edge-functions/agents.ts.
+#
+# The 404 *status* is not its job either: `public/_redirects` enumerates the
+# real routes and everything else falls through to `public/404.html`. Keeping
+# that in routing means it survives the function failing.
+
+# Per-post <head> and 404 status for /blog/:slug. Social crawlers do not run JS,
+# so this is what makes a shared post preview correctly — and what turns a
+# nonexistent slug into a real 404 instead of a 200 app shell.
+[[edge_functions]]
+  function = "blog-meta"
+  path = "/blog/*"
+
+# Live RSS + sitemap, generated from Firestore so publishing needs no rebuild.
+[[edge_functions]]
+  function = "feeds"
+  path = "/rss.xml"
+
+[[edge_functions]]
+  function = "feeds"
+  path = "/sitemap.xml"

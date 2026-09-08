@@ -1,9 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Fallback only. The live sitemap is generated per request from Firestore by
+  netlify/edge-functions/feeds.ts so new posts are discoverable without a
+  rebuild; this file is what that function falls back to if Firestore cannot
+  be reached, because an empty sitemap reads to a crawler as "these pages are
+  gone".
+-->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://marcusboni.com.br/</loc>
-    <lastmod>2026-06-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://marcusboni.com.br/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://marcusboni.com.br/developers</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
   </url>
 </urlset>

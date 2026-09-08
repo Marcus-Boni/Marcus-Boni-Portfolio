@@ -8,11 +8,20 @@ rules_version = '2';
 //  • `analytics` — visit + interaction events. Anyone can create, only the
 //    admin can read. Never updated or deleted from the client.
 //  • `settings/site` — site-wide toggles. Public read, admin write.
+//  • `posts` — the blog. Public read of `published` and `unlisted` posts;
+//    drafts are admin-only. Writes are always admin-only.
 service cloud.firestore {
   match /databases/{database}/documents {
 
     function isAdmin() {
       return request.auth != null;
+    }
+
+    // A post is publicly readable unless it is still a draft. `unlisted` stays
+    // readable by direct link on purpose — it is how a study gets shared in a
+    // meeting before (or without) going into the public index.
+    function isReadable() {
+      return resource.data.status in ['published', 'unlisted'];
     }
 
     match /content/{docId} {
@@ -34,6 +43,23 @@ service cloud.firestore {
       allow create: if true;
       allow read: if isAdmin();
       allow update, delete: if false;
+    }
+
+    match /posts/{slug} {
+      // On a list query Firestore proves this against the query constraints,
+      // so the public index MUST filter `where('status', '==', 'published')`.
+      // The admin listing skips the filter and passes via isAdmin().
+      allow read: if isReadable() || isAdmin();
+      allow write: if isAdmin();
+
+      // The Markdown body. `status` is mirrored onto this document (written in
+      // the same batch as the parent) specifically so this rule does not need
+      // a get() on the parent — a rules get() bills a document read on every
+      // request, which would double the cost of serving every post.
+      match /content/{docId} {
+        allow read: if isReadable() || isAdmin();
+        allow write: if isAdmin();
+      }
     }
   }
 }

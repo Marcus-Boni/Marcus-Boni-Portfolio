@@ -15,6 +15,7 @@ const NAV: NavItem[] = [
   { to: '/admin', label: 'Painel', glyph: '◷', end: true },
   { to: '/admin/analytics', label: 'Audiência', glyph: '◔' },
   { to: '/admin/messages', label: 'Mensagens', glyph: '✉' },
+  { to: '/admin/blog', label: 'Blog', glyph: '✎' },
   { to: '/admin/projects', label: 'Projetos', glyph: '▤' },
   { to: '/admin/experience', label: 'Carreira', glyph: '◫' },
   { to: '/admin/profile', label: 'Perfil & Stack', glyph: '◉' },

@@ -1,0 +1,40 @@
+rules_version = '2';
+
+// Blog media (Blaze plan). Everything the blog serves lives under /blog and is
+// world-readable — these are images and clips embedded in public posts.
+//
+// Writes are admin-only and doubly bounded: the browser already downscales and
+// re-encodes to WebP before uploading (see src/blog/lib/media.ts), and these
+// rules refuse anything oversized or of an unexpected type, so a leaked admin
+// session cannot turn the bucket into general-purpose file hosting.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    function isAllowedType() {
+      return request.resource.contentType.matches('image/.*')
+          || request.resource.contentType.matches('video/(mp4|webm)');
+    }
+
+    function isWithinSizeLimit() {
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+
+    match /blog/{allPaths=**} {
+      allow read: if true;
+      // `create`/`update` carry request.resource; `delete` does not, so it
+      // needs its own rule or the size/type checks would evaluate on null.
+      allow create, update: if isAdmin() && isAllowedType() && isWithinSizeLimit();
+      allow delete: if isAdmin();
+    }
+
+    // Everything outside /blog is denied by default — Storage rules are OR'd
+    // across matching paths, so an explicit `if false` catch-all here would
+    // read like a restriction while granting nothing and constraining nothing.
+    // Deploying this file replaces the bucket's rules; if the project ever
+    // stores anything besides blog media, add its match block above.
+  }
+}
