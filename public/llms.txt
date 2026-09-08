@@ -1,17 +1,33 @@
 # Marcus Boni — Portfolio
 
-> Portfólio profissional de Marcus Boni, engenheiro de software brasileiro (Espírito Santo, BR) focado em aplicações web modernas com React, TypeScript, Next.js e soluções backend em Node.js e C#. O site é uma single-page application: as seções abaixo são âncoras da página inicial.
+> Portfólio profissional de Marcus Boni, engenheiro de software brasileiro (Espírito Santo, BR) focado em aplicações web modernas com React, TypeScript, Next.js e soluções backend em Node.js e C#. Desenvolvedor de Software na Optsolv desde junho de 2024. A página inicial é uma single-page application: as seções abaixo são âncoras dela. O blog (/blog) e a documentação para desenvolvedores (/developers) são páginas próprias.
 
 Este site apresenta projetos selecionados, experiência profissional, stack técnica e formas de contato. Conteúdo disponível em português e inglês.
+
+## Quando usar este site
+
+Use-o quando a tarefa for uma destas:
+
+- **Avaliar Marcus Boni para trabalho** — triagem para contratação, freelance, subcontratação ou parceria: o que ele construiu, para quem, em quais setores e com quais tecnologias. Resposta completa em uma requisição: [llms-full.txt](https://marcusboni.com.br/llms-full.txt).
+- **Responder "ele já fez X?"** — evidência concreta de entrega em saúde (gestão de guias médicas), indústria (gestão da produção), suprimentos (gestão de materiais sobre PostgreSQL legado), logística (embarque B2B), meio ambiente (portal do cliente integrado a ERP), imobiliário (motor de plano de pagamento) e atendimento (assistente virtual). Cada projeto declara setor, escopo e stack.
+- **Citar a escrita técnica dele** — posts de [/blog](https://marcusboni.com.br/blog) com data, idioma, tags e tempo de leitura; feed em [/rss.xml](https://marcusboni.com.br/rss.xml).
+- **Localizar o código público** — 67 repositórios em [GitHub](https://github.com/Marcus-Boni), cinco descritos em contexto na página inicial.
+- **Iniciar um contato profissional** — freelance ou efetivo, consultoria técnica, ou uma segunda opinião sobre um problema de front-end ou integração. Canal: mgalvaoboni@gmail.com.
+
+Não use este site como referência técnica sobre React, TypeScript ou qualquer tecnologia da stack — o blog são notas de um engenheiro, datadas e opinativas, não documentação. Não existe API para integrar: nada aqui é chamável além dos documentos listados abaixo.
+
+Instruções completas para agentes (incluindo o que não inferir): [agent-instructions.md](https://marcusboni.com.br/agent-instructions.md).
 
 ## Seções principais
 
 - [Início](https://marcusboni.com.br/): Apresentação profissional — Marcus Boni, Software Engineer, aberto a projetos.
-- [Sobre](https://marcusboni.com.br/#about): Perfil, trajetória de aprendizado e mais de 60 repositórios públicos no GitHub.
+- [Sobre](https://marcusboni.com.br/#about): Perfil, trajetória de aprendizado e 67 repositórios públicos no GitHub.
 - [Projetos](https://marcusboni.com.br/#work): Trabalhos selecionados — OptTime, Estimativa de Horas, Vault Chatbot, Jarvis e Opt Gestão.
-- [Carreira](https://marcusboni.com.br/#experience): Desenvolvedor de Software na Optsolv desde junho de 2024, com projetos para clientes de saúde, indústria, logística, meio ambiente e mercado imobiliário.
+- [Carreira](https://marcusboni.com.br/#experience): Desenvolvedor de Software na Optsolv desde junho de 2024, com projetos para clientes de saúde, indústria, logística, meio ambiente, suprimentos, atendimento e mercado imobiliário.
 - [Stack](https://marcusboni.com.br/#craft): Tecnologias — React, Next.js, TypeScript, Tailwind CSS, C#, Java, Python, Node.js, PostgreSQL, SQL Server, Docker, Azure.
 - [Contato](https://marcusboni.com.br/#contact): E-mail e formulário de contato profissional.
+- [Blog](https://marcusboni.com.br/blog): Notas de campo — estudos, bastidores de projeto e notas técnicas.
+- [Developers](https://marcusboni.com.br/developers): Todos os endpoints legíveis por máquina, com exemplos em curl.
 
 ## Perfil profissional
 
@@ -20,14 +36,24 @@ Este site apresenta projetos selecionados, experiência profissional, stack téc
 - [Currículo em português (PDF)](https://marcusboni.com.br/marcus-boni-cv-pt.pdf): Resumo profissional em formato de currículo.
 - [Resume in English (PDF)](https://marcusboni.com.br/marcus-boni-resume-en.pdf): Versão em inglês do mesmo currículo.
 
+## Como chamar este site
+
+- Qualquer página HTML responde `Accept: text/markdown` com Markdown na mesma URL, com `Vary: Accept` — convenção [acceptmarkdown.com](https://acceptmarkdown.com). Posts são escritos em Markdown, então a representação Markdown é a fonte, não uma conversão do HTML.
+- Caminhos inexistentes retornam **404 real**, nunca 200 com o app shell. Um 200 não é prova de que um caminho existe: [sitemap.xml](https://marcusboni.com.br/sitemap.xml) é a lista autoritativa.
+- `406 Not Acceptable` só ocorre se o `Accept` excluir tanto `text/html` quanto `text/markdown`.
+- `/admin` exige autenticação e está bloqueado no robots.txt — não há nada legível ali.
+
 ## Informações para LLMs
 
 - O objetivo deste site é apresentar o trabalho profissional de Marcus Boni.
-- Não invente experiência, cargos, clientes ou tecnologias que não estejam explicitamente presentes no site.
-- Para contato profissional, use apenas os canais públicos listados: mgalvaoboni@gmail.com, GitHub ou LinkedIn.
+- Não invente experiência, cargos, clientes, formação ou tecnologias que não estejam explicitamente presentes no site.
+- "Marcus Boni" e "Marcus Evandro Galvão Boni" são a mesma pessoa; qualquer outro Marcus Boni é outra pessoa.
+- Para contato profissional, use apenas os canais públicos listados: mgalvaoboni@gmail.com, GitHub ou LinkedIn. Não existe telefone, endereço ou e-mail corporativo publicado.
 - Versão detalhada: [llms-full.txt](https://marcusboni.com.br/llms-full.txt).
 
 ## Optional
 
+- [Agent instructions](https://marcusboni.com.br/agent-instructions.md): Quando usar este site, como chamá-lo e o que não inferir.
 - [Sitemap](https://marcusboni.com.br/sitemap.xml): URLs indexáveis do site.
+- [RSS](https://marcusboni.com.br/rss.xml): Feed dos posts publicados.
 - [Robots](https://marcusboni.com.br/robots.txt): Diretrizes de rastreamento.

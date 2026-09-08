@@ -86,26 +86,88 @@ function decode(name: string, fields: Record<string, FsValue>): EdgePost {
 
 /* ─── Reads ─────────────────────────────────────────────────────────────── */
 
-/** One post's metadata, or `null` when missing, draft, or unreachable. */
-export async function getPost(slug: string): Promise<EdgePost | null> {
-  if (!isConfigured || !slug) return null
+/**
+ * The outcome of a post read.
+ *
+ * `missing` and `unavailable` used to collapse into one `null`, which was fine
+ * while the only consumer degraded to the default `<head>` either way. It is
+ * not fine now that a missing slug has to answer 404: a Firestore outage must
+ * not turn every post on the site into a "gone" that crawlers act on.
+ */
+export type PostLookup =
+  | { state: 'found'; post: EdgePost }
+  | { state: 'missing' }
+  | { state: 'unavailable' }
+
+/** Firestore statuses a signed-out visitor is allowed to see. */
+function isReadable(status: string): boolean {
+  // `unlisted` is deliberate: the link is meant to be shared, it is only kept
+  // out of the index and the feeds.
+  return status === 'published' || status === 'unlisted'
+}
+
+/**
+ * One post's metadata.
+ *
+ * A 404 or 403 from Firestore is a definite "no such post" — 403 is what the
+ * rules return for a draft, which is exactly what a crawler should be told.
+ * Anything else (5xx, a network error, no project id) is `unavailable`.
+ */
+export async function lookupPost(slug: string): Promise<PostLookup> {
+  if (!isConfigured || !slug) return { state: 'unavailable' }
   try {
     const response = await fetch(`${BASE}/posts/${encodeURIComponent(slug)}`, {
       headers: { accept: 'application/json' },
     })
-    if (!response.ok) return null
+    if (response.status === 404 || response.status === 403) return { state: 'missing' }
+    if (!response.ok) return { state: 'unavailable' }
     const data = (await response.json()) as {
       name?: string
       fields?: Record<string, FsValue>
     }
-    if (!data.name || !data.fields) return null
+    if (!data.name || !data.fields) return { state: 'missing' }
     const post = decode(data.name, data.fields)
-    // `unlisted` posts get full meta tags on purpose: the link is meant to be
-    // shared, it is only kept out of the index and the feeds.
-    return post.status === 'published' || post.status === 'unlisted' ? post : null
+    return isReadable(post.status) ? { state: 'found', post } : { state: 'missing' }
+  } catch {
+    return { state: 'unavailable' }
+  }
+}
+
+/** A post's Markdown source and its body images, or `null` when unreadable. */
+export async function getPostBody(
+  slug: string,
+): Promise<{ body: string; media: Record<string, { src: string; alt?: string }> } | null> {
+  if (!isConfigured || !slug) return null
+  try {
+    const response = await fetch(
+      `${BASE}/posts/${encodeURIComponent(slug)}/content/main`,
+      { headers: { accept: 'application/json' } },
+    )
+    if (!response.ok) return null
+    const data = (await response.json()) as { fields?: Record<string, FsValue> }
+    if (!data.fields) return null
+    return {
+      body: str(data.fields.body),
+      media: decodeMedia(data.fields.media),
+    }
   } catch {
     return null
   }
+}
+
+/** `media` is a map of id → MediaRef; only `src` and `alt` are needed here. */
+function decodeMedia(
+  value: FsValue | undefined,
+): Record<string, { src: string; alt?: string }> {
+  const fields = value?.mapValue?.fields ?? {}
+  const out: Record<string, { src: string; alt?: string }> = {}
+  for (const [id, entry] of Object.entries(fields)) {
+    const ref = entry.mapValue?.fields
+    const src = ref?.src?.stringValue
+    if (!src) continue
+    out[id] = { src, alt: ref?.alt?.stringValue }
+  }
+  return out
 }
 
 /** Published posts, newest first. Used by the sitemap and the RSS feed. */

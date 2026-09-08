@@ -9,11 +9,28 @@
 # the source, and so the order is explicit.
 
 [build]
-  command = "pnpm build"
+  # Tests first, so a failure costs seconds instead of a full build. Most of
+  # what they cover cannot be checked any other way: the routing table, the
+  # `_redirects` rules and the Markdown representations are configuration and
+  # strings, not code the type checker or the bundler ever looks at. A deploy
+  # that ships a broken `_redirects` builds perfectly and 404s the site.
+  command = "pnpm test && pnpm build"
   publish = "dist"
 
-# Per-post <head> for /blog/:slug. Social crawlers do not run JS, so this is
-# what makes a shared post preview correctly.
+# `agents` (Markdown content negotiation, `Vary: Accept`, 406, and the Markdown
+# half of the 404) is deliberately NOT listed here. It matches `/*` and relies
+# on `excludedPattern` to stay off hashed assets and `/admin`, and a
+# declaration in this file would be merged with — not replaced by — the inline
+# one, re-adding the paths it excludes. Its routing lives in
+# `export const config` at the bottom of netlify/edge-functions/agents.ts.
+#
+# The 404 *status* is not its job either: `public/_redirects` enumerates the
+# real routes and everything else falls through to `public/404.html`. Keeping
+# that in routing means it survives the function failing.
+
+# Per-post <head> and 404 status for /blog/:slug. Social crawlers do not run JS,
+# so this is what makes a shared post preview correctly — and what turns a
+# nonexistent slug into a real 404 instead of a 200 app shell.
 [[edge_functions]]
   function = "blog-meta"
   path = "/blog/*"

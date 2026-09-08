@@ -1,5 +1,32 @@
 # Legacy single-language CV URL, kept alive for links shared before the PT/EN split.
 /marcus-boni-cv.pdf    /marcus-boni-cv-pt.pdf    301!
 
-# SPA fallback — must stay last.
-/*    /index.html   200
+# SPA routes, enumerated on purpose.
+#
+# A catch-all `/*  /index.html  200` used to sit at the bottom of this file,
+# which meant every URL on the domain answered 200 with the app shell — a soft
+# 404. Agents probing for `/api`, `/docs` or `/.well-known/…` concluded that
+# every path existed, and a crawler could index unlimited duplicates of the
+# same shell.
+#
+# Listing the real routes lets everything else fall through to `404.html`,
+# which Netlify serves with a genuine 404 status. `/blog/:slug` still resolves
+# here; whether that *slug* exists is a database question, answered in
+# netlify/edge-functions/blog-meta.ts.
+#
+# Adding a client route in `src/main.tsx` or `src/blog/BlogApp.tsx` means adding
+# it here *and* in netlify/edge-functions/_routes.ts. `tests/routes.test.ts`
+# fails when the three drift.
+/                 /index.html   200
+/blog             /index.html   200
+/blog/*           /index.html   200
+/admin            /index.html   200
+/admin/*          /index.html   200
+
+# /developers is a standalone document, not a client route — it points at its
+# own file rather than the app shell. Spelled out instead of leaning on the
+# host's directory-index resolution: Netlify would serve
+# `developers/index.html` for `/developers` on its own, but `vite preview`
+# hands back the SPA shell, and a page that only exists in production is a page
+# nobody checks.
+/developers       /developers/index.html   200

@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.test.tsbuildinfo",
+    "target": "es2023",
+    /* DOM: the edge functions speak Request/Response/Headers, and the tests
+       reach into `src/`, which is browser code. */
+    "lib": ["ES2023", "DOM"],
+    "module": "esnext",
+    "types": ["node", "vitest/globals"],
+    "skipLibCheck": true,
+    /* `@/data/profile` type-imports `translations.tsx`. */
+    "jsx": "react-jsx",
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Paths */
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  /*
+   * This project is what finally puts `netlify/` under `tsc -b`. It was
+   * untypechecked before — nothing included it — which is how
+   * `agents.ts` shipped `method: ['HEAD']` past a `HTTPMethod` union that has
+   * no `HEAD` in it.
+   *
+   * `deno.d.ts` covers the one Deno global `_firestore.ts` reads.
+   */
+  "include": ["tests", "vitest.config.ts", "netlify/edge-functions", "netlify/deno.d.ts"]
+}

@@ -23,6 +23,7 @@ const AUTHOR_EMAIL = 'mgalvaoboni@gmail.com'
 const STATIC_ROUTES: { path: string; priority: string; changefreq: string }[] = [
   { path: '/', priority: '1.0', changefreq: 'monthly' },
   { path: '/blog', priority: '0.9', changefreq: 'weekly' },
+  { path: '/developers', priority: '0.5', changefreq: 'yearly' },
 ]
 
 export default async function handler(request: Request, context: Context) {

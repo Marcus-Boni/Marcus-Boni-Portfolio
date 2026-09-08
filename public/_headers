@@ -19,5 +19,21 @@
 /marcus-boni-resume-en.pdf
   Cache-Control: public, max-age=86400, stale-while-revalidate=86400
 
+# Machine-readable files. Agents fetch these first and re-fetch them often, so
+# an hour of cache is worth more here than freshness — none of them changes
+# without a deploy. `agent-instructions.md` gets an explicit Content-Type
+# rather than trusting extension sniffing: a `.md` served as `text/plain` (or
+# worse, downloaded) is a file an agent has to guess about.
+/llms.txt
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+/llms-full.txt
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+/agent-instructions.md
+  Content-Type: text/markdown; charset=utf-8
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+  X-Content-Type-Options: nosniff
+
 # The blog's RSS and sitemap are produced by netlify/edge-functions/feeds.ts,
-# which sets its own Cache-Control — do not add rules for them here.
+# which sets its own Cache-Control — do not add rules for them here. The same
+# goes for the Markdown representation of any HTML page: that comes from
+# netlify/edge-functions/agents.ts, which sets Cache-Control and Vary itself.

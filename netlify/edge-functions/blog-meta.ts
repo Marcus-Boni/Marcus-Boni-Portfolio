@@ -3,13 +3,13 @@ import type { Config, Context } from '@netlify/edge-functions'
 import {
   escapeHtml,
   escapeJsonLd,
-  getPost,
   isConfigured,
+  lookupPost,
   type EdgePost,
 } from './_firestore.ts'
 
 /**
- * Per-post `<head>` injection for `/blog/:slug`.
+ * Per-post `<head>` injection and 404 status for `/blog/:slug`.
  *
  * This is the half of the SEO story that JavaScript cannot do. LinkedIn, Slack,
  * WhatsApp and X fetch the HTML and never execute scripts, so without this
@@ -18,9 +18,17 @@ import {
  * true in the delivered HTML.
  *
  * The whole `<!-- SEO:START -->…<!-- SEO:END -->` block from index.html is
- * replaced in one shot. Anything unexpected — no project id, unknown slug, a
- * missing marker — falls through to the untouched response, so a failure here
- * degrades to the site's default card rather than to an error page.
+ * replaced in one shot. Anything unexpected — no project id, an unreadable
+ * Firestore, a missing marker — falls through to the untouched response, so a
+ * failure here degrades to the site's default card rather than to an error
+ * page.
+ *
+ * A slug Firestore *definitely* does not have is the one case that changes the
+ * status: the app shell still renders (React shows its own not-found view, so
+ * the visual result is unchanged) but it is delivered as a real 404 instead of
+ * a 200. `/blog/anything` answering 200 is the same soft-404 that
+ * `public/_redirects` fixes for the rest of the site — it just needs a
+ * database read to detect.
  */
 
 const SITE_URL = 'https://marcusboni.com.br'
@@ -42,13 +50,19 @@ export default async function handler(request: Request, context: Context) {
   // `/blog` itself is the index — it has no post-specific head to build.
   if (!slug || slug.includes('/')) return response
 
-  const post = await getPost(slug)
-  if (!post) return response
+  const lookup = await lookupPost(slug)
+  // `unavailable` is not `missing`: a Firestore outage must not turn every
+  // post on the site into a 404 that crawlers act on.
+  if (lookup.state === 'unavailable') return response
 
   const html = await response.text()
   if (!MARKER.test(html)) return response
 
-  const rewritten = html.replace(MARKER, buildHead(post))
+  const missing = lookup.state === 'missing'
+  const rewritten = html.replace(
+    MARKER,
+    missing ? buildNotFoundHead(slug) : buildHead(lookup.post),
+  )
 
   const headers = new Headers(response.headers)
   // Cached at the edge so a crawler storm costs a handful of Firestore reads,
@@ -58,9 +72,38 @@ export default async function handler(request: Request, context: Context) {
   headers.delete('content-length')
 
   return new Response(rewritten, {
-    status: response.status,
+    // The shell is delivered as-is — React renders its own not-found view —
+    // but the status tells the truth about the URL.
+    status: missing ? 404 : response.status,
     headers,
   })
+}
+
+/**
+ * `<head>` for a slug that does not exist.
+ *
+ * Kept minimal on purpose: no canonical (there is no canonical URL for a page
+ * that isn't there) and an explicit `noindex`, so a crawler that followed a
+ * stale link drops it instead of indexing an error state.
+ */
+function buildNotFoundHead(slug: string): string {
+  const title = `Post não encontrado — ${SITE_NAME}`
+  return `<!-- SEO:START -->
+    <title>${escapeHtml(title)}</title>
+    <meta name="title" content="${escapeHtml(title)}" />
+    <meta
+      name="description"
+      content="Não existe um post em /blog/${escapeHtml(slug)}. Veja o índice em ${SITE_URL}/blog."
+    />
+    <meta name="robots" content="noindex, follow" />
+    <link rel="alternate" type="text/markdown" href="${SITE_URL}/blog/${escapeHtml(slug)}" />
+    <meta name="theme-color" content="#0d0c0a" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="${escapeHtml(title)}" />
+    <meta property="og:site_name" content="${SITE_NAME}" />
+    <meta property="og:image" content="${DEFAULT_OG}" />
+    <!-- SEO:END -->`
 }
 
 function buildHead(post: EdgePost): string {
@@ -106,6 +149,7 @@ function buildHead(post: EdgePost): string {
     ${robots}
     <link rel="canonical" href="${escapeHtml(url)}" />
     ${alternates}
+    <link rel="alternate" type="text/markdown" href="${escapeHtml(url)}" />
     <meta name="theme-color" content="#0d0c0a" />
 
     <meta property="og:type" content="article" />

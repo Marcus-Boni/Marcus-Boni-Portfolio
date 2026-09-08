@@ -75,6 +75,29 @@ before reaching Storage, in three widths plus a blur-up placeholder.
 
 Setup, authoring syntax and the chunking rules are in [`docs/BLOG.md`](./docs/BLOG.md).
 
+## Agent readiness
+
+The site is built to be read by programs as well as people:
+
+- **Real 404s** — `public/_redirects` enumerates the routes instead of ending in
+  a catch-all, so an unknown path gets a genuine 404 and `public/404.html`
+  rather than the app shell with a 200. A `/blog/:slug` that Firestore does not
+  have returns 404 too.
+- **Content without JavaScript** — `index.html` ships the substance of the page
+  (projects, client work, stack, contact, links) in plain HTML, below the fold
+  and replaced by React on mount.
+- **Markdown content negotiation** — every HTML page answers
+  `Accept: text/markdown` from the same URL with `Vary: Accept`, per
+  [acceptmarkdown.com](https://acceptmarkdown.com). Posts are authored in
+  Markdown, so their Markdown representation is the source, not a conversion.
+- **[`/developers`](https://marcusboni.com.br/developers)** — a standalone,
+  bundle-free portal documenting every machine-readable endpoint with `curl`
+  examples, plus [`/agent-instructions.md`](https://marcusboni.com.br/agent-instructions.md)
+  and a "when to use this" section in `llms.txt`.
+
+The design, the traps and the verification commands are in
+[`docs/AGENTS.md`](./docs/AGENTS.md).
+
 ## Architecture
 
 ```
@@ -116,8 +139,14 @@ src/
 ## Scripts
 
 ```bash
-pnpm dev       # start dev server
-pnpm build     # type-check + production build
-pnpm lint      # eslint
-pnpm preview   # preview the production build
+pnpm dev         # start dev server
+pnpm build       # type-check (app, node, tests + netlify/) + production build
+pnpm lint        # eslint
+pnpm test        # vitest — edge functions, routing, machine-readable files
+pnpm test:watch  # vitest in watch mode
+pnpm preview     # preview the production build
 ```
+
+`pnpm preview` serves `dist` through Vite, which has its own SPA fallback and
+reads neither `_redirects` nor the edge functions — `/nope` answers 200 there
+and 404 in production. Trust `pnpm test` for that behaviour, not the preview.
