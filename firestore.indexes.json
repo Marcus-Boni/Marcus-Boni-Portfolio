@@ -1,0 +1,14 @@
+{
+  "indexes": [
+    {
+      "//": "Public blog index: where('status','==','published').orderBy('publishedAt','desc'). An equality filter combined with an orderBy on a different field always needs a composite index. Language and tag filtering are done client-side precisely so this stays the only one.",
+      "collectionGroup": "posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "publishedAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

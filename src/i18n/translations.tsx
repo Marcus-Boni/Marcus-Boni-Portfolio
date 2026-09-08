@@ -88,6 +88,40 @@ export interface Translation {
       offline: string
     }
   }
+  blog: {
+    /** Label used in the header link and the menu overlay. */
+    nav: string
+    label: string
+    title: string
+    lead: string
+    filters: {
+      all: string
+      allTags: string
+      language: string
+      clear: string
+      results: (count: number) => string
+    }
+    readingTime: (minutes: number) => string
+    empty: string
+    loading: string
+    error: string
+    retry: string
+    featured: string
+    unlistedNotice: string
+    post: {
+      back: string
+      toc: string
+      updated: (date: string) => string
+      share: string
+      copyLink: string
+      copied: string
+      readAlso: string
+      translationAvailable: string
+      notFound: string
+      notFoundBody: string
+      backToIndex: string
+    }
+  }
   marquee: string[]
   cursor: { view: string; drag: string }
 }
@@ -211,6 +245,42 @@ export const translations: Record<Locale, Translation> = {
           'Formulário indisponível no momento — use o botão de e-mail acima.',
       },
     },
+    blog: {
+      nav: 'Diário',
+      label: 'Diário técnico',
+      title: 'Notas de campo',
+      lead: 'Estudos, bastidores de projeto e o que anda me tirando o sono no mercado — escrito para eu entender, publicado para você usar.',
+      filters: {
+        all: 'Tudo',
+        allTags: 'Todos os temas',
+        language: 'Idioma',
+        clear: 'Limpar filtros',
+        results: (count) =>
+          count === 1 ? '1 registro' : `${count} registros`,
+      },
+      readingTime: (minutes) => `${minutes} min de leitura`,
+      empty: 'Ainda não há nada publicado por aqui. Volte em breve.',
+      loading: 'Carregando registros…',
+      error: 'Não foi possível carregar os registros.',
+      retry: 'Tentar novamente',
+      featured: 'Em destaque',
+      unlistedNotice:
+        'Este registro não está listado publicamente — você chegou por link direto.',
+      post: {
+        back: 'Voltar ao diário',
+        toc: 'Nesta página',
+        updated: (date) => `Atualizado em ${date}`,
+        share: 'Compartilhar',
+        copyLink: 'Copiar link',
+        copied: 'Link copiado',
+        readAlso: 'Leia também',
+        translationAvailable: 'Read in English',
+        notFound: 'Registro não encontrado',
+        notFoundBody:
+          'Este link pode ter mudado de endereço ou o registro ainda não foi publicado.',
+        backToIndex: 'Ver todos os registros',
+      },
+    },
     marquee: ['Construir', 'Aprender', 'Iterar', 'Repetir'],
     cursor: { view: 'VER', drag: 'ARRASTE' },
   },
@@ -331,6 +401,41 @@ export const translations: Record<Locale, Translation> = {
         success: "Message sent — I'll get back to you soon. Thanks!",
         error: 'Something went wrong. Try again or use the email above.',
         offline: 'Form unavailable right now — use the email button above.',
+      },
+    },
+    blog: {
+      nav: 'Notes',
+      label: 'Engineering notes',
+      title: 'Field notes',
+      lead: 'Studies, project post-mortems and whatever the industry just threw at us — written to make it stick, published in case it helps.',
+      filters: {
+        all: 'All',
+        allTags: 'All topics',
+        language: 'Language',
+        clear: 'Clear filters',
+        results: (count) => (count === 1 ? '1 entry' : `${count} entries`),
+      },
+      readingTime: (minutes) => `${minutes} min read`,
+      empty: 'Nothing published here yet. Check back soon.',
+      loading: 'Loading entries…',
+      error: 'Could not load the entries.',
+      retry: 'Try again',
+      featured: 'Featured',
+      unlistedNotice:
+        'This entry is not publicly listed — you arrived through a direct link.',
+      post: {
+        back: 'Back to notes',
+        toc: 'On this page',
+        updated: (date) => `Updated ${date}`,
+        share: 'Share',
+        copyLink: 'Copy link',
+        copied: 'Link copied',
+        readAlso: 'Read next',
+        translationAvailable: 'Ler em português',
+        notFound: 'Entry not found',
+        notFoundBody:
+          'This link may have moved, or the entry has not been published yet.',
+        backToIndex: 'See all entries',
       },
     },
     marquee: ['Build', 'Learn', 'Iterate', 'Repeat'],

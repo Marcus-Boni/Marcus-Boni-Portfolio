@@ -18,3 +18,6 @@
   Cache-Control: public, max-age=86400, stale-while-revalidate=86400
 /marcus-boni-resume-en.pdf
   Cache-Control: public, max-age=86400, stale-while-revalidate=86400
+
+# The blog's RSS and sitemap are produced by netlify/edge-functions/feeds.ts,
+# which sets its own Cache-Control — do not add rules for them here.

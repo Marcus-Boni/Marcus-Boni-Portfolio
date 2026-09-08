@@ -1,0 +1,28 @@
+# Netlify configuration.
+#
+# Added for the blog's edge functions. Caching and the SPA fallback stay where
+# they already were — `public/_headers` and `public/_redirects` — so there is
+# one place per concern rather than two competing sources of truth.
+#
+# Edge functions declare their own routes via `export const config` in each
+# file; they are listed here as well so the routing is visible without opening
+# the source, and so the order is explicit.
+
+[build]
+  command = "pnpm build"
+  publish = "dist"
+
+# Per-post <head> for /blog/:slug. Social crawlers do not run JS, so this is
+# what makes a shared post preview correctly.
+[[edge_functions]]
+  function = "blog-meta"
+  path = "/blog/*"
+
+# Live RSS + sitemap, generated from Firestore so publishing needs no rebuild.
+[[edge_functions]]
+  function = "feeds"
+  path = "/rss.xml"
+
+[[edge_functions]]
+  function = "feeds"
+  path = "/sitemap.xml"

@@ -14,6 +14,12 @@ export type AnalyticsEventType =
   | 'cv_download'
   | 'contact_submit'
   | 'language_change'
+  // Blog. `post_read` fires once at 75% scroll depth, so the dashboard can
+  // separate "opened it" from "actually read it".
+  | 'blog_index_view'
+  | 'post_view'
+  | 'post_read'
+  | 'post_share'
 
 export interface AnalyticsContext {
   visitorId: string

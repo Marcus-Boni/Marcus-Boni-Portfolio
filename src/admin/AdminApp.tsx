@@ -5,6 +5,8 @@ import { AuthProvider } from '@/admin/AuthContext'
 import { AdminLayout } from '@/admin/components/AdminLayout'
 import { ProtectedRoute } from '@/admin/components/ProtectedRoute'
 import { Analytics } from '@/admin/pages/Analytics'
+import { BlogEditor } from '@/admin/pages/BlogEditor'
+import { BlogList } from '@/admin/pages/BlogList'
 import { Dashboard } from '@/admin/pages/Dashboard'
 import { Experience } from '@/admin/pages/Experience'
 import { Login } from '@/admin/pages/Login'
@@ -37,6 +39,9 @@ export default function AdminApp() {
             <Route index element={<Dashboard />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="messages" element={<Messages />} />
+            <Route path="blog" element={<BlogList />} />
+            <Route path="blog/new" element={<BlogEditor />} />
+            <Route path="blog/:slug" element={<BlogEditor />} />
             <Route path="projects" element={<Projects />} />
             <Route path="experience" element={<Experience />} />
             <Route path="profile" element={<Profile />} />

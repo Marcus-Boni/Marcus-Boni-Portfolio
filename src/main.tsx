@@ -12,6 +12,13 @@ import { LanguageProvider } from '@/i18n/LanguageContext'
 // eslint-disable-next-line react-refresh/only-export-components
 const AdminApp = lazy(() => import('@/admin/AdminApp'))
 
+// The blog carries its own Markdown renderer and syntax highlighter, neither of
+// which the portfolio page has any use for. `App` stays eagerly imported
+// because the home route is the LCP-critical one — putting it behind a lazy
+// boundary would add a network round-trip before the hero can hydrate.
+// eslint-disable-next-line react-refresh/only-export-components
+const BlogApp = lazy(() => import('@/blog/BlogApp'))
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
@@ -22,6 +29,16 @@ createRoot(document.getElementById('root')!).render(
             <Suspense fallback={<div className="min-h-svh bg-ink" />}>
               <AdminApp />
             </Suspense>
+          }
+        />
+        <Route
+          path="/blog/*"
+          element={
+            <LanguageProvider>
+              <Suspense fallback={<div className="min-h-svh bg-ink" />}>
+                <BlogApp />
+              </Suspense>
+            </LanguageProvider>
           }
         />
         <Route

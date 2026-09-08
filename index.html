@@ -4,7 +4,22 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="Marcus Boni — Notas de campo"
+      href="/rss.xml"
+    />
     
+    <!--
+      SEO:START / SEO:END delimit everything the blog's Netlify edge function
+      swaps out per post (netlify/edge-functions/blog-meta.ts). Social crawlers
+      never run JS, so these are the tags that decide what a shared /blog link
+      looks like in Slack, LinkedIn and WhatsApp. Replacing a marked block is
+      deterministic in a way that pattern-matching individual tags is not — if
+      you add a tag here that varies per post, put it inside the markers.
+    -->
+    <!-- SEO:START -->
     <!-- Primary Meta Tags -->
     <title>Marcus Boni — Software Engineer</title>
     <meta name="title" content="Marcus Boni — Software Engineer" />
@@ -38,6 +53,7 @@
       content="Brazilian software engineer crafting robust, modern web applications."
     />
     <meta property="twitter:image" content="https://marcusboni.com.br/og-image.png" />
+    <!-- SEO:END -->
 
     <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json">
@@ -82,6 +98,7 @@
         intro animation over it. Keep classes in sync with Hero.tsx.
       -->
       <section
+        id="hero-shell"
         class="relative flex h-svh flex-col justify-end overflow-hidden"
         aria-label="Apresentação"
       >
@@ -127,6 +144,15 @@
           </div>
         </div>
       </section>
+      <script>
+        // The shell above is the *portfolio's* LCP element. Every route is
+        // served this same HTML by the SPA fallback, so on /blog and /admin it
+        // would flash the wrong content before React mounts. Dropping it here,
+        // synchronously, means it never paints off-route.
+        if (location.pathname !== '/') {
+          document.getElementById('hero-shell')?.remove()
+        }
+      </script>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
