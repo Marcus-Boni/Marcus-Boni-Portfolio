@@ -6,16 +6,16 @@ import {
   mergeVary,
   negotiate,
   notAcceptableBody,
-} from './_accept.ts'
+} from '../lib/accept.ts'
 import {
   blogIndexMarkdown,
   developersMarkdown,
   homeMarkdown,
   notFoundMarkdown,
   postMarkdown,
-} from './_agent-docs.ts'
-import { getPostBody, isConfigured, listPublished, lookupPost } from './_firestore.ts'
-import { blogSlug, matchRoute } from './_routes.ts'
+} from '../lib/agent-docs.ts'
+import { getPostBody, isConfigured, listPublished, lookupPost } from '../lib/firestore.ts'
+import { blogSlug, matchRoute } from '../lib/routes.ts'
 
 /**
  * HTTP-level agent readiness: Markdown content negotiation, `Vary: Accept`,

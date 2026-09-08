@@ -6,7 +6,7 @@ import {
   isConfigured,
   lookupPost,
   type EdgePost,
-} from './_firestore.ts'
+} from '../lib/firestore.ts'
 
 /**
  * Per-post `<head>` injection and 404 status for `/blog/:slug`.

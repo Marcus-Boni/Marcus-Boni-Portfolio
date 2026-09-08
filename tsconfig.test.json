@@ -36,7 +36,7 @@
    * `agents.ts` shipped `method: ['HEAD']` past a `HTTPMethod` union that has
    * no `HEAD` in it.
    *
-   * `deno.d.ts` covers the one Deno global `_firestore.ts` reads.
+   * `deno.d.ts` covers the one Deno global `firestore.ts` reads.
    */
-  "include": ["tests", "vitest.config.ts", "netlify/edge-functions", "netlify/deno.d.ts"]
+  "include": ["tests", "vitest.config.ts", "netlify"]
 }

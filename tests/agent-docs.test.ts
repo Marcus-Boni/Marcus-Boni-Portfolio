@@ -21,13 +21,13 @@ import {
   postMarkdown,
   resolveMedia,
   type DocPost,
-} from '../netlify/edge-functions/_agent-docs.ts'
+} from '../netlify/lib/agent-docs.ts'
 
 /**
  * Drift tests for the hand-maintained Markdown representations.
  *
  * The edge runtime cannot import from `src/` — React, the i18n bundle and the
- * Firebase SDK have no business at the edge — so `_agent-docs.ts` restates the
+ * Firebase SDK have no business at the edge — so `agent-docs.ts` restates the
  * site's content in prose. That copy is exactly the kind of thing that rots
  * silently: nothing breaks when a project is renamed in `profile.ts` and not
  * here, the Markdown just starts lying.

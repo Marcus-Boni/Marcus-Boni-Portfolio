@@ -8,7 +8,7 @@ import {
   negotiate,
   notAcceptableBody,
   parseAccept,
-} from '../netlify/edge-functions/_accept.ts'
+} from '../netlify/lib/accept.ts'
 
 /**
  * Conformance tests for the Markdown content-negotiation contract.

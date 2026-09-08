@@ -28,11 +28,11 @@ unlimited duplicates of the same page.
 
 Adding a client route means touching three files: the `<Route>` in
 `src/main.tsx`, the rewrite in `public/_redirects`, and the entry in
-`netlify/edge-functions/_routes.ts`. `tests/routes.test.ts` fails if they
+`netlify/lib/routes.ts`. `tests/routes.test.ts` fails if they
 disagree — which is the point of keeping the table.
 
 `blog-meta` only 404s when Firestore *definitely* says the slug is missing.
-`_firestore.ts` distinguishes `missing` (404/403 — a draft is 403, and "not
+`firestore.ts` distinguishes `missing` (404/403 — a draft is 403, and "not
 found" is the right answer for a crawler) from `unavailable` (5xx, network
 error, no project id). Collapsing the two would turn a database blip into
 "every post on this site is gone".
@@ -71,10 +71,10 @@ rather than quietly making the crawlable copy wrong.
 Every HTML document also answers `Accept: text/markdown` from the same URL,
 per [acceptmarkdown.com](https://acceptmarkdown.com).
 
-- `netlify/edge-functions/_accept.ts` — the parser. Ranks by q, breaks ties by
+- `netlify/lib/accept.ts` — the parser. Ranks by q, breaks ties by
   specificity, treats `q=0` as a refusal. The conformance vectors from the spec
   are in `tests/accept.test.ts`.
-- `netlify/edge-functions/_agent-docs.ts` — the documents. Pure functions, so
+- `netlify/lib/agent-docs.ts` — the documents. Pure functions, so
   the drift tests can hold them against `profile.ts`.
 - `netlify/edge-functions/agents.ts` — the handler.
 
@@ -104,6 +104,24 @@ the function being skipped for `curl -sI`, which is the command
 acceptmarkdown.com tells implementers to verify with. The handler filters
 methods itself, where a test can reach it.
 
+### Shared code goes in `netlify/lib/`, never in `netlify/edge-functions/`
+
+Netlify packages **every** `.ts` file at the top level of
+`netlify/edge-functions/` as an edge function and requires each one to
+default-export a function. It does *not* skip names beginning with `_` — that
+convention belongs to Netlify *Functions*. A helper module parked there kills
+the deploy:
+
+```
+Default export in '…/netlify/edge-functions/_accept.ts' must be a function.
+```
+
+This is worth knowing because of *when* it fails: `pnpm test` passes, `pnpm
+build` passes, and the deploy dies afterwards in the bundling step, so nothing
+you can run locally catches it. `tests/edge-functions.test.ts` now does —
+it enumerates the directory and asserts every file default-exports a handler
+and declares a `config.path`.
+
 ## 4. Agent instructions and the developer portal
 
 - `public/agent-instructions.md` — when to use this site, when not to, how to
@@ -119,7 +137,7 @@ rather than leaning on the host to resolve a directory index — Netlify would,
 `vite preview` would not, and a page that only exists in production is a page
 nobody checks.
 
-Its Markdown twin is `developersMarkdown()` in `_agent-docs.ts`.
+Its Markdown twin is `developersMarkdown()` in `agent-docs.ts`.
 `tests/agent-docs.test.ts` asserts both name exactly the same endpoints.
 
 **On "API keys and a sandbox".** The readiness model asks a developer portal for

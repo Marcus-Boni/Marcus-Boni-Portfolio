@@ -1,6 +1,6 @@
 import type { Config, Context } from '@netlify/edge-functions'
 
-import { escapeHtml, isConfigured, listPublished, type EdgePost } from './_firestore.ts'
+import { escapeHtml, isConfigured, listPublished, type EdgePost } from '../lib/firestore.ts'
 
 /**
  * Dynamic `/rss.xml` and `/sitemap.xml`.

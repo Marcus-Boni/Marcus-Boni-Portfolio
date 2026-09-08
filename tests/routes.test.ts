@@ -10,7 +10,7 @@ import {
   normalizePath,
   redirectPath,
   ROUTES,
-} from '../netlify/edge-functions/_routes.ts'
+} from '../netlify/lib/routes.ts'
 
 /**
  * The soft-404 regression suite.
@@ -169,7 +169,7 @@ describe('route table ↔ src/main.tsx', () => {
     for (const segment of segments) {
       expect(
         known.has(segment),
-        `src/main.tsx routes /${segment}/* but netlify/edge-functions/_routes.ts does not — it will 404 on a fresh load`,
+        `src/main.tsx routes /${segment}/* but netlify/lib/routes.ts does not — it will 404 on a fresh load`,
       ).toBe(true)
     }
   })

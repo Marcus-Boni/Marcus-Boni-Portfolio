@@ -5,7 +5,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
  *
  * The handler is a plain `(Request, { next }) => Response`, so it runs under
  * Node with two stubs: a `Deno.env` shim (read at module load by
- * `_firestore.ts`) and, for the blog cases, a `fetch` standing in for the
+ * `firestore.ts`) and, for the blog cases, a `fetch` standing in for the
  * Firestore REST API. That buys real assertions on status codes, content types
  * and `Vary` — the three things the readiness checks actually probe — without
  * waiting for a deploy.
