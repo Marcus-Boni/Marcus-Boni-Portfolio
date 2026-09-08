@@ -37,9 +37,13 @@
 
 A full back-office for the portfolio, behind Firebase Auth:
 
-- **Dashboard & Audience** — first-party, cookie-less analytics: visits, unique
-  visitors, devices/browsers/OS, country (by timezone), referrers, most-viewed
-  sections, peak hours and a live activity feed.
+- **Dashboard & Audience** — first-party, cookie-less analytics with a
+  selectable window (24h / 7d / 30d / 90d), every figure compared against the
+  preceding window of equal length: visits, unique visitors, sessions, bounce
+  rate, session duration, top pages, traffic sources, devices/browsers/OS,
+  country (by timezone), a weekday × hour heat map, blog read-through rates, and
+  CSV export. Every chart ships a table twin. Metric definitions and the colour
+  rationale are in [`docs/ANALYTICS.md`](./docs/ANALYTICS.md).
 - **Messages** — inbox for the site's contact form (Firestore-backed).
 - **Content editing** — full CRUD over profile, projects, career timeline, tech
   stack and socials. The public site hydrates from Firestore, falling back to the
@@ -107,7 +111,7 @@ src/
 - The home page loads exactly four static chunks (`rolldown-runtime`, `react`,
   `router`, `motion`); the blog and admin add none. Verify after any chunking
   change with `grep -o 'modulepreload[^>]*href="/assets/[^"]*"' dist/index.html`
-  — see the traps listed in [`docs/BLOG.md`](./docs/BLOG.md#4-arquitetura).
+  — see the traps listed in [`docs/BLOG.md`](./docs/BLOG.md#5-arquitetura).
 
 ## Scripts
 

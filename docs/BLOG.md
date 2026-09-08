@@ -156,7 +156,14 @@ puro em vez de quebrar.
 
 ---
 
-## 4. Arquitetura
+## 4. Métricas
+
+O desempenho de cada post aparece em **Audiência → Desempenho do blog**:
+aberturas, leituras (rolagem até 75%), taxa de leitura e compartilhamentos. As
+rotas do blog também emitem `pageview`, então aparecem em "Páginas mais vistas"
+junto com o portfólio. Definições em [`ANALYTICS.md`](./ANALYTICS.md).
+
+## 5. Arquitetura
 
 ### Dados
 
