@@ -24,9 +24,11 @@
 /admin/*          /index.html   200
 
 # /developers is a standalone document, not a client route — it points at its
-# own file rather than the app shell. Spelled out instead of leaning on the
-# host's directory-index resolution: Netlify would serve
-# `developers/index.html` for `/developers` on its own, but `vite preview`
-# hands back the SPA shell, and a page that only exists in production is a page
-# nobody checks.
-/developers       /developers/index.html   200
+# own file rather than the app shell.
+#
+# A flat `developers.html`, not `developers/index.html`: Netlify 301s a request
+# for `/developers` to `/developers/` when a directory of that name exists, and
+# a canonical URL that costs an extra round trip is a canonical URL agents will
+# disagree with. With no directory there is nothing to redirect to, and this
+# rewrite serves the file at the canonical path with a 200.
+/developers       /developers.html         200

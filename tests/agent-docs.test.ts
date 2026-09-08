@@ -122,9 +122,9 @@ describe('homeMarkdown', () => {
   })
 })
 
-describe('developersMarkdown ↔ public/developers/index.html', () => {
+describe('developersMarkdown ↔ public/developers.html', () => {
   const markdown = developersMarkdown()
-  const html = read('public/developers/index.html')
+  const html = read('public/developers.html')
 
   it('names exactly the same endpoints in both representations', () => {
     expect(endpoints(markdown)).toEqual(endpoints(html))

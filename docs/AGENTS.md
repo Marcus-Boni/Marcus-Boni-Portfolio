@@ -93,10 +93,28 @@ representation is the source rather than a conversion of the HTML.
 `media:{id}` references are resolved to real URLs on the way out; they are
 meaningless outside the React renderer.
 
-**The routing is subtle.** `agents.ts` declares itself inline only, never in
-`netlify.toml`: it matches `/*` and relies on `excludedPattern` to stay off
-hashed assets and `/admin`, and a `netlify.toml` declaration would be *merged*
-with the inline one rather than replacing it, re-adding the paths it excludes.
+**The handler asks the origin; it does not guess.** `agents.ts` produces a
+representation only for the routes in the table. Everything else — every static
+file, `/admin`, and every path that does not exist — goes to `context.next()`,
+and only a genuine 404 coming back is restated as Markdown.
+
+That structure is not decoration. The first version trusted its own routing
+config to keep it away from static files, matching `/*` with an
+`excludedPattern` list. Netlify pairs `excludedPattern` with `pattern` and
+silently ignores it next to `path`, so the exclusions never applied — and
+because the handler read "not an app route" as "does not exist", `/llms.txt`,
+`/robots.txt`, `/sitemap.xml` and every PDF answered **404**, while
+`Accept: text/plain` on a text/plain file got a **406** claiming the resource
+only came in HTML and Markdown. Every local test passed; only a deploy showed
+it.
+
+`excludedPath` (the form that does go with `path`) is still declared, but now
+purely to save invocations on hashed assets. If it were ignored again the site
+would still be correct, just slightly busier.
+
+`agents.ts` also declares itself inline only, never in `netlify.toml`: a
+declaration there is *merged* with the inline one rather than replacing it,
+which would re-add the paths it excludes.
 
 There is no `method` filter either. Netlify's `HTTPMethod` union has no `HEAD`
 — the platform answers HEAD from the GET path — so listing `['GET']` would risk
@@ -127,15 +145,20 @@ and declares a `config.path`.
 - `public/agent-instructions.md` — when to use this site, when not to, how to
   call it, and the ground rules for what to say about it.
 - `public/llms.txt` — same guidance in condensed form, plus the section index.
-- `public/developers/index.html` — the human-readable portal.
+- `public/developers.html` — the human-readable portal.
 
 `/developers` is a standalone document, not a React route. Reference
 documentation has no reason to wait for a bundle, and serving it as a file
 means the delivered HTML carries its own `<title>` and canonical instead of
-inheriting the SPA shell's. It is rewritten to its own file in `_redirects`
-rather than leaning on the host to resolve a directory index — Netlify would,
-`vite preview` would not, and a page that only exists in production is a page
-nobody checks.
+inheriting the SPA shell's.
+
+It is a **flat `public/developers.html`**, rewritten to itself in `_redirects`.
+Both halves of that matter. As `public/developers/index.html` it worked, but
+Netlify 301'd `/developers` to `/developers/` because a directory of that name
+existed — so the canonical URL cost an extra round trip and disagreed with the
+`<link rel="canonical">` on the page. And the explicit rewrite is what makes it
+resolve under `vite preview`, which serves the SPA shell for any extensionless
+path; a page that only works in production is a page nobody checks.
 
 Its Markdown twin is `developersMarkdown()` in `agent-docs.ts`.
 `tests/agent-docs.test.ts` asserts both name exactly the same endpoints.

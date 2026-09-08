@@ -188,6 +188,51 @@ describe('agents — unknown paths', () => {
     }
   })
 
+  it('never 404s a path the origin actually serves', async () => {
+    // The regression that shipped: the handler treated "not an app route" as
+    // "does not exist", so /llms.txt, /robots.txt and every PDF answered 404 —
+    // because `excludedPattern` was silently ignored and the function ran on
+    // them after all. Routing config is a performance lever; correctness has to
+    // come from asking the origin.
+    const file = new Response('# Marcus Boni\n', {
+      status: 200,
+      headers: { 'content-type': 'text/plain; charset=UTF-8', vary: 'Accept-Encoding' },
+    })
+    const response = await handler(get('https://x/llms.txt', 'text/markdown'), ctx(file))
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('text/plain; charset=UTF-8')
+    expect(await response.text()).toBe('# Marcus Boni\n')
+  })
+
+  it('never 406s a static file whose type it does not produce', async () => {
+    // `/llms.txt` is text/plain. Answering "this resource is available in
+    // text/html and text/markdown" was a lie the handler had no business
+    // telling — 406 is only honest about representations it produces itself.
+    const file = new Response('User-agent: *\n', {
+      status: 200,
+      headers: { 'content-type': 'text/plain; charset=UTF-8' },
+    })
+    const response = await handler(get('https://x/robots.txt', 'text/plain'), ctx(file))
+    expect(response.status).toBe(200)
+  })
+
+  it('passes a hashed asset through untouched', async () => {
+    const asset = new Response('console.log(1)', {
+      status: 200,
+      headers: { 'content-type': 'text/javascript', 'cache-control': 'max-age=31536000' },
+    })
+    const response = await handler(get('https://x/assets/index-abc123.js'), ctx(asset))
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('text/javascript')
+    expect(response.headers.get('cache-control')).toBe('max-age=31536000')
+  })
+
+  it('still 406s on a page it does own', async () => {
+    // The narrowing above must not disable 406 where it is correct.
+    const response = await handler(get('https://x/', 'application/pdf'), ctx())
+    expect(response.status).toBe(406)
+  })
+
   it('does not answer for the admin app', async () => {
     // Excluded from this function's routing in production; the switch arm
     // exists so a routing change cannot start serving Markdown for it.

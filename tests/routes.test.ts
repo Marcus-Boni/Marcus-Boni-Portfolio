@@ -118,12 +118,15 @@ describe('public/_redirects', () => {
     }
   })
 
-  it('points statically served routes at their own file, not the app shell', () => {
+  it('points statically served routes at their own flat file', () => {
     const rules = redirectRules()
     for (const route of ROUTES.filter((entry) => entry.served === 'static')) {
       const rule = rules.find((candidate) => candidate.from === route.path)
       expect(rule, `missing rewrite for ${route.path}`).toBeDefined()
-      expect(rule?.to).toBe(`${route.path}/index.html`)
+      // `<path>.html`, never `<path>/index.html`: Netlify 301s `/developers`
+      // to `/developers/` when a directory of that name exists, and the
+      // canonical URL should answer 200 on the first request.
+      expect(rule?.to).toBe(`${route.path}.html`)
       expect(rule?.status).toBe('200')
     }
   })
@@ -138,10 +141,18 @@ describe('public/_redirects', () => {
 describe('route table ↔ filesystem', () => {
   it('ships a file for every statically served route', () => {
     for (const route of ROUTES.filter((entry) => entry.served === 'static')) {
-      const file = path.join(root, 'public', route.path, 'index.html')
-      expect(existsSync(file), `${route.path} needs public${route.path}/index.html`).toBe(
-        true,
-      )
+      const file = path.join(root, 'public', `${route.path}.html`)
+      expect(existsSync(file), `${route.path} needs public${route.path}.html`).toBe(true)
+    }
+  })
+
+  it('creates no directory that would shadow a static route with a 301', () => {
+    for (const route of ROUTES.filter((entry) => entry.served === 'static')) {
+      const dir = path.join(root, 'public', route.path)
+      expect(
+        existsSync(dir),
+        `public${route.path}/ exists — Netlify will 301 ${route.path} to ${route.path}/`,
+      ).toBe(false)
     }
   })
 

@@ -176,8 +176,8 @@ describe('public/404.html', () => {
   })
 })
 
-describe('public/developers/index.html', () => {
-  const portal = read('public/developers/index.html')
+describe('public/developers.html', () => {
+  const portal = read('public/developers.html')
 
   it('has its own title and canonical, not the SPA shell', () => {
     expect(portal).toContain('<title>Developers — Marcus Boni</title>')

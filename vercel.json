@@ -8,7 +8,7 @@
     }
   ],
   "rewrites": [
-    { "source": "/developers", "destination": "/developers/index.html" },
+    { "source": "/developers", "destination": "/developers.html" },
     { "source": "/blog", "destination": "/index.html" },
     { "source": "/blog/:slug", "destination": "/index.html" },
     { "source": "/admin", "destination": "/index.html" },

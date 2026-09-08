@@ -148,7 +148,7 @@ ${footer()}`
 /**
  * The developer portal as Markdown.
  *
- * Mirrors `public/developers/index.html`. Both are hand-maintained against the
+ * Mirrors `public/developers.html`. Both are hand-maintained against the
  * same list of endpoints; `tests/agent-docs.test.ts` asserts every endpoint
  * named here also appears in the HTML page, so the two cannot drift apart.
  */

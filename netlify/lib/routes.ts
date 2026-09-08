@@ -51,7 +51,7 @@ export const ROUTES: readonly Route[] = [
   { path: '/', kind: 'home', wildcard: 'none', served: 'spa' },
   { path: '/blog', kind: 'blog-index', wildcard: 'none', served: 'spa' },
   { path: '/blog', kind: 'blog-post', wildcard: 'segment', served: 'spa' },
-  // Documentation, not app: `public/developers/index.html`. It carries no
+  // Documentation, not app: `public/developers.html`. It carries no
   // bundle, so an agent reading it pays for nothing but the HTML.
   { path: '/developers', kind: 'developers', wildcard: 'none', served: 'static' },
   { path: '/admin', kind: 'admin', wildcard: 'none', served: 'spa' },
