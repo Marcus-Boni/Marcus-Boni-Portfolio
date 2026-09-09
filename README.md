@@ -90,6 +90,11 @@ The site is built to be read by programs as well as people:
   `Accept: text/markdown` from the same URL with `Vary: Accept`, per
   [acceptmarkdown.com](https://acceptmarkdown.com). Posts are authored in
   Markdown, so their Markdown representation is the source, not a conversion.
+- **A read-only JSON API** at [`/api/v1`](https://marcusboni.com.br/api/v1), described by
+  [OpenAPI 3.1](https://marcusboni.com.br/openapi.json) — profile, projects, client
+  work, stack and posts as typed JSON, with RFC 9457 `problem+json` errors. No
+  authentication, no write operations. Built from the same `src/data/profile.ts`
+  the site renders from.
 - **[`/developers`](https://marcusboni.com.br/developers)** — a standalone,
   bundle-free portal documenting every machine-readable endpoint with `curl`
   examples, plus [`/agent-instructions.md`](https://marcusboni.com.br/agent-instructions.md)

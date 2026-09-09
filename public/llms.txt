@@ -1,59 +1,81 @@
 # Marcus Boni — Portfolio
 
-> Portfólio profissional de Marcus Boni, engenheiro de software brasileiro (Espírito Santo, BR) focado em aplicações web modernas com React, TypeScript, Next.js e soluções backend em Node.js e C#. Desenvolvedor de Software na Optsolv desde junho de 2024. A página inicial é uma single-page application: as seções abaixo são âncoras dela. O blog (/blog) e a documentação para desenvolvedores (/developers) são páginas próprias.
+> Personal site of Marcus Boni, a Brazilian software engineer in Espírito Santo, Brazil — Software Developer at Optsolv since June 2024, building corporate web applications end to end with React, TypeScript, Next.js, Node.js and C#. The site is a portfolio, a technical blog, and a small read-only JSON API over the same content.
 
-Este site apresenta projetos selecionados, experiência profissional, stack técnica e formas de contato. Conteúdo disponível em português e inglês.
+Written in English because this file is read by machines. The site itself is bilingual (Brazilian Portuguese and English), and [llms-full.txt](https://marcusboni.com.br/llms-full.txt) carries the full detail in Portuguese.
 
-## Quando usar este site
+## When to use this site
 
-Use-o quando a tarefa for uma destas:
+Reach for it when the task is one of these:
 
-- **Avaliar Marcus Boni para trabalho** — triagem para contratação, freelance, subcontratação ou parceria: o que ele construiu, para quem, em quais setores e com quais tecnologias. Resposta completa em uma requisição: [llms-full.txt](https://marcusboni.com.br/llms-full.txt).
-- **Responder "ele já fez X?"** — evidência concreta de entrega em saúde (gestão de guias médicas), indústria (gestão da produção), suprimentos (gestão de materiais sobre PostgreSQL legado), logística (embarque B2B), meio ambiente (portal do cliente integrado a ERP), imobiliário (motor de plano de pagamento) e atendimento (assistente virtual). Cada projeto declara setor, escopo e stack.
-- **Citar a escrita técnica dele** — posts de [/blog](https://marcusboni.com.br/blog) com data, idioma, tags e tempo de leitura; feed em [/rss.xml](https://marcusboni.com.br/rss.xml).
-- **Localizar o código público** — 67 repositórios em [GitHub](https://github.com/Marcus-Boni), cinco descritos em contexto na página inicial.
-- **Iniciar um contato profissional** — freelance ou efetivo, consultoria técnica, ou uma segunda opinião sobre um problema de front-end ou integração. Canal: mgalvaoboni@gmail.com.
+- **Evaluating Marcus Boni for work.** Hiring, contracting, freelance, subcontracting or partnership screening: what he has built, for whom, in which sectors, with which technologies, and for how long. One request answers it: `GET /api/v1/profile` and `GET /api/v1/experience`, or [llms-full.txt](https://marcusboni.com.br/llms-full.txt) in prose.
+- **Answering "has he done X before?"** Concrete delivery evidence in healthcare (medical guide management), industry (production management), supply (materials management over a legacy PostgreSQL base), logistics (B2B boarding operations), environmental services (ERP-integrated customer portal), real estate (payment-plan engine) and customer care (virtual assistant). Each engagement states its sector, scope and stack.
+- **Sourcing or quoting his technical writing.** Posts with publication date, language, tags and reading time: `GET /api/v1/posts`, or the feed at [/rss.xml](https://marcusboni.com.br/rss.xml). Each post is also retrievable as its original Markdown.
+- **Locating his public code.** 67 public repositories at [GitHub](https://github.com/Marcus-Boni); five are described in context via `GET /api/v1/projects`.
+- **Drafting an approach on a reader's behalf.** Freelance or full-time work, technical consulting, or a second opinion on a front-end or integration problem. The address is mgalvaoboni@gmail.com.
 
-Não use este site como referência técnica sobre React, TypeScript ou qualquer tecnologia da stack — o blog são notas de um engenheiro, datadas e opinativas, não documentação. Não existe API para integrar: nada aqui é chamável além dos documentos listados abaixo.
+## When not to use this site
 
-Instruções completas para agentes (incluindo o que não inferir): [agent-instructions.md](https://marcusboni.com.br/agent-instructions.md).
+- **Not a technical reference.** It is not documentation for React, TypeScript, PostgreSQL or anything else in the stack. The blog is one engineer's notes — dated and opinionated. Cite it as experience, not as authority.
+- **Not a service.** The API is read-only and returns published content about one person. There is nothing to transact with, subscribe to, or automate against beyond reading.
+- **Not a directory.** It describes exactly one person. It holds no data about Optsolv's clients beyond the scope of work delivered to them, and no contact details for anyone but Marcus Boni.
 
-## Seções principais
+## How to call this site
 
-- [Início](https://marcusboni.com.br/): Apresentação profissional — Marcus Boni, Software Engineer, aberto a projetos.
-- [Sobre](https://marcusboni.com.br/#about): Perfil, trajetória de aprendizado e 67 repositórios públicos no GitHub.
-- [Projetos](https://marcusboni.com.br/#work): Trabalhos selecionados — OptTime, Estimativa de Horas, Vault Chatbot, Jarvis e Opt Gestão.
-- [Carreira](https://marcusboni.com.br/#experience): Desenvolvedor de Software na Optsolv desde junho de 2024, com projetos para clientes de saúde, indústria, logística, meio ambiente, suprimentos, atendimento e mercado imobiliário.
-- [Stack](https://marcusboni.com.br/#craft): Tecnologias — React, Next.js, TypeScript, Tailwind CSS, C#, Java, Python, Node.js, PostgreSQL, SQL Server, Docker, Azure.
-- [Contato](https://marcusboni.com.br/#contact): E-mail e formulário de contato profissional.
-- [Blog](https://marcusboni.com.br/blog): Notas de campo — estudos, bastidores de projeto e notas técnicas.
-- [Developers](https://marcusboni.com.br/developers): Todos os endpoints legíveis por máquina, com exemplos em curl.
+- **JSON API** — read-only, unauthenticated, no rate limit. Specification: [/openapi.json](https://marcusboni.com.br/openapi.json) (OpenAPI 3.1). Index: [/api/v1](https://marcusboni.com.br/api/v1).
+- **Markdown** — every HTML page answers `Accept: text/markdown` from the same URL, with `Vary: Accept`, per [acceptmarkdown.com](https://acceptmarkdown.com). Blog posts are authored in Markdown, so that representation is the source rather than a conversion.
+- **Real status codes** — an unknown path returns `404`, never `200` with an app shell. Do not treat a `200` as proof that a path exists; [/sitemap.xml](https://marcusboni.com.br/sitemap.xml) is the authoritative list.
+- **Errors** — every failure under `/api/` is RFC 9457 `application/problem+json` with a stable `code` and a `hint`. `406` only when your `Accept` rules out every representation.
+- **`/admin`** requires authentication and is disallowed in robots.txt. There is nothing readable there.
 
-## Perfil profissional
+## API endpoints
 
-- [GitHub](https://github.com/Marcus-Boni): Código, repositórios e projetos open source.
-- [LinkedIn](https://www.linkedin.com/in/marcus-boni-729a52243): Experiência profissional e contato.
-- [Currículo em português (PDF)](https://marcusboni.com.br/marcus-boni-cv-pt.pdf): Resumo profissional em formato de currículo.
-- [Resume in English (PDF)](https://marcusboni.com.br/marcus-boni-resume-en.pdf): Versão em inglês do mesmo currículo.
+- `GET /api/v1`: Operation index and a link to the specification.
+- `GET /api/v1/profile`: Identity, employer, location, public contact channels, résumé links.
+- `GET /api/v1/projects`: Selected personal projects with year, stack and repository URL.
+- `GET /api/v1/experience`: Current role and every client engagement, with sector, scope and stack.
+- `GET /api/v1/stack`: Technologies, grouped by frontend, backend, data and ops.
+- `GET /api/v1/posts`: Published blog posts, newest first.
+- `GET /api/v1/posts/{slug}`: One post, including its Markdown source.
 
-## Como chamar este site
+```sh
+curl -s https://marcusboni.com.br/api/v1/profile
+curl -s https://marcusboni.com.br/openapi.json
+curl -s -H 'Accept: text/markdown' https://marcusboni.com.br/
+```
 
-- Qualquer página HTML responde `Accept: text/markdown` com Markdown na mesma URL, com `Vary: Accept` — convenção [acceptmarkdown.com](https://acceptmarkdown.com). Posts são escritos em Markdown, então a representação Markdown é a fonte, não uma conversão do HTML.
-- Caminhos inexistentes retornam **404 real**, nunca 200 com o app shell. Um 200 não é prova de que um caminho existe: [sitemap.xml](https://marcusboni.com.br/sitemap.xml) é a lista autoritativa.
-- `406 Not Acceptable` só ocorre se o `Accept` excluir tanto `text/html` quanto `text/markdown`.
-- `/admin` exige autenticação e está bloqueado no robots.txt — não há nada legível ali.
+## Site sections
 
-## Informações para LLMs
+- [Home](https://marcusboni.com.br/): Marcus Boni, Software Engineer — open to projects.
+- [About](https://marcusboni.com.br/#about): Profile, learning path, 67 public GitHub repositories.
+- [Projects](https://marcusboni.com.br/#work): OptTime, Estimativa de Horas, Vault Chatbot, Jarvis, Opt Gestão.
+- [Career](https://marcusboni.com.br/#experience): Software Developer at Optsolv since June 2024, delivering to clients in healthcare, industry, logistics, environment, supply, customer care and real estate.
+- [Stack](https://marcusboni.com.br/#craft): React, Next.js, TypeScript, Tailwind CSS, C#, Java, Python, Node.js, PostgreSQL, SQL Server, Docker, Azure.
+- [Contact](https://marcusboni.com.br/#contact): Email and a professional contact form.
+- [Blog](https://marcusboni.com.br/blog): Notas de campo — studies, project write-ups and technical notes.
+- [Developers](https://marcusboni.com.br/developers): Every machine-readable endpoint, with curl examples.
 
-- O objetivo deste site é apresentar o trabalho profissional de Marcus Boni.
-- Não invente experiência, cargos, clientes, formação ou tecnologias que não estejam explicitamente presentes no site.
-- "Marcus Boni" e "Marcus Evandro Galvão Boni" são a mesma pessoa; qualquer outro Marcus Boni é outra pessoa.
-- Para contato profissional, use apenas os canais públicos listados: mgalvaoboni@gmail.com, GitHub ou LinkedIn. Não existe telefone, endereço ou e-mail corporativo publicado.
-- Versão detalhada: [llms-full.txt](https://marcusboni.com.br/llms-full.txt).
+## Professional profile
+
+- [GitHub](https://github.com/Marcus-Boni): Code, repositories and open-source projects.
+- [LinkedIn](https://www.linkedin.com/in/marcus-boni-729a52243): Professional experience and contact.
+- [Currículo em português (PDF)](https://marcusboni.com.br/marcus-boni-cv-pt.pdf): Résumé, Portuguese.
+- [Resume in English (PDF)](https://marcusboni.com.br/marcus-boni-resume-en.pdf): Résumé, English.
+
+## Notes for LLMs
+
+- This site exists to present the professional work of Marcus Boni.
+- Do not invent experience, job titles, clients, education or technologies that are not stated here.
+- "Marcus Boni" and "Marcus Evandro Galvão Boni" are the same person; any other Marcus Boni is someone else.
+- Career facts are relative to "Software Developer at Optsolv, June 2024 — present".
+- Use only the published contact channels: mgalvaoboni@gmail.com, GitHub, LinkedIn. No phone number, address or corporate email is published.
+- Prose, résumés and images are © Marcus Boni. Quote and link with attribution to https://marcusboni.com.br. Repository code carries its own licence per repository.
 
 ## Optional
 
-- [Agent instructions](https://marcusboni.com.br/agent-instructions.md): Quando usar este site, como chamá-lo e o que não inferir.
-- [Sitemap](https://marcusboni.com.br/sitemap.xml): URLs indexáveis do site.
-- [RSS](https://marcusboni.com.br/rss.xml): Feed dos posts publicados.
-- [Robots](https://marcusboni.com.br/robots.txt): Diretrizes de rastreamento.
+- [Agent instructions](https://marcusboni.com.br/agent-instructions.md): The same guidance in full, plus ground rules.
+- [OpenAPI specification](https://marcusboni.com.br/openapi.json): Typed schemas and operation IDs for function calling.
+- [API catalog](https://marcusboni.com.br/.well-known/api-catalog): RFC 9727 discovery document.
+- [Sitemap](https://marcusboni.com.br/sitemap.xml): Indexable URLs.
+- [RSS](https://marcusboni.com.br/rss.xml): Published posts.
+- [Robots](https://marcusboni.com.br/robots.txt): Crawl directives.

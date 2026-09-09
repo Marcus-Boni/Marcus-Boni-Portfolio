@@ -33,6 +33,20 @@
   Cache-Control: public, max-age=3600, stale-while-revalidate=86400
   X-Content-Type-Options: nosniff
 
+# The API's static payloads and its specification. `/.well-known/api-catalog`
+# has no file extension, so without this it would be served as a download
+# rather than as the linkset RFC 9727 defines.
+/openapi.json
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+  X-Content-Type-Options: nosniff
+/.well-known/api-catalog
+  Content-Type: application/linkset+json
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+  X-Content-Type-Options: nosniff
+/api/*
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+  X-Content-Type-Options: nosniff
+
 # The blog's RSS and sitemap are produced by netlify/edge-functions/feeds.ts,
 # which sets its own Cache-Control — do not add rules for them here. The same
 # goes for the Markdown representation of any HTML page: that comes from

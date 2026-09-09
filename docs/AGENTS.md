@@ -3,7 +3,7 @@
 How this site behaves for the things that read it without a browser: crawlers,
 retrieval pipelines, and agents fetching a URL to answer a question.
 
-Four concerns, four places in the codebase. None of them is a React problem —
+Five concerns, five places in the codebase. None of them is a React problem —
 all of it has to be true of the *delivered response*, before any JavaScript
 runs.
 
@@ -147,6 +147,14 @@ and declares a `config.path`.
 - `public/llms.txt` — same guidance in condensed form, plus the section index.
 - `public/developers.html` — the human-readable portal.
 
+**`llms.txt` is written in English, on purpose.** The first version had the
+guidance under `## Quando usar este site`, with the English `## When to use
+this site` only in `agent-instructions.md`. The readiness check reads
+`llms.txt` — it picks up other things from that file — and did not recognise
+the section, so the check kept failing while the content was demonstrably
+there. The file is read by machines, so its headings are English now. The
+*site* stays bilingual and `llms-full.txt` is still Portuguese.
+
 `/developers` is a standalone document, not a React route. Reference
 documentation has no reason to wait for a bundle, and serving it as a file
 means the delivered HTML carries its own `<title>` and canonical instead of
@@ -164,17 +172,60 @@ Its Markdown twin is `developersMarkdown()` in `agent-docs.ts`.
 `tests/agent-docs.test.ts` asserts both name exactly the same endpoints.
 
 **On "API keys and a sandbox".** The readiness model asks a developer portal for
-both. This site is read-only and unauthenticated, so the honest answer is that
+both. The API is read-only and unauthenticated, so the honest answer is that
 neither exists — every endpoint is the production endpoint and needs no
-credentials, which makes the site its own sandbox. Issuing fake keys to score a
+credentials, which makes the API its own sandbox. Issuing fake keys to score a
 check would be worse than the check failing.
+
+## 5. The JSON API
+
+`/api/v1` publishes the same content the pages do, as typed JSON, described by
+[OpenAPI 3.1](https://marcusboni.com.br/openapi.json). It exists so an agent can
+*call* the site instead of parsing it — the readiness model's API checks
+(`openapi-spec`, `json-error-responses`, `api-schema-analysis`,
+`function-calling-compat`) all reduce to that.
+
+**Two mechanisms, deliberately.**
+
+| Endpoints | Served by | Why |
+| --- | --- | --- |
+| `/api/v1`, `/profile`, `/projects`, `/experience`, `/stack` | Static JSON in `public/api/v1/`, rewritten in `_redirects` | The content changes only on deploy. A file read beats an invocation. |
+| `/api/v1/posts`, `/api/v1/posts/{slug}` | `netlify/edge-functions/api.ts` | Posts live in Firestore and appear on publish, without a rebuild. |
+
+**Where the data comes from.** `src/data/profile.ts`, still the only source.
+`src/data/api.ts` shapes it into payloads and `src/data/openapi.ts` builds the
+specification from the same `OPERATIONS` list, so a documented endpoint that
+does not exist is not expressible. `tests/api-payloads.test.ts` writes the
+files with `toMatchFileSnapshot`, which means the committed JSON *is* the
+assertion: edit `profile.ts` without regenerating and the suite fails, and the
+Netlify build runs the suite.
+
+```bash
+pnpm test -u    # regenerate public/api/v1/*.json and public/openapi.json
+```
+
+**Errors.** Every failure under `/api/` is RFC 9457
+`application/problem+json` — `netlify/lib/problem.ts` — with a stable `code` and
+a `hint` naming the next request to make. `api.ts` deliberately does **not** set
+`onError: 'bypass'`: the bypass target is `public/404.html`, and handing an HTML
+page to a JSON client is the exact failure the endpoint exists to prevent.
+
+For the same reason `agents.ts` now converts a 404 to Markdown only when the
+origin's own 404 was HTML. Without that guard it would have rewritten
+`problem+json` into prose.
+
+**Why 3.1 rather than 3.0.** 3.1 is JSON Schema 2020-12 compatible, so the
+schemas can go straight into a tool-calling runtime. `tests/openapi.test.ts`
+asserts what makes that work — unique `operationId`s, a description long enough
+to decide on, typed parameters, a named response schema per operation, and no
+dangling or unused `$ref`.
 
 ---
 
 ## Verifying
 
 ```bash
-pnpm test          # 200+ assertions across the four concerns above
+pnpm test          # 300+ assertions across the five concerns above
 pnpm build         # tsc -b now covers netlify/ too
 ```
 

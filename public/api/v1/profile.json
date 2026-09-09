@@ -1,0 +1,52 @@
+{
+  "name": "Marcus Boni",
+  "fullName": "Marcus Evandro Galvão Boni",
+  "role": "Software Engineer",
+  "employer": {
+    "company": "Optsolv",
+    "role": "Software Developer",
+    "since": "2024-06",
+    "current": true
+  },
+  "location": {
+    "region": "Espírito Santo",
+    "country": "Brazil"
+  },
+  "email": "mgalvaoboni@gmail.com",
+  "bio": {
+    "pt": "Desenvolvedor web brasileiro apaixonado por construir aplicações robustas e modernas.",
+    "en": "Brazilian web developer focused on building robust, modern applications."
+  },
+  "repositoryCount": 67,
+  "languages": [
+    "pt-BR",
+    "en"
+  ],
+  "links": [
+    {
+      "label": "GitHub",
+      "handle": "@Marcus-Boni",
+      "url": "https://github.com/Marcus-Boni"
+    },
+    {
+      "label": "LinkedIn",
+      "handle": "marcus-boni",
+      "url": "https://www.linkedin.com/in/marcus-boni-729a52243"
+    },
+    {
+      "label": "Email",
+      "handle": "mgalvaoboni@gmail.com",
+      "url": "mailto:mgalvaoboni@gmail.com"
+    }
+  ],
+  "resumes": [
+    {
+      "language": "pt-BR",
+      "url": "https://marcusboni.com.br/marcus-boni-cv-pt.pdf"
+    },
+    {
+      "language": "en",
+      "url": "https://marcusboni.com.br/marcus-boni-resume-en.pdf"
+    }
+  ]
+}

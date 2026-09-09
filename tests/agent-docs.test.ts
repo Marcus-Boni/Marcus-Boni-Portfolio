@@ -51,9 +51,15 @@ function flat(text: string): string {
   return text.replace(/[—–]/g, '-').replace(/\s+/g, ' ')
 }
 
-/** File-like paths named in a document: `/llms.txt`, `/rss.xml`, … */
+/**
+ * File-like paths named in a document: `/llms.txt`, `/rss.xml`, `/openapi.json`.
+ *
+ * The character class excludes `+`, which is what keeps media types such as
+ * `application/problem+json` and `application/vnd.oai.openapi+json` out of the
+ * comparison — they are types, not endpoints.
+ */
 function endpoints(text: string): string[] {
-  const found = text.matchAll(/\/[a-z0-9][a-z0-9._-]*\.(?:txt|md|xml|pdf)\b/g)
+  const found = text.matchAll(/\/[a-z0-9][a-z0-9._-]*\.(?:txt|md|xml|pdf|json)\b/g)
   return [...new Set([...found].map((match) => match[0]))].sort()
 }
 

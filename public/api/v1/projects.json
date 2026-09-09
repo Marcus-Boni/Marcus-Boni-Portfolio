@@ -1,0 +1,79 @@
+{
+  "count": 5,
+  "items": [
+    {
+      "id": "01",
+      "title": "OptTime",
+      "year": "2026",
+      "description": {
+        "pt": "Produto nascido em um hackathon explorando fluxos de desenvolvimento orquestrados por agentes de IA — construído sob pressão, entregue em dias.",
+        "en": "Hackathon-born product exploring software development workflows orchestrated by AI agents — built under pressure, shipped in days."
+      },
+      "stack": [
+        "TypeScript",
+        "React",
+        "AI Agents"
+      ],
+      "repositoryUrl": "https://github.com/Marcus-Boni/OptTime"
+    },
+    {
+      "id": "02",
+      "title": "Estimativa de Horas",
+      "year": "2026",
+      "description": {
+        "pt": "Ferramenta web que substituiu planilhas frágeis de Excel na estimativa de horas, puxando work items direto do Azure DevOps.",
+        "en": "A web tool that replaced fragile Excel spreadsheets for task-hour estimation, pulling work items straight from Azure DevOps."
+      },
+      "stack": [
+        "TypeScript",
+        "Azure DevOps",
+        "React"
+      ],
+      "repositoryUrl": "https://github.com/Marcus-Boni/Ferramenta-Estimativa-Horas"
+    },
+    {
+      "id": "03",
+      "title": "Vault Chatbot",
+      "year": "2026",
+      "description": {
+        "pt": "Chatbot ancorado em vaults do Obsidian, respondendo perguntas sobre transcrições de reuniões em vez de deixá-las apodrecer em pastas.",
+        "en": "A chatbot grounded in Obsidian vaults, answering questions over company meeting transcriptions instead of letting them rot in folders."
+      },
+      "stack": [
+        "TypeScript",
+        "LLM",
+        "RAG"
+      ],
+      "repositoryUrl": "https://github.com/Marcus-Boni/chatbot-template"
+    },
+    {
+      "id": "04",
+      "title": "Jarvis",
+      "year": "2026",
+      "description": {
+        "pt": "Sistema de assistente pessoal automatizando os rituais diários de um desenvolvedor — uma rotina de cada vez.",
+        "en": "A personal assistant system automating the daily rituals of a working software developer — one routine at a time."
+      },
+      "stack": [
+        "Python",
+        "Automation"
+      ],
+      "repositoryUrl": "https://github.com/Marcus-Boni/Jarvis"
+    },
+    {
+      "id": "05",
+      "title": "Opt Gestão",
+      "year": "2026",
+      "description": {
+        "pt": "Aplicação de gestão de projetos construída para uso real em empresa — planejar, acompanhar e entregar sem cerimônia.",
+        "en": "Project administration application built for real company use — planning, tracking and shipping without ceremony."
+      },
+      "stack": [
+        "TypeScript",
+        "React",
+        "PostgreSQL"
+      ],
+      "repositoryUrl": "https://github.com/Marcus-Boni/Opt-Gestao-Projetos"
+    }
+  ]
+}

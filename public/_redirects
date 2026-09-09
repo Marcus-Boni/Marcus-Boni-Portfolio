@@ -32,3 +32,17 @@
 # disagree with. With no directory there is nothing to redirect to, and this
 # rewrite serves the file at the canonical path with a 200.
 /developers       /developers.html         200
+
+# Public content API. The payloads are static JSON generated from
+# `src/data/api.ts` (see tests/api-payloads.test.ts, which writes them), so
+# these endpoints cost a file read and no compute. Extensionless paths are the
+# ones documented in /openapi.json, hence the rewrites.
+#
+# /api/v1/posts is absent on purpose: it is served live from Firestore by
+# netlify/edge-functions/api.ts, which also turns every unmatched /api/ path
+# into an RFC 9457 problem+json instead of the HTML 404 page.
+/api/v1           /api/v1/index.json       200
+/api/v1/profile   /api/v1/profile.json     200
+/api/v1/projects  /api/v1/projects.json    200
+/api/v1/experience  /api/v1/experience.json  200
+/api/v1/stack     /api/v1/stack.json       200

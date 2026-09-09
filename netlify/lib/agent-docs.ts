@@ -159,26 +159,71 @@ export function developersMarkdown(): string {
 > than a person: the machine-readable files, the content-negotiation contract,
 > and copy-pasteable \`curl\` for each one.
 
-This is a personal portfolio and technical blog. It is a **read-only,
-public site**: there is no private API, no authentication, no rate limit, and
-therefore **no API keys to issue and no sandbox to provision**. Every endpoint
-below is the production endpoint, and calling it needs no credentials.
+This is a personal portfolio and technical blog. Its API is **public,
+read-only and unauthenticated**: no private endpoints, no write operations, no
+published rate limit, and therefore **no API keys to issue and no sandbox to
+provision**. Every endpoint below is the production endpoint, which makes the
+API its own sandbox.
 
 ## Quickstart
 
 \`\`\`bash
+# The profile, as JSON
+curl -s ${SITE_URL}/api/v1/profile
+
+# The OpenAPI 3.1 description of every operation
+curl -s ${SITE_URL}/openapi.json
+
 # The site's own guide for language models
 curl -s ${SITE_URL}/llms.txt
 
 # Any page, as Markdown instead of HTML
 curl -s -H 'Accept: text/markdown' ${SITE_URL}/
-
-# When to reach for this site, and how
-curl -s ${SITE_URL}/agent-instructions.md
-
-# Blog feed
-curl -s ${SITE_URL}/rss.xml
 \`\`\`
+
+## JSON API
+
+Read-only representations of the same content the pages publish. The
+specification is [OpenAPI 3.1](${SITE_URL}/openapi.json); every operation has a
+unique \`operationId\`, a description, typed parameters and a response schema,
+so the surface can be handed to a function-calling runtime unchanged.
+Discovery also goes through the RFC 9727 catalog at
+[\`/.well-known/api-catalog\`](${SITE_URL}/.well-known/api-catalog).
+
+| Operation | Endpoint | Returns |
+| --- | --- | --- |
+| \`getApiIndex\` | \`GET /api/v1\` | The operation list and a link to the specification. |
+| \`getProfile\` | \`GET /api/v1/profile\` | Identity, employer, location, contact channels, résumés. |
+| \`listProjects\` | \`GET /api/v1/projects\` | Selected projects with year, stack and repository URL. |
+| \`getExperience\` | \`GET /api/v1/experience\` | Current role and every client engagement, with sector and scope. |
+| \`listTechnologies\` | \`GET /api/v1/stack\` | Technologies, grouped by frontend, backend, data and ops. |
+| \`listPosts\` | \`GET /api/v1/posts\` | Published posts, newest first. Served live, so publishing needs no rebuild. |
+| \`getPost\` | \`GET /api/v1/posts/{slug}\` | One post, including the Markdown it was authored in. |
+
+### Errors
+
+Every failure under \`/api/\` is [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457)
+\`application/problem+json\`, never an HTML error page, with a stable \`code\`
+and a \`hint\` naming the next thing to try.
+
+\`\`\`json
+{
+  "type": "${SITE_URL}/developers#error-not-found",
+  "title": "Not found",
+  "status": 404,
+  "detail": "No published post has the slug \\"ghost\\". Drafts are not readable.",
+  "instance": "/api/v1/posts/ghost",
+  "code": "not_found",
+  "hint": "GET ${SITE_URL}/api/v1/posts to list every published post and its slug."
+}
+\`\`\`
+
+| Code | Status | When |
+| --- | --- | --- |
+| \`not_found\` | 404 | No such endpoint, or no published post with that slug. |
+| \`method_not_allowed\` | 405 | Anything but GET or HEAD. The API is read-only. |
+| \`not_acceptable\` | 406 | Your \`Accept\` header rules out \`application/json\`. |
+| \`upstream_unavailable\` | 503 | The content database is unreachable. Transient — retry. |
 
 ## Markdown content negotiation
 
@@ -212,6 +257,8 @@ unknown path (which answers \`404\` in both representations).
 
 | Endpoint | Content type | What it is |
 | --- | --- | --- |
+| \`/openapi.json\` | \`application/json\` | OpenAPI 3.1 description of every API operation. |
+| \`/.well-known/api-catalog\` | \`application/linkset+json\` | RFC 9727 discovery document pointing at the specification and the docs. |
 | \`/llms.txt\` | \`text/plain\` | Condensed site guide, [llmstxt.org](https://llmstxt.org) format, including a "when to use this" section. |
 | \`/llms-full.txt\` | \`text/plain\` | Full profile: bio, every project, every client engagement, the whole stack. |
 | \`/agent-instructions.md\` | \`text/markdown\` | Best-fit tasks, how to call this site, and what not to infer from it. |
@@ -235,9 +282,11 @@ curl -s ${SITE_URL}/ | grep -A2 'application/ld+json'
 
 - **404** — unknown paths return a genuine \`404\`, not the app shell with a
   \`200\`. The body points back at this page, \`/sitemap.xml\` and \`/llms.txt\`.
-  A \`/blog/{slug}\` with no such post returns \`404\` as well.
-- **406** — returned only when an \`Accept\` header rules out both \`text/html\`
-  and \`text/markdown\`.
+  A \`/blog/{slug}\` with no such post returns \`404\` as well. Under \`/api/\`
+  the same 404 arrives as \`problem+json\`.
+- **406** — returned only when an \`Accept\` header rules out every
+  representation a path can produce: \`text/html\` and \`text/markdown\` on a
+  page, \`application/json\` under \`/api/\`.
 - **301** — \`/marcus-boni-cv.pdf\` redirects to the Portuguese résumé, kept
   alive for links shared before the PT/EN split.
 - **CORS** — not enabled. These are documents, fetched server-side; nothing
