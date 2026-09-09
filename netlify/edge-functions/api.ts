@@ -1,6 +1,7 @@
 import type { Config, Context } from '@netlify/edge-functions'
 
 import { negotiate } from '../lib/accept.ts'
+import { deprecationHeaders } from '../lib/deprecation.ts'
 import { resolveMedia } from '../lib/agent-docs.ts'
 import {
   getPostBody,
@@ -40,8 +41,22 @@ const JSON_TYPE = 'application/json; charset=utf-8'
 const POSTS = '/api/v1/posts'
 
 export default async function handler(request: Request, context: Context) {
-  const url = new URL(request.url)
-  const path = url.pathname.replace(/\/+$/, '') || '/'
+  const path = new URL(request.url).pathname.replace(/\/+$/, '') || '/'
+  const response = await route(request, context, path)
+
+  // Applied once, to whatever the route produced, so a deprecated path
+  // announces itself on its errors as much as on its successes — including the
+  // static payloads, which this function only passes through.
+  const headers = deprecationHeaders(path)
+  if (Object.keys(headers).length === 0) return response
+  return withHeaders(response, headers)
+}
+
+async function route(
+  request: Request,
+  context: Context,
+  path: string,
+): Promise<Response> {
   const isHead = request.method === 'HEAD'
 
   // Read-only by design. Saying so with 405 beats letting a POST fall through
@@ -144,8 +159,12 @@ function json(payload: unknown, isHead: boolean): Response {
 }
 
 function withVary(response: Response): Response {
+  return withHeaders(response, { Vary: 'Accept, Accept-Encoding' })
+}
+
+function withHeaders(response: Response, extra: Record<string, string>): Response {
   const headers = new Headers(response.headers)
-  headers.set('Vary', 'Accept, Accept-Encoding')
+  for (const [name, value] of Object.entries(extra)) headers.set(name, value)
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,

@@ -8,11 +8,14 @@ import {
   notAcceptableBody,
 } from '../lib/accept.ts'
 import {
+  aboutMarkdown,
   blogIndexMarkdown,
+  contactMarkdown,
   developersMarkdown,
   homeMarkdown,
   notFoundMarkdown,
   postMarkdown,
+  privacyMarkdown,
 } from '../lib/agent-docs.ts'
 import { getPostBody, isConfigured, listPublished, lookupPost } from '../lib/firestore.ts'
 import { blogSlug, matchRoute, type RouteKind } from '../lib/routes.ts'
@@ -132,6 +135,15 @@ async function buildMarkdown(
 
     case 'developers':
       return { body: developersMarkdown(), status: 200 }
+
+    case 'about':
+      return { body: aboutMarkdown(), status: 200 }
+
+    case 'contact':
+      return { body: contactMarkdown(), status: 200 }
+
+    case 'privacy':
+      return { body: privacyMarkdown(), status: 200 }
 
     case 'blog-index':
       // An empty list is a real answer for a blog with no posts yet, and the

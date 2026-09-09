@@ -1,4 +1,4 @@
-import { API_VERSION, OPERATIONS, type Operation } from '@/data/api'
+import { API_VERSION, MINIMUM_NOTICE_DAYS, OPERATIONS, type Operation } from '@/data/api'
 
 /**
  * The OpenAPI 3.1 description of the public content API.
@@ -378,6 +378,19 @@ export function openApiDocument(): Json {
         'Errors are RFC 9457 `application/problem+json` with a stable `code` and a `hint`.',
         'The same content is available as Markdown from the HTML URLs via',
         '`Accept: text/markdown` — see https://marcusboni.com.br/developers.',
+        '',
+        '## Versioning and deprecation',
+        '',
+        'The major version is in the URL path. `/api/v1` is current; a breaking',
+        'change would ship as `/api/v2`, never as an edit to `v1`. Additive changes —',
+        'a new endpoint, a new optional field — happen in place, so clients should',
+        'ignore unknown properties rather than fail on them.',
+        '',
+        'A path being retired is announced on its own responses, before it stops',
+        'answering: `Deprecation` (RFC 9745) carries the date it was deprecated,',
+        '`Sunset` (RFC 8594) the date it stops responding, and',
+        '`Link: <…>; rel="deprecation"` points at the explanation. There is at least',
+        `**${MINIMUM_NOTICE_DAYS} days** between the two. Nothing is deprecated today.`,
       ].join('\n'),
       contact: {
         name: 'Marcus Boni',

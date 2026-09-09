@@ -1,0 +1,255 @@
+/*
+ * Shared styling for the standalone document pages: /developers, /about,
+ * /contact and /privacy.
+ *
+ * These four are plain files, not React routes — reference and trust pages
+ * have no reason to wait for the app bundle. They each used to need a copy of
+ * this block; one stylesheet is one place to change the palette.
+ *
+ * public/404.html deliberately keeps its own inline copy: an error page that
+ * needs a second request before it can be read is a worse error page.
+ *
+ * The tokens mirror the @theme block in src/styles/index.css and use the font
+ * fallbacks those tokens declare, so the pages read as the same site without
+ * pulling in the webfonts.
+ */
+
+:root {
+  --ink: #0d0c0a;
+  --ink-soft: #161412;
+  --bone: #ece7df;
+  --bone-dim: #b5afa4;
+  --smoke: #7a7368;
+  --ember: #ff4d17;
+  --line: #2a2723;
+  --sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --mono: 'Courier New', Courier, monospace;
+  --serif: Georgia, 'Times New Roman', serif;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--bone);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 6rem;
+}
+@media (min-width: 48rem) {
+  .wrap {
+    padding: 2rem 2rem 8rem;
+  }
+}
+
+/* ── Header ─────────────────────────────────────────── */
+.topbar {
+  display: flex;
+  align-items: baseline;
+  /* Wraps: the trust pages carry four nav links, which overflow a 380px
+     viewport in a single row. */
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  padding-bottom: 3rem;
+}
+.wordmark {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--bone);
+  text-decoration: none;
+  border: 0;
+}
+.wordmark span {
+  color: var(--ember);
+}
+.topbar nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+.topbar nav a {
+  color: var(--smoke);
+  border: 0;
+}
+.topbar nav a:hover {
+  color: var(--bone);
+}
+
+.label {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ember);
+}
+h1 {
+  margin: 1.25rem 0 0;
+  font-size: clamp(3rem, 9vw, 6.5rem);
+  line-height: 0.9;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+.lead {
+  max-width: 52ch;
+  margin: 1.75rem 0 0;
+  font-size: 1.0625rem;
+  color: var(--bone-dim);
+}
+@media (min-width: 48rem) {
+  .lead {
+    font-size: 1.125rem;
+  }
+}
+header.page {
+  padding-bottom: 2.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+/* ── Sections ───────────────────────────────────────── */
+section {
+  margin-top: 4rem;
+}
+h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin: 0 0 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--smoke);
+}
+h2 b {
+  color: var(--ember);
+  font-weight: 400;
+}
+h3 {
+  margin: 2.5rem 0 0.75rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+p {
+  max-width: 68ch;
+  margin: 0 0 1rem;
+  color: var(--bone-dim);
+}
+p strong {
+  color: var(--bone);
+}
+a {
+  color: var(--bone);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+  transition: color 0.2s, border-color 0.2s;
+}
+a:hover,
+a:focus-visible {
+  color: var(--ember);
+  border-color: var(--ember);
+}
+code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  color: var(--bone);
+  background: var(--ink-soft);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 0.1em 0.35em;
+}
+pre {
+  margin: 0 0 1.5rem;
+  padding: 1.25rem;
+  overflow-x: auto;
+  background: var(--ink-soft);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+pre code {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.8125rem;
+  line-height: 1.8;
+  color: var(--bone-dim);
+  white-space: pre;
+}
+pre code .c {
+  color: var(--smoke);
+}
+pre code .k {
+  color: var(--ember);
+}
+
+/* ── Tables ─────────────────────────────────────────── */
+.scroller {
+  margin: 0 0 1.5rem;
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  min-width: 34rem;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  text-align: left;
+}
+th {
+  padding: 0 1rem 0.75rem 0;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--smoke);
+  white-space: nowrap;
+}
+td {
+  padding: 0.9rem 1rem 0.9rem 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--bone-dim);
+  vertical-align: top;
+}
+td:first-child {
+  white-space: nowrap;
+  color: var(--bone);
+}
+ul {
+  max-width: 68ch;
+  margin: 0 0 1rem;
+  padding-left: 1.1rem;
+  color: var(--bone-dim);
+}
+li {
+  margin-bottom: 0.6rem;
+}
+
+footer {
+  margin-top: 5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--smoke);
+}

@@ -18,7 +18,15 @@
  */
 
 /** What kind of document a path resolves to. Drives the Markdown branch. */
-export type RouteKind = 'home' | 'blog-index' | 'blog-post' | 'developers' | 'admin'
+export type RouteKind =
+  | 'home'
+  | 'blog-index'
+  | 'blog-post'
+  | 'developers'
+  | 'about'
+  | 'contact'
+  | 'privacy'
+  | 'admin'
 
 export interface Route {
   /** Path prefix. With `wildcard`, the prefix is followed by more segments. */
@@ -51,9 +59,13 @@ export const ROUTES: readonly Route[] = [
   { path: '/', kind: 'home', wildcard: 'none', served: 'spa' },
   { path: '/blog', kind: 'blog-index', wildcard: 'none', served: 'spa' },
   { path: '/blog', kind: 'blog-post', wildcard: 'segment', served: 'spa' },
-  // Documentation, not app: `public/developers.html`. It carries no
-  // bundle, so an agent reading it pays for nothing but the HTML.
+  // Documentation and trust pages, not app. Plain files carrying no bundle, so
+  // an agent reading them pays for nothing but the HTML — and each keeps its
+  // own <title> and canonical instead of inheriting the SPA shell's.
   { path: '/developers', kind: 'developers', wildcard: 'none', served: 'static' },
+  { path: '/about', kind: 'about', wildcard: 'none', served: 'static' },
+  { path: '/contact', kind: 'contact', wildcard: 'none', served: 'static' },
+  { path: '/privacy', kind: 'privacy', wildcard: 'none', served: 'static' },
   { path: '/admin', kind: 'admin', wildcard: 'none', served: 'spa' },
   { path: '/admin', kind: 'admin', wildcard: 'deep', served: 'spa' },
 ]

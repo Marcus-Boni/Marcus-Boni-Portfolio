@@ -9,9 +9,25 @@ rules_version = '2';
 // session cannot turn the bucket into general-purpose file hosting.
 service firebase.storage {
   match /b/{bucket}/o {
+    // The admin is one specific account, named here rather than "anyone who
+    // managed to authenticate".
+    //
+    // The Firebase web config is public by construction — every VITE_FIREBASE_*
+    // value is inlined into the client bundle — so the API key identifies the
+    // project to anyone who views source. If the Email/Password provider ever
+    // allows self-signup,  would hand a stranger write
+    // access to site content and read access to every contact message and
+    // analytics event. Pinning the uid closes that regardless of the console
+    // setting.
+    //
+    // The uid is an identifier, not a credential: it grants nothing without
+    // authenticating as that account, which is why it is safe in a public repo.
+    // Adding a second admin means adding their uid here and redeploying rules.
 
     function isAdmin() {
-      return request.auth != null;
+
+      return request.auth != null && request.auth.uid == 'FG69ZSmr9kZcA15R3fLaf4khAqm1';
+
     }
 
     function isAllowedType() {
