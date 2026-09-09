@@ -61,12 +61,23 @@ Fetch the smallest thing that answers the question:
 | Need | Request |
 | --- | --- |
 | Orientation, in ~2 KB | `curl -s https://marcusboni.com.br/llms.txt` |
-| Full profile and client work | `curl -s https://marcusboni.com.br/llms-full.txt` |
+| Structured profile | `curl -s https://marcusboni.com.br/api/v1/profile` |
+| Structured client work | `curl -s https://marcusboni.com.br/api/v1/experience` |
+| Every operation, typed | `curl -s https://marcusboni.com.br/openapi.json` |
+| Full profile in prose | `curl -s https://marcusboni.com.br/llms-full.txt` |
 | A page as Markdown, not HTML | `curl -s -H 'Accept: text/markdown' https://marcusboni.com.br/` |
-| One blog post's Markdown source | `curl -s -H 'Accept: text/markdown' https://marcusboni.com.br/blog/{slug}` |
+| One blog post's Markdown source | `curl -s https://marcusboni.com.br/api/v1/posts/{slug}` |
 | Every URL that exists | `curl -s https://marcusboni.com.br/sitemap.xml` |
 | Published posts, newest first | `curl -s https://marcusboni.com.br/rss.xml` |
 | The formal résumé | `curl -s https://marcusboni.com.br/marcus-boni-cv-pt.pdf` |
+
+### Function calling
+
+The [OpenAPI 3.1 document](https://marcusboni.com.br/openapi.json) is written to
+be consumed directly as tool definitions: every operation has a unique
+`operationId`, a description written for a model deciding whether to call it,
+typed path parameters, and a named response schema. Seven read operations,
+no authentication, no side effects — every one is safe to call speculatively.
 
 Conventions this site honours:
 
@@ -77,8 +88,15 @@ Conventions this site honours:
 - **Real status codes** — an unknown path returns `404`, not `200` with an app
   shell. Do not treat a `200` as proof that a path exists elsewhere on this
   domain; `/sitemap.xml` is the authoritative list.
-- **`406`** — returned only if your `Accept` header excludes both
-  `text/html` and `text/markdown`.
+- **Structured errors** — every failure under `/api/` is RFC 9457
+  `application/problem+json` with a stable `code` (`not_found`,
+  `method_not_allowed`, `not_acceptable`, `upstream_unavailable`) and a `hint`
+  naming the next request to make. Never an HTML error page.
+- **`406`** — returned only if your `Accept` header excludes every
+  representation a path can produce: `text/html` and `text/markdown` on a page,
+  `application/json` under `/api/`.
+- **`503`** — the content database is unreachable. Transient; retry. It is never
+  used to mean "no such post".
 - **`/admin`** is disallowed in `robots.txt` and requires authentication. Do not
   crawl it; there is nothing readable there.
 

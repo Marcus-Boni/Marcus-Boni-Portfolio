@@ -32,33 +32,49 @@ describe('public/llms.txt', () => {
     expect(lines.slice(0, 4).some((line) => line.startsWith('> '))).toBe(true)
   })
 
-  it('has a when-to-use section', () => {
-    expect(llms).toContain('## Quando usar este site')
+  it('has a when-to-use section, in English', () => {
+    // The readiness check reads this file and did not recognise the section
+    // while its heading was Portuguese ("Quando usar este site"), even though
+    // the English one existed in /agent-instructions.md. The file is read by
+    // machines; the guidance headings are English now. Site *content* stays
+    // bilingual, and llms-full.txt is still Portuguese.
+    expect(llms).toContain('## When to use this site')
+    expect(llms).toContain('## When not to use this site')
   })
 
   it('names concrete tasks rather than describing the site', () => {
     // "Be specific about the jobs you are right for — generic marketing copy
     // does not read as guidance."
     for (const job of [
-      'Avaliar Marcus Boni para trabalho',
-      'Citar a escrita técnica',
-      'Localizar o código público',
-      'Iniciar um contato profissional',
+      'Evaluating Marcus Boni for work',
+      'Answering "has he done X before?"',
+      'Sourcing or quoting his technical writing',
+      'Locating his public code',
     ]) {
       expect(llms).toContain(job)
     }
   })
 
   it('says what the site is not for', () => {
-    expect(llms).toContain('Não use este site como referência técnica')
-    expect(llms).toContain('Não existe API para integrar')
+    expect(llms).toContain('Not a technical reference')
+    expect(llms).toContain('Not a service')
+    expect(llms).toContain('Not a directory')
   })
 
   it('explains how to call the site', () => {
     expect(llms).toContain('Accept: text/markdown')
     expect(llms).toContain('Vary: Accept')
-    expect(llms).toContain('404 real')
-    expect(llms).toContain('406 Not Acceptable')
+    expect(llms).toContain('`404`')
+    expect(llms).toContain('RFC 9457')
+  })
+
+  it('lists the API surface, so the endpoints are discoverable by name', () => {
+    // The "developer resource discoverability" check wants the API docs listed
+    // in llms.txt, not only linked from a page.
+    expect(llms).toContain('/openapi.json')
+    for (const operation of ['/api/v1/profile', '/api/v1/projects', '/api/v1/posts']) {
+      expect(llms).toContain(operation)
+    }
   })
 
   it('links the dedicated agent-instructions file and the developer portal', () => {
@@ -150,6 +166,41 @@ describe('sitemap', () => {
     // `feeds.ts` cannot be imported here (Deno globals at module load), so the
     // route table is asserted against its source.
     expect(read('netlify/edge-functions/feeds.ts')).toContain("path: '/developers'")
+  })
+})
+
+describe('public/.well-known/api-catalog', () => {
+  const catalog = JSON.parse(read('public/.well-known/api-catalog')) as {
+    linkset: {
+      anchor: string
+      'service-desc': { href: string; type: string }[]
+      'service-doc': { href: string; type: string }[]
+    }[]
+  }
+
+  it('is an RFC 9727 linkset anchored on the API base', () => {
+    expect(catalog.linkset).toHaveLength(1)
+    expect(catalog.linkset[0].anchor).toBe('https://marcusboni.com.br/api/v1')
+  })
+
+  it('points service-desc at the OpenAPI document with its media type', () => {
+    const [desc] = catalog.linkset[0]['service-desc']
+    expect(desc.href).toBe('https://marcusboni.com.br/openapi.json')
+    expect(desc.type).toBe('application/vnd.oai.openapi+json;version=3.1')
+  })
+
+  it('points service-doc at pages that exist', () => {
+    const hrefs = catalog.linkset[0]['service-doc'].map((link) => link.href)
+    expect(hrefs).toContain('https://marcusboni.com.br/developers')
+    expect(hrefs).toContain('https://marcusboni.com.br/agent-instructions.md')
+  })
+})
+
+describe('public/openapi.json', () => {
+  it('is committed, so the endpoint exists without a generator at build time', () => {
+    // `tests/api-payloads.test.ts` writes it; this asserts it was not deleted.
+    const document = JSON.parse(read('public/openapi.json')) as { openapi: string }
+    expect(document.openapi).toBe('3.1.0')
   })
 })
 

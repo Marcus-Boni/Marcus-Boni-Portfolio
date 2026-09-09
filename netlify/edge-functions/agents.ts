@@ -96,7 +96,14 @@ export default async function handler(request: Request, context: Context) {
   const response = await context.next()
   if (response.status !== 404) return withVary(response)
 
-  // A genuine 404. Restate it as Markdown for a client that never named
+  // Only an HTML 404 is this function's to restate. `/api/` answers with RFC
+  // 9457 `application/problem+json`, and rewriting that into Markdown would
+  // break the contract the API endpoint exists to keep — a JSON client asked
+  // for a machine-readable error and would get prose.
+  const origin = response.headers.get('content-type') ?? ''
+  if (!origin.includes('text/html')) return withVary(response)
+
+  // A genuine 404 page. Restate it as Markdown for a client that never named
   // `text/html` — see `acceptsHtmlExplicitly` for why a 404 diagnostic is
   // treated differently from a page.
   if (negotiate(accept) === MARKDOWN || !acceptsHtmlExplicitly(accept)) {
@@ -219,6 +226,8 @@ export const config: Config = {
     '/assets/*',
     '/admin',
     '/admin/*',
+    // `api.ts` owns everything under /api, errors included.
+    '/api/*',
     '/*.js',
     '/*.mjs',
     '/*.css',

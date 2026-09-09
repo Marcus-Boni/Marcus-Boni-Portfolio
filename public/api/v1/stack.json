@@ -1,0 +1,69 @@
+{
+  "count": 16,
+  "items": [
+    {
+      "name": "React",
+      "category": "frontend"
+    },
+    {
+      "name": "Next.js",
+      "category": "frontend"
+    },
+    {
+      "name": "TypeScript",
+      "category": "frontend"
+    },
+    {
+      "name": "Tailwind CSS",
+      "category": "frontend"
+    },
+    {
+      "name": "React Native",
+      "category": "frontend"
+    },
+    {
+      "name": "C#",
+      "category": "backend"
+    },
+    {
+      "name": "Java",
+      "category": "backend"
+    },
+    {
+      "name": "Python",
+      "category": "backend"
+    },
+    {
+      "name": "Node.js",
+      "category": "backend"
+    },
+    {
+      "name": "PostgreSQL",
+      "category": "data"
+    },
+    {
+      "name": "SQL Server",
+      "category": "data"
+    },
+    {
+      "name": "Supabase",
+      "category": "data"
+    },
+    {
+      "name": "Firebase",
+      "category": "data"
+    },
+    {
+      "name": "Docker",
+      "category": "ops"
+    },
+    {
+      "name": "Azure",
+      "category": "ops"
+    },
+    {
+      "name": "Azure DevOps",
+      "category": "ops"
+    }
+  ]
+}

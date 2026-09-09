@@ -1,0 +1,32 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://marcusboni.com.br/api/v1",
+      "service-desc": [
+        {
+          "href": "https://marcusboni.com.br/openapi.json",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "OpenAPI 3.1 description of the public content API"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://marcusboni.com.br/developers",
+          "type": "text/html",
+          "title": "Developer portal, with curl examples for every endpoint"
+        },
+        {
+          "href": "https://marcusboni.com.br/agent-instructions.md",
+          "type": "text/markdown",
+          "title": "When to use this site, and how to call it"
+        }
+      ],
+      "author": [
+        {
+          "href": "mailto:mgalvaoboni@gmail.com",
+          "title": "Marcus Boni"
+        }
+      ]
+    }
+  ]
+}

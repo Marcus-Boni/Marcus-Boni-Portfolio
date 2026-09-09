@@ -46,7 +46,7 @@ function load(name: string): Promise<Record<string, unknown>> {
 
 describe('netlify/edge-functions', () => {
   it('holds only real functions — no directories, no stray files', () => {
-    expect(files).toEqual(['agents.ts', 'blog-meta.ts', 'feeds.ts'])
+    expect(files).toEqual(['agents.ts', 'api.ts', 'blog-meta.ts', 'feeds.ts'])
     expect(entries.filter((entry) => entry.isDirectory())).toEqual([])
   })
 

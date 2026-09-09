@@ -1,0 +1,51 @@
+{
+  "name": "Marcus Boni — public content API",
+  "description": "Read-only JSON representations of the content published on marcusboni.com.br. No authentication, no rate limit, no write operations.",
+  "version": "1.0.0",
+  "documentation": "https://marcusboni.com.br/developers",
+  "openapi": "https://marcusboni.com.br/openapi.json",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/v1",
+      "operationId": "getApiIndex",
+      "summary": "List the available operations"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/profile",
+      "operationId": "getProfile",
+      "summary": "Get the profile of Marcus Boni"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/projects",
+      "operationId": "listProjects",
+      "summary": "List selected personal projects"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/experience",
+      "operationId": "getExperience",
+      "summary": "Get professional experience and client engagements"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/stack",
+      "operationId": "listTechnologies",
+      "summary": "List the technologies worked with"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/posts",
+      "operationId": "listPosts",
+      "summary": "List published blog posts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/posts/{slug}",
+      "operationId": "getPost",
+      "summary": "Get one blog post with its Markdown body"
+    }
+  ]
+}

@@ -9,7 +9,7 @@
     <meta name="title" content="Developers — Marcus Boni" />
     <meta
       name="description"
-      content="Every machine-readable endpoint on marcusboni.com.br: llms.txt, agent instructions, Markdown content negotiation, sitemap and RSS — with curl examples. No API keys required."
+      content="The public read-only JSON API, OpenAPI 3.1 spec, llms.txt, agent instructions and Markdown content negotiation for marcusboni.com.br — with curl examples. No API keys required."
     />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://marcusboni.com.br/developers" />
@@ -27,7 +27,7 @@
     <meta property="og:title" content="Developers — Marcus Boni" />
     <meta
       property="og:description"
-      content="Machine-readable endpoints, Markdown content negotiation and curl examples for marcusboni.com.br."
+      content="A public read-only JSON API with an OpenAPI 3.1 spec, plus Markdown content negotiation and curl examples for marcusboni.com.br."
     />
     <meta property="og:image" content="https://marcusboni.com.br/og-image.png" />
     <meta property="og:site_name" content="Marcus Boni — Portfolio" />
@@ -38,7 +38,7 @@
     <meta property="twitter:title" content="Developers — Marcus Boni" />
     <meta
       property="twitter:description"
-      content="Machine-readable endpoints, Markdown content negotiation and curl examples for marcusboni.com.br."
+      content="A public read-only JSON API with an OpenAPI 3.1 spec, plus Markdown content negotiation and curl examples for marcusboni.com.br."
     />
     <meta property="twitter:image" content="https://marcusboni.com.br/og-image.png" />
 
@@ -55,7 +55,7 @@
       src/styles/index.css so it reads as the same site.
 
       The Markdown twin of this page lives in
-      netlify/edge-functions/_agent-docs.ts (`developersMarkdown`) and is
+      netlify/lib/agent-docs.ts (`developersMarkdown`) and is
       served from this same URL under `Accept: text/markdown`.
       `tests/agent-docs.test.ts` asserts every endpoint named in one appears in
       the other.
@@ -324,12 +324,12 @@
       <section id="scope">
         <h2><b>00</b> Scope</h2>
         <p>
-          This is a personal portfolio and technical blog. It is a
-          <strong>read-only public site</strong>: there is no private API, no
-          authentication, no rate limit, and therefore
+          This is a personal portfolio and technical blog. Its API is
+          <strong>public, read-only and unauthenticated</strong>: no private
+          endpoints, no write operations, no published rate limit, and therefore
           <strong>no API keys to issue and no sandbox to provision</strong>.
-          Every endpoint below is the production endpoint, and calling it needs
-          no credentials — which makes the whole site its own sandbox.
+          Every endpoint below is the production endpoint, which makes the API
+          its own sandbox.
         </p>
         <p>
           If you are an agent deciding whether this site answers your question,
@@ -340,21 +340,147 @@
 
       <section id="quickstart">
         <h2><b>01</b> Quickstart</h2>
-        <pre><code><span class="c"># The site's own guide for language models</span>
+        <pre><code><span class="c"># The profile, as JSON</span>
+curl -s https://marcusboni.com.br/api/v1/profile
+
+<span class="c"># The OpenAPI 3.1 description of every operation</span>
+curl -s https://marcusboni.com.br/openapi.json
+
+<span class="c"># The site's own guide for language models</span>
 curl -s https://marcusboni.com.br/llms.txt
 
 <span class="c"># Any page, as Markdown instead of HTML</span>
-curl -s -H <span class="k">'Accept: text/markdown'</span> https://marcusboni.com.br/
+curl -s -H <span class="k">'Accept: text/markdown'</span> https://marcusboni.com.br/</code></pre>
+      </section>
 
-<span class="c"># When to reach for this site, and how</span>
-curl -s https://marcusboni.com.br/agent-instructions.md
+      <section id="api">
+        <h2><b>02</b> JSON API</h2>
+        <p>
+          Read-only representations of the same content the pages publish. The
+          specification is
+          <a href="/openapi.json">OpenAPI 3.1</a>; every operation carries a
+          unique <code>operationId</code>, a description, typed parameters and a
+          response schema, so the surface can be handed to a function-calling
+          runtime unchanged. Discovery also goes through the RFC 9727 catalog at
+          <a href="/.well-known/api-catalog"><code>/.well-known/api-catalog</code></a>.
+        </p>
 
-<span class="c"># Blog feed</span>
-curl -s https://marcusboni.com.br/rss.xml</code></pre>
+        <div class="scroller">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Operation</th>
+                <th scope="col">Endpoint</th>
+                <th scope="col">Returns</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>getApiIndex</code></td>
+                <td><a href="/api/v1">GET /api/v1</a></td>
+                <td>The operation list and a link to the specification.</td>
+              </tr>
+              <tr>
+                <td><code>getProfile</code></td>
+                <td><a href="/api/v1/profile">GET /api/v1/profile</a></td>
+                <td>Identity, employer, location, contact channels, résumés.</td>
+              </tr>
+              <tr>
+                <td><code>listProjects</code></td>
+                <td><a href="/api/v1/projects">GET /api/v1/projects</a></td>
+                <td>Selected projects with year, stack and repository URL.</td>
+              </tr>
+              <tr>
+                <td><code>getExperience</code></td>
+                <td><a href="/api/v1/experience">GET /api/v1/experience</a></td>
+                <td>
+                  Current role and every client engagement, with sector and
+                  scope.
+                </td>
+              </tr>
+              <tr>
+                <td><code>listTechnologies</code></td>
+                <td><a href="/api/v1/stack">GET /api/v1/stack</a></td>
+                <td>Technologies, grouped by frontend, backend, data and ops.</td>
+              </tr>
+              <tr>
+                <td><code>listPosts</code></td>
+                <td><a href="/api/v1/posts">GET /api/v1/posts</a></td>
+                <td>
+                  Published posts, newest first. Served live, so publishing
+                  needs no rebuild.
+                </td>
+              </tr>
+              <tr>
+                <td><code>getPost</code></td>
+                <td><code>GET /api/v1/posts/{slug}</code></td>
+                <td>One post, including the Markdown it was authored in.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Errors</h3>
+        <p>
+          Every failure under <code>/api/</code> is
+          <a href="https://www.rfc-editor.org/rfc/rfc9457">RFC 9457</a>
+          <code>application/problem+json</code> — never an HTML error page —
+          with a stable <code>code</code> and a <code>hint</code> naming the next
+          thing to try.
+        </p>
+
+        <pre><code>{
+  <span class="k">"type"</span>: "https://marcusboni.com.br/developers#error-not-found",
+  <span class="k">"title"</span>: "Not found",
+  <span class="k">"status"</span>: 404,
+  <span class="k">"detail"</span>: "No published post has the slug \"ghost\". Drafts are not readable.",
+  <span class="k">"instance"</span>: "/api/v1/posts/ghost",
+  <span class="k">"code"</span>: "not_found",
+  <span class="k">"hint"</span>: "GET https://marcusboni.com.br/api/v1/posts to list every published post and its slug."
+}</code></pre>
+
+        <div class="scroller">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Code</th>
+                <th scope="col">Status</th>
+                <th scope="col">When</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="error-not-found">
+                <td><code>not_found</code></td>
+                <td>404</td>
+                <td>No such endpoint, or no published post with that slug.</td>
+              </tr>
+              <tr id="error-method-not-allowed">
+                <td><code>method_not_allowed</code></td>
+                <td>405</td>
+                <td>Anything but GET or HEAD. The API is read-only.</td>
+              </tr>
+              <tr id="error-not-acceptable">
+                <td><code>not_acceptable</code></td>
+                <td>406</td>
+                <td>
+                  Your <code>Accept</code> header rules out
+                  <code>application/json</code>.
+                </td>
+              </tr>
+              <tr id="error-upstream-unavailable">
+                <td><code>upstream_unavailable</code></td>
+                <td>503</td>
+                <td>
+                  The content database is unreachable. Transient — retry.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section id="markdown">
-        <h2><b>02</b> Markdown content negotiation</h2>
+        <h2><b>03</b> Markdown content negotiation</h2>
         <p>
           Every HTML document on this site is also available as Markdown from
           the same URL, following the
@@ -429,7 +555,7 @@ curl -s https://marcusboni.com.br/rss.xml</code></pre>
       </section>
 
       <section id="files">
-        <h2><b>03</b> Machine-readable files</h2>
+        <h2><b>04</b> Machine-readable files</h2>
         <div class="scroller">
           <table>
             <thead>
@@ -440,6 +566,21 @@ curl -s https://marcusboni.com.br/rss.xml</code></pre>
               </tr>
             </thead>
             <tbody>
+              <tr>
+                <td><a href="/openapi.json">/openapi.json</a></td>
+                <td><code>application/json</code></td>
+                <td>OpenAPI 3.1 description of every API operation.</td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="/.well-known/api-catalog">/.well-known/api-catalog</a>
+                </td>
+                <td><code>application/linkset+json</code></td>
+                <td>
+                  RFC 9727 discovery document pointing at the specification and
+                  the docs.
+                </td>
+              </tr>
               <tr>
                 <td><a href="/llms.txt">/llms.txt</a></td>
                 <td><code>text/plain</code></td>
@@ -510,7 +651,7 @@ curl -s https://marcusboni.com.br/rss.xml</code></pre>
       </section>
 
       <section id="structured-data">
-        <h2><b>04</b> Structured data</h2>
+        <h2><b>05</b> Structured data</h2>
         <p>
           The home page carries a schema.org <code>Person</code> in JSON-LD;
           every blog post carries a <code>BlogPosting</code>, injected into the
@@ -521,7 +662,7 @@ curl -s https://marcusboni.com.br/rss.xml</code></pre>
       </section>
 
       <section id="http">
-        <h2><b>05</b> HTTP behaviour</h2>
+        <h2><b>06</b> HTTP behaviour</h2>
         <ul>
           <li>
             <strong>404</strong> — unknown paths return a genuine
@@ -553,7 +694,7 @@ curl -s https://marcusboni.com.br/rss.xml</code></pre>
       </section>
 
       <section id="licence">
-        <h2><b>06</b> Reusing the content</h2>
+        <h2><b>07</b> Reusing the content</h2>
         <p>
           The prose, résumés and images are © Marcus Boni. Quote and link
           freely, with attribution to
