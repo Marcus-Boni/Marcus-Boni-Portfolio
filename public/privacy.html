@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <title>Privacidade — Marcus Boni</title>
+    <meta name="title" content="Privacidade — Marcus Boni" />
+    <meta
+      name="description"
+      content="O que marcusboni.com.br coleta, por quê, por quanto tempo guarda e como exercer seus direitos sob a LGPD. Sem cookies, sem rastreadores de terceiros, sem publicidade."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://marcusboni.com.br/privacy" />
+    <link rel="alternate" type="text/markdown" href="https://marcusboni.com.br/privacy" />
+    <meta name="theme-color" content="#0d0c0a" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://marcusboni.com.br/privacy" />
+    <meta property="og:title" content="Privacidade — Marcus Boni" />
+    <meta
+      property="og:description"
+      content="O que este site coleta, por quê e por quanto tempo. Sem cookies e sem rastreadores de terceiros."
+    />
+    <meta property="og:image" content="https://marcusboni.com.br/og-image.png" />
+    <meta property="og:site_name" content="Marcus Boni — Portfolio" />
+    <meta property="og:locale" content="pt_BR" />
+
+    <!--
+      Escrita a partir do código, não de um modelo genérico. Cada afirmação
+      abaixo é verificável:
+
+        src/lib/analytics.ts        o que é coletado em cada evento
+        src/lib/analytics-write.ts  onde é gravado (coleção `analytics`)
+        src/lib/messages.ts         o formulário de contato (coleção `messages`)
+        firestore.rules             quem consegue ler
+
+      DUAS DECISÕES DE PRODUTO estão fixadas aqui como padrão e podem ser
+      ajustadas — se mudarem, mude também netlify/lib/agent-docs.ts:
+
+        1. Retenção de eventos de analytics: 12 meses.
+        2. Retenção de mensagens do formulário: enquanto a conversa for
+           relevante, e apagadas a pedido.
+    -->
+    <link rel="stylesheet" href="/page.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="topbar">
+        <a class="wordmark" href="/" aria-label="Marcus Boni — início"
+          >mb<span>.</span></a
+        >
+        <nav>
+          <a href="/">Portfólio</a>
+          <a href="/about">Sobre</a>
+          <a href="/contact">Contato</a>
+          <a href="/blog">Blog</a>
+        </nav>
+      </div>
+
+      <header class="page">
+        <p class="label">Privacidade</p>
+        <h1>O que<br />eu guardo</h1>
+        <p class="lead">
+          Este site é um portfólio pessoal. Ele não vende nada, não tem
+          publicidade e não usa cookies. Coleta duas coisas: as mensagens que
+          você envia pelo formulário de contato e estatísticas de acesso
+          anônimas. Esta página descreve exatamente o quê, por quê e por quanto
+          tempo.
+        </p>
+      </header>
+
+      <section id="controlador">
+        <h2><b>00</b> Quem é o controlador</h2>
+        <p>
+          <strong>Marcus Evandro Galvão Boni</strong>, pessoa física, Espírito
+          Santo, Brasil. Contato para qualquer assunto relativo a dados,
+          incluindo pedidos de titular:
+          <a href="mailto:mgalvaoboni@gmail.com">mgalvaoboni@gmail.com</a>.
+          Não há encarregado (DPO) designado — os pedidos chegam direto a mim e
+          eu respondo pessoalmente.
+        </p>
+      </section>
+
+      <section id="formulario">
+        <h2><b>01</b> Formulário de contato</h2>
+        <p>
+          Quando você envia o formulário, são gravados exatamente os campos que
+          você preencheu — <strong>nome</strong>, <strong>e-mail</strong> e
+          <strong>mensagem</strong> — mais o idioma em que o site estava, o
+          domínio de onde você veio, um país estimado e a data de envio.
+        </p>
+        <p>
+          <strong>Base legal:</strong> o tratamento é necessário para
+          providências preliminares a pedido do titular — você me escreveu para
+          que eu responda. <strong>Finalidade:</strong> responder. Nada mais. As
+          mensagens não alimentam lista de e-mail, não são usadas para marketing
+          e não são compartilhadas com ninguém.
+        </p>
+        <p>
+          <strong>Retenção:</strong> enquanto a conversa for relevante. Você
+          pode pedir a exclusão a qualquer momento e ela é imediata.
+        </p>
+      </section>
+
+      <section id="analytics">
+        <h2><b>02</b> Estatísticas de acesso</h2>
+        <p>
+          O site tem analytics próprio, de primeira parte.
+          <strong>Não usa cookies</strong>, não carrega Google Analytics nem
+          qualquer script de terceiro, e não faz geolocalização por IP. O que é
+          registrado a cada evento:
+        </p>
+        <ul>
+          <li>
+            Um <strong>identificador aleatório</strong> guardado no
+            <code>localStorage</code> do seu navegador, para distinguir visitas
+            repetidas de novas, e outro no <code>sessionStorage</code>, que
+            morre quando você fecha a aba. Nenhum dos dois é ligado a você — são
+            números aleatórios, não perfis.
+          </li>
+          <li>
+            A <strong>página visitada</strong>, o horário, e qual evento
+            ocorreu: visualização, rolagem até uma seção, clique em link
+            externo, download de currículo, envio do formulário, troca de
+            idioma, leitura de post.
+          </li>
+          <li>
+            <strong>Tipo de dispositivo</strong> (celular, tablet ou
+            computador), navegador, sistema operacional, resolução de tela e
+            idioma do navegador.
+          </li>
+          <li>
+            O <strong>site de origem</strong>, quando você chega por um link.
+          </li>
+          <li>
+            Seu <strong>fuso horário</strong>, do qual estimo um país. É uma
+            aproximação grosseira e deliberada: prefiro saber "Brasil" por fuso
+            do que sua localização por IP.
+          </li>
+        </ul>
+        <p>
+          <strong>Base legal:</strong> legítimo interesse em entender se o site
+          funciona e o que as pessoas leem. <strong>Retenção:</strong> 12 meses.
+        </p>
+        <p>
+          Também guardo no seu navegador a preferência de idioma
+          (<code>mb-locale</code>), para não perguntar de novo. Isso fica só no
+          seu dispositivo. Limpar os dados do site apaga tudo isso e o site
+          volta a funcionar normalmente.
+        </p>
+      </section>
+
+      <section id="terceiros">
+        <h2><b>03</b> Quem mais toca nesses dados</h2>
+        <p>
+          Dois operadores, ambos por necessidade técnica:
+        </p>
+        <ul>
+          <li>
+            <strong>Google (Firebase / Cloud Firestore)</strong> — onde as
+            mensagens e os eventos ficam armazenados.
+          </li>
+          <li>
+            <strong>Netlify</strong> — hospedagem. Como qualquer servidor web,
+            mantém registros de acesso próprios, que incluem endereço IP, sob a
+            política de privacidade deles.
+          </li>
+        </ul>
+        <p>
+          Ambos operam servidores fora do Brasil, então há transferência
+          internacional. Não vendo, alugo nem compartilho dados com mais
+          ninguém — não existe terceiro comercial nessa cadeia.
+        </p>
+        <p>
+          O acesso administrativo é meu e somente meu, protegido por
+          autenticação; as regras de segurança do banco recusam leitura de
+          mensagens e de analytics para qualquer outra pessoa.
+        </p>
+      </section>
+
+      <section id="direitos">
+        <h2><b>04</b> Seus direitos</h2>
+        <p>
+          A LGPD (Lei 13.709/2018) garante a você, entre outros: confirmação de
+          que existe tratamento, acesso aos dados, correção de dados incompletos
+          ou desatualizados, anonimização ou eliminação, portabilidade,
+          informação sobre com quem compartilho, e revogação do consentimento.
+        </p>
+        <p>
+          Para exercer qualquer um deles, escreva para
+          <a href="mailto:mgalvaoboni@gmail.com">mgalvaoboni@gmail.com</a>.
+          Respondo no menor prazo que conseguir. Para pedir exclusão de uma
+          mensagem, basta dizer qual — não preciso de formulário, protocolo nem
+          comprovação além do e-mail de onde ela veio.
+        </p>
+      </section>
+
+      <section id="mudancas">
+        <h2><b>05</b> Mudanças</h2>
+        <p>
+          Se esta política mudar, a alteração aparece no
+          <a href="https://github.com/Marcus-Boni/Marcus-Boni-Portfolio"
+            >repositório público do site</a
+          >, com histórico — dá para ver exatamente o que mudou e quando. Não há
+          versão privada desta página.
+        </p>
+      </section>
+
+      <section id="english">
+        <h2><b>06</b> In English</h2>
+        <p>
+          This is a personal portfolio. No cookies, no third-party trackers, no
+          advertising, no IP geolocation. It stores what you type into the
+          contact form (name, email, message) in order to reply, and anonymous
+          first-party analytics — a random browser-local identifier, the page
+          and event, device and browser type, referrer, and a country estimated
+          from your time zone. Analytics are kept for 12 months; messages for as
+          long as the conversation is relevant, and deleted on request.
+          Processors are Google Firebase (storage) and Netlify (hosting). To
+          exercise any data right under Brazil's LGPD, email
+          <a href="mailto:mgalvaoboni@gmail.com">mgalvaoboni@gmail.com</a>.
+        </p>
+      </section>
+
+      <footer>
+        Marcus Boni — Software Engineer · Espírito Santo, Brasil ·
+        <a href="/about">Sobre</a> · <a href="/contact">Contato</a> ·
+        <a href="/developers">Developers</a>
+      </footer>
+    </div>
+  </body>
+</html>

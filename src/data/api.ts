@@ -183,6 +183,16 @@ export const API_VERSION = '1.0.0'
 export const API_BASE = '/api/v1'
 
 /**
+ * Minimum days between announcing a deprecation and the path going away.
+ *
+ * Duplicated in `netlify/lib/deprecation.ts`, which is where it is enforced —
+ * the edge runtime cannot import from `src/`. `tests/deprecation.test.ts`
+ * asserts the two agree, so the number the specification publishes is the
+ * number the headers honour.
+ */
+export const MINIMUM_NOTICE_DAYS = 180
+
+/**
  * Every operation the API exposes, in one list.
  *
  * `scripts/vite-plugin-api.ts` writes a file for each `static` entry, the

@@ -225,6 +225,27 @@ and a \`hint\` naming the next thing to try.
 | \`not_acceptable\` | 406 | Your \`Accept\` header rules out \`application/json\`. |
 | \`upstream_unavailable\` | 503 | The content database is unreachable. Transient — retry. |
 
+### Versioning and deprecation
+
+The major version is in the URL path. \`/api/v1\` is current; a breaking change
+ships as \`/api/v2\`, never as an edit to \`v1\`. Additive changes — a new
+endpoint, a new optional field — happen in place, so **ignore unknown
+properties rather than failing on them**.
+
+A path being retired announces itself on its own responses, before it stops
+answering:
+
+| Header | Spec | Carries |
+| --- | --- | --- |
+| \`Deprecation\` | RFC 9745 | When the path was deprecated, as \`@<unix-seconds>\`. |
+| \`Sunset\` | RFC 8594 | When it stops responding, as an HTTP date. |
+| \`Link\` | RFC 8288 | \`rel="deprecation"\`, pointing at the explanation. |
+
+There are at least **180 days** between the two dates. **Nothing is deprecated
+today**, so none of these headers appears on any current response — the
+mechanism is in place and tested so the first deprecation is signalled rather
+than announced after the fact.
+
 ## Markdown content negotiation
 
 Every HTML document on this site is also available as Markdown from the same
@@ -299,6 +320,185 @@ curl -s ${SITE_URL}/ | grep -A2 'application/ld+json'
 The prose, résumés and images are © Marcus Boni. Quote and link freely, with
 attribution to ${SITE_URL}. Code in the linked GitHub repositories carries its
 own licence per repository.
+
+${footer()}`
+}
+
+/* ─── /about, /contact, /privacy ────────────────────────────────────────── */
+
+/**
+ * The trust pages, as Markdown.
+ *
+ * These are what an agent reads to decide whether the person behind a site is
+ * real before recommending them, so the Markdown has to carry the same facts
+ * as the HTML rather than a teaser. Twins of `public/about.html`,
+ * `public/contact.html` and `public/privacy.html`; `tests/agent-docs.test.ts`
+ * holds the key facts in both.
+ *
+ * Portuguese, like the pages: these address people, and the site is PT-first.
+ * The machine-facing documents (`llms.txt`, `agent-instructions.md`,
+ * `/developers`) stay English.
+ */
+export function aboutMarkdown(): string {
+  return `# Sobre — Marcus Boni
+
+> Engenheiro de software brasileiro, no Espírito Santo. Desenvolvedor de
+> Software na Optsolv desde junho de 2024, construindo aplicações web
+> corporativas de ponta a ponta.
+
+## O que eu faço
+
+Trabalho no ciclo inteiro: levantar o problema com quem vai usar, desenhar a
+tela, escrever o serviço, integrar com o sistema legado que ninguém quer tocar,
+e acompanhar em produção. Na prática: React e TypeScript na frente, Node.js e
+C# atrás, PostgreSQL e SQL Server nos dados, e o que o cliente já usa no meio —
+de ERP Sankhya a Azure DevOps.
+
+A parte que costuma decidir o projeto raramente é a tecnologia. É entender por
+que a planilha que a ferramenta vai substituir existe há seis anos.
+
+## Onde já entreguei
+
+Sete clientes, sete setores, todos na Optsolv:
+
+- **Saúde** — Unimed Sul Capixaba: gestão de guias médicas, integração com
+  serviços autenticados via AD, rastreabilidade de guias de intercâmbio.
+- **Indústria** — Hidrauvit: gestão da produção em entrega faseada, integração
+  via WebService.
+- **Logística** — GAB, Grupo Águia Branca: plataforma de embarque B2B, fluxos
+  administrativos e notificações auditadas.
+- **Meio ambiente** — Marca Ambiental: portal do cliente web/PWA multi-perfil
+  integrado ao ERP Sankhya.
+- **Suprimentos** — Cedisa: gestão de materiais sobre base PostgreSQL legada.
+- **Imobiliário** — Galwan: motor de plano de pagamento, parcelamento e KPIs
+  financeiros.
+- **Atendimento** — EAV, Escola Americana de Vitória: assistente virtual.
+
+Escopo e stack de cada um em \`GET ${SITE_URL}/api/v1/experience\`.
+
+## Fora do trabalho
+
+67 repositórios públicos em https://github.com/Marcus-Boni. Alguns viraram
+projetos selecionados: ferramenta de estimativa de horas que aposentou
+planilhas, chatbot ancorado em vaults do Obsidian, produto de hackathon
+explorando fluxos orquestrados por agentes de IA. Escrevo no blog quando um
+problema rende nota. Este site é código aberto, incluindo o painel
+administrativo e a API.
+
+## Trabalhar comigo
+
+Aberto a trabalho freelance ou efetivo, consultoria técnica e segunda opinião
+em problema de front-end ou integração. E-mail: mgalvaoboni@gmail.com.
+Detalhes em [${SITE_URL}/contact](${SITE_URL}/contact).
+
+${footer()}`
+}
+
+export function contactMarkdown(): string {
+  return `# Contato — Marcus Boni
+
+> E-mail é o canal principal: **mgalvaoboni@gmail.com**. Não há telefone
+> comercial publicado, nem chat, nem link de agenda.
+
+## Canais
+
+- **E-mail**: mgalvaoboni@gmail.com — qualquer assunto, inclusive pedidos
+  relativos a dados pessoais.
+- **Formulário**: no fim de [${SITE_URL}/](${SITE_URL}/). Cai na mesma caixa.
+- **LinkedIn**: https://www.linkedin.com/in/marcus-boni-729a52243 — carreira e
+  recrutamento.
+- **GitHub**: https://github.com/Marcus-Boni — código.
+
+Baseado no Espírito Santo, Brasil (UTC−3). Atende em português e inglês.
+
+## Que trabalho eu pego
+
+- **Aplicação web de ponta a ponta** — da tela ao serviço, incluindo integração
+  com o sistema que já existe.
+- **Front-end sobre back-end de terceiro** — quando a API já existe, é legada,
+  ou é de outro time. React, TypeScript, Next.js.
+- **Integração** — ERP, WebService, base legada, serviço autenticado.
+- **Segunda opinião** — revisão de arquitetura, decisão técnica ou código, em
+  escopo fechado e curto.
+
+## Como funciona o orçamento
+
+Não há tabela de preço publicada, porque o que determina o custo é o escopo, o
+estado do sistema que vai receber a integração e o prazo. O caminho é uma
+conversa curta e então uma proposta com escopo e valor fechados por escrito,
+antes de qualquer trabalho começar. Estimativa de ordem de grandeza para
+decidir se vale continuar: é só pedir.
+
+## O que incluir na mensagem
+
+Qual é o problema (não a solução já imaginada), que sistema existe hoje, qual
+prazo importa, e se há orçamento definido. Link para repositório, protótipo ou
+documento ajuda mais que descrição longa. Se for recrutamento: formato
+(efetivo ou contrato, remoto ou presencial) e faixa.
+
+${footer()}`
+}
+
+export function privacyMarkdown(): string {
+  return `# Privacidade — Marcus Boni
+
+> Portfólio pessoal. Não vende nada, não tem publicidade e **não usa cookies**.
+> Coleta duas coisas: mensagens do formulário de contato e estatísticas de
+> acesso anônimas.
+
+## Controlador
+
+Marcus Evandro Galvão Boni, pessoa física, Espírito Santo, Brasil. Contato para
+qualquer assunto relativo a dados, incluindo pedidos de titular:
+mgalvaoboni@gmail.com. Não há encarregado (DPO) designado.
+
+## Formulário de contato
+
+Grava exatamente os campos preenchidos — nome, e-mail e mensagem — mais o
+idioma do site, o domínio de origem, um país estimado e a data.
+
+- **Base legal**: providências preliminares a pedido do titular.
+- **Finalidade**: responder. As mensagens não alimentam lista de e-mail, não
+  são usadas para marketing e não são compartilhadas.
+- **Retenção**: enquanto a conversa for relevante; exclusão imediata a pedido.
+
+## Estatísticas de acesso
+
+Analytics próprio, de primeira parte. Sem cookies, sem Google Analytics, sem
+qualquer script de terceiro, sem geolocalização por IP. Por evento:
+
+- Um identificador aleatório no \`localStorage\` e outro no \`sessionStorage\`,
+  que morre ao fechar a aba. Números aleatórios, não perfis.
+- Página visitada, horário e qual evento ocorreu.
+- Tipo de dispositivo, navegador, sistema operacional, resolução e idioma.
+- Site de origem, quando há.
+- Fuso horário, do qual se estima um país — aproximação deliberada.
+
+- **Base legal**: legítimo interesse.
+- **Retenção**: 12 meses.
+
+A preferência de idioma (\`mb-locale\`) também fica no navegador. Limpar os
+dados do site apaga tudo isso.
+
+## Operadores
+
+- **Google (Firebase / Cloud Firestore)** — armazenamento.
+- **Netlify** — hospedagem; mantém registros de acesso próprios, que incluem
+  endereço IP, sob a política deles.
+
+Ambos operam servidores fora do Brasil, então há transferência internacional.
+Nada é vendido, alugado ou compartilhado com terceiro comercial.
+
+## Direitos (LGPD, Lei 13.709/2018)
+
+Confirmação de tratamento, acesso, correção, anonimização ou eliminação,
+portabilidade, informação sobre compartilhamento, e revogação de consentimento.
+Para exercer qualquer um: mgalvaoboni@gmail.com.
+
+## Mudanças
+
+Alterações aparecem no repositório público do site, com histórico:
+https://github.com/Marcus-Boni/Marcus-Boni-Portfolio
 
 ${footer()}`
 }

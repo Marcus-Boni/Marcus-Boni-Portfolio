@@ -26,6 +26,7 @@ Reach for it when the task is one of these:
 - **Markdown** — every HTML page answers `Accept: text/markdown` from the same URL, with `Vary: Accept`, per [acceptmarkdown.com](https://acceptmarkdown.com). Blog posts are authored in Markdown, so that representation is the source rather than a conversion.
 - **Real status codes** — an unknown path returns `404`, never `200` with an app shell. Do not treat a `200` as proof that a path exists; [/sitemap.xml](https://marcusboni.com.br/sitemap.xml) is the authoritative list.
 - **Errors** — every failure under `/api/` is RFC 9457 `application/problem+json` with a stable `code` and a `hint`. `406` only when your `Accept` rules out every representation.
+- **Versioning** — the major version is in the URL path. Breaking changes ship as a new path; retirement is announced on the responses themselves with `Deprecation` (RFC 9745) and `Sunset` (RFC 8594) headers, at least 180 days ahead. Nothing is deprecated today.
 - **`/admin`** requires authentication and is disallowed in robots.txt. There is nothing readable there.
 
 ## API endpoints
@@ -52,6 +53,9 @@ curl -s -H 'Accept: text/markdown' https://marcusboni.com.br/
 - [Career](https://marcusboni.com.br/#experience): Software Developer at Optsolv since June 2024, delivering to clients in healthcare, industry, logistics, environment, supply, customer care and real estate.
 - [Stack](https://marcusboni.com.br/#craft): React, Next.js, TypeScript, Tailwind CSS, C#, Java, Python, Node.js, PostgreSQL, SQL Server, Docker, Azure.
 - [Contact](https://marcusboni.com.br/#contact): Email and a professional contact form.
+- [About](https://marcusboni.com.br/about): Who Marcus Boni is, the seven client sectors delivered in, and how to work with him.
+- [Contact](https://marcusboni.com.br/contact): Channels, what work he takes, how quoting works, what to include in a message.
+- [Privacy](https://marcusboni.com.br/privacy): What the site collects and why. No cookies, no third-party trackers.
 - [Blog](https://marcusboni.com.br/blog): Notas de campo — studies, project write-ups and technical notes.
 - [Developers](https://marcusboni.com.br/developers): Every machine-readable endpoint, with curl examples.
 
