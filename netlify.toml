@@ -66,3 +66,10 @@
 [[edge_functions]]
   function = "feeds"
   path = "/sitemap.xml"
+
+# Authenticated write surface for trusted agents. Public blog reads remain under
+# /api/v1/posts; this endpoint creates and revises posts only after a bearer-
+# token-authorized request.
+[[edge_functions]]
+  function = "agent-publish"
+  path = "/agent/v1/posts"

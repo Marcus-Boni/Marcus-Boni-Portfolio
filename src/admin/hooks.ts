@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
   eventsToCsv,
@@ -8,7 +8,6 @@ import {
   type AnalyticsSummary,
   type RangeKey,
 } from '@/admin/services/analytics'
-import { subscribeMessages, type ContactMessage } from '@/lib/messages'
 
 /** Surfaced verbatim: a Firestore `failed-precondition` message carries the
  *  console URL that creates the missing index, so hiding it hides the fix. */
@@ -99,23 +98,110 @@ export function useAnalytics(initialRange: RangeKey = '30d'): UseAnalyticsResult
   }
 }
 
-export function useMessages(): {
-  messages: ContactMessage[]
-  unread: number
-  loading: boolean
-} {
-  const [messages, setMessages] = useState<ContactMessage[] | null>(null)
+/* ─── Keyboard ──────────────────────────────────────────────────────────── */
+
+export interface HotkeySpec {
+  /** Compared case-insensitively against `event.key`. */
+  key: string
+  /** Requires Ctrl on Windows/Linux or ⌘ on macOS. */
+  mod?: boolean
+  shift?: boolean
+}
+
+/**
+ * Window-level shortcut.
+ *
+ * Two details matter. The handler lives in a ref so a shortcut registered with
+ * an inline closure does not tear down and re-bind on every render. And typing
+ * inside a field never triggers a bare letter shortcut — only modified ones —
+ * so `?` in a message body stays a question mark.
+ */
+export function useHotkey(
+  spec: HotkeySpec,
+  handler: (event: KeyboardEvent) => void,
+  enabled = true,
+): void {
+  // The handler lives in a ref, written in its own effect: assigning during
+  // render is what `react-hooks/refs` forbids, and re-binding the listener on
+  // every render is what the ref exists to avoid.
+  const latest = useRef(handler)
+  useEffect(() => {
+    latest.current = handler
+  }, [handler])
 
   useEffect(() => {
-    const unsubscribe = subscribeMessages(setMessages)
-    return unsubscribe
-  }, [])
+    if (!enabled) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== spec.key.toLowerCase()) return
+      const mod = event.ctrlKey || event.metaKey
+      if (Boolean(spec.mod) !== mod) return
+      if (Boolean(spec.shift) !== event.shiftKey) return
 
-  const loaded = useMemo(() => messages ?? [], [messages])
-  const unread = useMemo(
-    () => loaded.filter((message) => !message.read).length,
-    [loaded],
+      if (!spec.mod) {
+        const target = event.target as HTMLElement | null
+        const tag = target?.tagName
+        if (
+          tag === 'INPUT' ||
+          tag === 'TEXTAREA' ||
+          tag === 'SELECT' ||
+          target?.isContentEditable
+        ) {
+          return
+        }
+      }
+
+      event.preventDefault()
+      latest.current(event)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [spec.key, spec.mod, spec.shift, enabled])
+}
+
+/* ─── Small utilities ───────────────────────────────────────────────────── */
+
+/**
+ * State mirrored into `localStorage`.
+ *
+ * Used for the preferences that are annoying to re-set on every visit — the
+ * remembered login e-mail, whether editor cards start collapsed, the last
+ * analytics window. Reads are wrapped because Safari's private mode throws on
+ * access rather than returning null.
+ */
+export function useStoredState<T>(
+  key: string,
+  initial: T,
+): [T, (next: T) => void] {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const raw = localStorage.getItem(key)
+      return raw === null ? initial : (JSON.parse(raw) as T)
+    } catch {
+      return initial
+    }
+  })
+
+  const update = useCallback(
+    (next: T) => {
+      setValue(next)
+      try {
+        localStorage.setItem(key, JSON.stringify(next))
+      } catch {
+        /* storage unavailable — the in-memory value still works */
+      }
+    },
+    [key],
   )
 
-  return { messages: loaded, unread, loading: messages === null }
+  return [value, update]
+}
+
+/** Debounced mirror of a fast-changing value (search fields, mostly). */
+export function useDebounced<T>(value: T, delay = 180): T {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebounced(value), delay)
+    return () => window.clearTimeout(id)
+  }, [value, delay])
+  return debounced
 }

@@ -45,10 +45,25 @@ site — apenas não injetam nada e o sitemap cai no arquivo estático.
 
 ## 2. Escrever um post
 
-`/admin/blog → Novo post`. O editor é split-pane: Markdown à esquerda, preview à
-direita usando **o mesmo CSS do post publicado** — o que você vê é o resultado.
+`/admin/blog → Novo post` abre o editor no fluxo rápido: primeiro título,
+visibilidade e escrita; depois detalhes editoriais e checklist. O modo inicial
+prioriza a escrita. Você pode alternar para o preview ou para a visualização
+dividida, que usa **o mesmo CSS do post publicado**.
 
-### Status
+### Começo rápido
+
+No topo ficam os campos que decidem se o post já pode existir:
+
+- **Título**: gera o slug enquanto você não editar o endereço manualmente.
+- **Visibilidade**: `draft`, `unlisted` ou `published`.
+- **Markdown**: corpo do artigo, com preview disponível na barra do editor.
+- **Estruturas iniciais**: escolha explicação, tutorial ou estudo de caso, ou
+  comece do zero. Substitua os trechos entre colchetes antes de publicar.
+
+Salve cedo. O editor guarda rascunhos locais, mas o Firestore é a fonte de
+verdade assim que você publica ou compartilha um link.
+
+### Visibilidade
 
 | Status | No índice, RSS e sitemap | Por link direto | Indexável |
 | --- | --- | --- | --- |
@@ -56,20 +71,26 @@ direita usando **o mesmo CSS do post publicado** — o que você vê é o result
 | `unlisted` | **não** | **sim** | não (`noindex`) |
 | `published` | sim | sim | sim |
 
-`unlisted` existe para o caso de compartilhar um estudo numa reunião interna
-antes (ou em vez) de publicar.
+`unlisted` existe para compartilhar um estudo em revisão, reunião interna ou
+pré-lançamento sem colocá-lo no índice público.
 
-### Idioma
+### Detalhes e checklist
 
-Cada post nasce em um idioma. Preencha **Tradução** com o slug do par no outro
-idioma só quando ele existir de fato — é isso que gera as tags `hreflang`, e
-declarar um par inexistente é pior do que não declarar nada.
+Depois que o texto principal estiver de pé, preencha os detalhes:
+
+- **Resumo**: alimenta cards, meta description, RSS e respostas de agentes.
+- **Tags**: ajudam o índice e agrupam assuntos recorrentes.
+- **Capa e alt text**: tornam o compartilhamento mais forte e acessível.
+- **Idioma e tradução**: declare o par traduzido só quando ele existir de fato.
+
+O checklist mostra pontos de atenção sobre título, URL, resumo, capa, tags e
+estrutura do texto antes de trocar a visibilidade para `published`.
 
 ### Slug
 
 O slug segue o título até você editá-lo à mão; depois disso ele é seu. Renomear
-um post já publicado **quebra os links compartilhados** — o editor move o
-documento, mas o endereço antigo passa a dar 404.
+um post já publicado **quebra links compartilhados**: o editor move o documento,
+mas o endereço antigo passa a dar 404.
 
 ---
 
@@ -176,6 +197,64 @@ A separação é o que mantém o índice barato: listar 40 posts baixa 40 docume
 pequenos, não 40 artigos inteiros. `status` é espelhado no documento do corpo e
 escrito no **mesmo `writeBatch`**, para as regras poderem filtrar sem um `get()`
 — um `get()` nas regras cobra uma leitura por requisição.
+
+### Publicação por agentes
+
+Agentes confiáveis publicam por `POST /agent/v1/posts` e revisam posts existentes
+por `PATCH /agent/v1/posts`. Não há `DELETE`: remoção continua sendo uma ação
+humana no admin.
+
+A autorização técnica é o cabeçalho `Authorization: Bearer <AGENT_PUBLISH_TOKEN>`.
+O `requestId` no corpo é uma correlação fornecida pelo chamador, útil para ligar
+a resposta e o último registro de publicação por agente ao pedido original.
+Ele não prova, por si só, que houve um pedido autorizado.
+
+A regra operacional para agentes confiáveis é publicar ou revisar somente após
+um pedido específico, por exemplo: "crie um artigo explicando APIs". Escolher
+pauta e publicar proativamente não é uma política tecnicamente aplicada por
+`requestId`; é uma instrução do agente e deve ser respeitada na orquestração que
+chama este endpoint.
+
+```json
+{
+  "requestId": "api-explainer-2026-09-28",
+  "post": {
+    "slug": "explicando-apis",
+    "lang": "pt",
+    "title": "Explicando APIs",
+    "subtitle": "Uma introdução prática",
+    "body": "## O que é uma API?\n\n...",
+    "tags": ["apis", "arquitetura"],
+    "status": "published"
+  }
+}
+```
+
+Envie esse JSON com `Content-Type: application/json` para
+`POST https://marcusboni.com.br/agent/v1/posts`. Para uma revisão, envie
+`PATCH` para a mesma URL com `requestId`, `post.slug` e somente os campos que
+quer alterar. A revisão mantém título, Markdown, capa, tags e demais campos
+omitidos. `POST` retorna `201`; `PATCH` retorna `200`. Um slug ocupado ou uma
+revisão concorrente retorna `409`, e um token ausente ou inválido retorna `401`.
+
+Credenciais ficam somente no Netlify:
+
+- `AGENT_PUBLISH_TOKEN` protege o endpoint contra chamadas externas.
+- `FIREBASE_PROJECT_ID` ou `VITE_FIREBASE_PROJECT_ID` identifica o projeto.
+- `FIREBASE_SERVICE_ACCOUNT_EMAIL` e `FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY`
+  assinam o acesso server-side ao Firestore.
+
+Crie uma conta de serviço dedicada à publicação, com o menor acesso ao Firestore
+que permita ler e gravar os posts. Guarde a chave privada apenas nas variáveis
+secretas do Netlify e faça a rotação se ela for exposta. Chamadas com essa conta
+usam IAM e não passam por `firestore.rules`; o limite a posts é imposto pelo
+endpoint e pelo sigilo das credenciais, não pelas regras do cliente.
+
+O endpoint grava o mesmo layout do admin: metadados em `posts/{slug}` e Markdown
+em `posts/{slug}/content/main`, com `status` espelhado no corpo e `publishedAt`
+preservado em revisões. `PATCH` só revisa posts que já estejam `published` ou
+`unlisted`, preserva campos omitidos e usa a versão lida do Firestore como
+precondição para evitar sobrescrever uma revisão concorrente.
 
 ### SEO
 

@@ -44,15 +44,29 @@ A full back-office for the portfolio, behind Firebase Auth:
   country (by timezone), a weekday × hour heat map, blog read-through rates, and
   CSV export. Every chart ships a table twin. Metric definitions and the colour
   rationale are in [`docs/ANALYTICS.md`](./docs/ANALYTICS.md).
-- **Messages** — inbox for the site's contact form (Firestore-backed).
+  The dashboard leads with what is pending — unread messages, open drafts and
+  every content gap that would reach a visitor — each row linking to the field
+  that fixes it.
+- **Messages** — inbox for the site's contact form: search, list + detail, a
+  reply that is already addressed and quoted, CSV export.
+- **Blog** — list and split-pane Markdown editor (live preview with the
+  published post's CSS, publish checklist, cover + alt text, publish date,
+  translation pair), plus one-click publish/unpublish and browser-local draft
+  recovery.
+- **Media** — the Storage bucket grouped by post, flagging folders whose post no
+  longer exists.
 - **Content editing** — full CRUD over profile, projects, career timeline, tech
-  stack and socials. The public site hydrates from Firestore, falling back to the
-  static `src/data/profile.ts` data when Firebase is absent.
+  stack and socials: collapsed rows, drag or ↑/↓ reordering, per-field
+  validation, undo on removal. The public site hydrates from Firestore, falling
+  back to the static `src/data/profile.ts` data when Firebase is absent.
+- **Throughout** — `Ctrl+K` command palette, `Ctrl+S` save, toasts with undo,
+  typed confirmation on destructive actions, JSON export/import with a diff
+  preview, and a connection/env diagnostic in Ajustes.
 
 Firebase is **optional and lazy**: without env config the public site runs on the
 static data and `/admin` shows a demo mode; when configured, the SDK is loaded on
 demand so it never enters the public site's initial bundle. Full setup steps live
-in [`ADMIN_SETUP.md`](./ADMIN_SETUP.md).
+in [`docs/ADMIN_SETUP.md`](./docs/ADMIN_SETUP.md).
 
 ## Blog (`/blog`)
 
@@ -95,6 +109,10 @@ The site is built to be read by programs as well as people:
   work, stack and posts as typed JSON, with RFC 9457 `problem+json` errors. No
   authentication, no write operations. Built from the same `src/data/profile.ts`
   the site renders from.
+- **Agent publishing** uses a separate authenticated endpoint at
+  `/agent/v1/posts`: trusted agents can create articles and revise published
+  posts after a specific request. Its credential stays server-side and cannot
+  delete posts; setup and payloads are documented in [`docs/BLOG.md`](./docs/BLOG.md).
 - **[`/developers`](https://marcusboni.com.br/developers)** — a standalone,
   bundle-free portal documenting every machine-readable endpoint with `curl`
   examples, plus [`/agent-instructions.md`](https://marcusboni.com.br/agent-instructions.md)

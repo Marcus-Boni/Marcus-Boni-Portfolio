@@ -9,6 +9,13 @@ import {
 
 import { isFirebaseConfigured } from '@/lib/firebase-config'
 
+import {
+  ACCEPTED_IMAGE_TYPES,
+  ACCEPTED_VIDEO_TYPES,
+  MAX_UPLOAD_BYTES,
+  rejectImage,
+} from './media-limits'
+
 import type { MediaRef } from '../types'
 
 /**
@@ -29,18 +36,18 @@ const LQIP_WIDTH = 20
 
 const QUALITY = 0.82
 
-/** Hard ceiling mirrored in `storage.rules` — reject early, with a clear message. */
-export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
-
-export const ACCEPTED_IMAGE_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/avif',
-  'image/gif',
-]
-
-export const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/webm']
+/**
+ * Limits and the pre-flight check live in `media-limits.ts`, which imports no
+ * Firebase code — that is what lets the admin validate a dropped file without
+ * loading the Storage SDK. Re-exported here so existing call sites keep one
+ * import.
+ */
+export {
+  ACCEPTED_IMAGE_TYPES,
+  ACCEPTED_VIDEO_TYPES,
+  MAX_UPLOAD_BYTES,
+  rejectImage,
+}
 
 function storage() {
   if (!isFirebaseConfigured) {
@@ -112,14 +119,8 @@ export async function uploadImage(
 ): Promise<MediaRef> {
   const { alt = '', caption, folder = 'library', onProgress } = options
 
-  if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-    throw new Error(`Formato não suportado: ${file.type || 'desconhecido'}`)
-  }
-  if (file.size > MAX_UPLOAD_BYTES) {
-    throw new Error(
-      `Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)} MB). Limite: 10 MB.`,
-    )
-  }
+  const rejection = rejectImage(file)
+  if (rejection) throw new Error(rejection)
 
   const bitmap = await createImageBitmap(file)
   try {
