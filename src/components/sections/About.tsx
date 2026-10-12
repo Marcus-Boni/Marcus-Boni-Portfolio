@@ -4,15 +4,20 @@ import { useLanguage } from '@/i18n/LanguageContext'
 import { gsap } from '@/animations/gsap'
 import { BIRTH_DATE, calculateAge } from '@/lib/age'
 import { SectionHeading } from '@/components/ui/SectionHeading'
+import { CodePortrait } from '@/components/ui/CodePortrait'
 
 /**
  * Editorial about: an oversized serif statement revealed line by line,
- * a parallax duotone portrait, and a mono fact sheet.
+ * a portrait assembled from code, and a mono fact sheet.
  */
 export function About() {
   const { t } = useLanguage()
   const { content } = useSiteContent()
   const { profile } = content
+  // Older CMS content points to the GitHub redirect. The same author portrait
+  // is already hosted locally, optimized and safe to sample into a canvas.
+  const portraitSrc = /^https:\/\/github\.com\/Marcus-Boni\.png(?:\?.*)?$/.test(profile.avatar)
+    ? '/portrait-640.webp' : profile.avatar
   const age = calculateAge(BIRTH_DATE)
   const statementRef = useScrollReveal<HTMLParagraphElement>({
     mode: 'lines',
@@ -72,27 +77,8 @@ export function About() {
         </div>
 
         <div className="lg:col-span-4">
-          <div className="relative ml-auto aspect-[3/4] max-w-xs overflow-hidden lg:-mt-10">
-            <img
-              data-portrait
-              src={profile.avatar}
-              srcSet={
-                profile.avatar === '/portrait-640.webp'
-                  ? '/portrait-320.webp 320w, /portrait-640.webp 640w'
-                  : undefined
-              }
-              sizes="(min-width: 640px) 320px, 80vw"
-              alt={t.about.portraitAlt}
-              loading="lazy"
-              decoding="async"
-              width={640}
-              height={640}
-              className="h-[116%] w-full object-cover grayscale transition-all duration-700 hover:grayscale-0"
-            />
-            <span className="absolute bottom-3 left-3 bg-ink/80 px-3 py-1 font-mono text-[10px] tracking-[0.25em] text-ember uppercase">
-              {t.about.figcaption}
-            </span>
-          </div>
+          <CodePortrait src={portraitSrc} alt={t.about.portraitAlt}
+            caption={t.about.figcaption} />
         </div>
       </div>
 

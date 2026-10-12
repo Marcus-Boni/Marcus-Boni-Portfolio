@@ -38,6 +38,7 @@ export interface Translation {
     p2: string
     figcaption: string
     portraitAlt: string
+    replayPortrait: string
     facts: (repoCount: number) => Fact[]
   }
   work: {
@@ -167,6 +168,7 @@ export const translations: Record<Locale, Translation> = {
       p2: 'Acredito em código limpo, interfaces honestas e na ideia de que boa engenharia se mede pelo que ela simplifica na vida de quem usa.',
       figcaption: 'fig. 01 — o autor',
       portraitAlt: 'Retrato de Marcus Boni',
+      replayPortrait: 'Recriar retrato em código',
       facts: (repoCount) => [
         { label: 'Base', value: 'Espírito Santo, BR' },
         { label: 'Foco', value: 'Web Engineering' },
@@ -326,6 +328,7 @@ export const translations: Record<Locale, Translation> = {
       p2: 'I believe in clean code, honest interfaces, and the idea that good engineering is measured by what it simplifies in the lives of the people who use it.',
       figcaption: 'fig. 01 — the author',
       portraitAlt: 'Portrait of Marcus Boni',
+      replayPortrait: 'Rebuild portrait from code',
       facts: (repoCount) => [
         { label: 'Based in', value: 'Espírito Santo, BR' },
         { label: 'Focus', value: 'Web Engineering' },
