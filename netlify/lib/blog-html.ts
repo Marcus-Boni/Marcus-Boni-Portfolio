@@ -1,6 +1,9 @@
-import { createElement as h, type ReactNode } from 'react'
+// React ships CommonJS. Deno (Netlify's edge bundler) exposes only the default
+// export of a CommonJS module, so named imports fail at packaging time even
+// though Vite and Vitest accept them. Keep these as default imports.
+import React, { type ReactNode } from 'react'
 // The browser entry avoids Node streams in Netlify's Deno runtime.
-import { renderToStaticMarkup } from 'react-dom/server.browser'
+import ReactDOMServer from 'react-dom/server.browser'
 import Markdown, { defaultUrlTransform, type Components } from 'react-markdown'
 import rehypeSlug from 'rehype-slug'
 import remarkDirective from 'remark-directive'
@@ -10,6 +13,9 @@ import { remarkBlogDirectives } from '../../src/blog/lib/remark-blog.ts'
 import { articleHeadings } from '../../src/blog/lib/article-headings.ts'
 import { postUrl, safeImage, SITE_URL, validDate } from './blog-seo.ts'
 import { escapeHtml, type EdgePost, type EdgeMedia } from './firestore.ts'
+
+const h = React.createElement
+const { renderToStaticMarkup } = ReactDOMServer
 
 type BodyMedia = Record<string, EdgeMedia>
 type DirectiveProps = { children?: ReactNode; [key: string]: unknown }
