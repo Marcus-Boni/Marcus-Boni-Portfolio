@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { usePosts } from '@/admin/PostsContext'
 import { MarkdownEditor } from '@/admin/components/MarkdownEditor'
 import { MediaUploader } from '@/admin/components/MediaUploader'
+import { SeoPreview } from '@/admin/components/SeoPreview'
 import { TagInput } from '@/admin/components/TagInput'
 import { useConfirm } from '@/admin/components/overlays'
 import { useToast } from '@/admin/components/toast'
@@ -442,7 +443,11 @@ export function BlogEditor() {
       <Card className="mb-6 border-bone/20 bg-ink-soft/80">
         <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_13rem] md:items-end">
           <div>
-            <Field label="Título" required counter={[post.title.trim().length, 70]}>
+            <Field
+              label="Título"
+              required
+              hint="Claro, específico e no idioma do artigo. O Google pode ajustar a exibição na busca."
+            >
               <TextInput
                 value={post.title}
                 onChange={(event) => onTitleChange(event.target.value)}
@@ -587,7 +592,7 @@ export function BlogEditor() {
             <Field
               label="Resumo"
               counter={[post.excerpt.length, 200]}
-              hint="Cards, meta description e RSS. Vazio gera automático a partir do corpo."
+              hint="Cards, meta description e RSS. Cerca de 150–160 caracteres é uma referência, sem garantir a exibição. Vazio usa o corpo."
             >
               <TextArea
                 value={post.excerpt}
@@ -690,7 +695,7 @@ export function BlogEditor() {
         <div className="mt-6 border-t border-line pt-5">
           <SectionHeader
             label="Capa"
-            hint="Vira a imagem do card social. Sem ela, o compartilhamento sai sem imagem."
+            hint="Vira a imagem do card social. Sem capa própria, é usada a imagem padrão do site."
             action={
               <div className="flex items-center gap-3">
                 {post.cover && (
@@ -772,6 +777,7 @@ export function BlogEditor() {
             />
           )}
         </div>
+        <SeoPreview post={post} />
         </div>
       </details>
 
@@ -780,10 +786,10 @@ export function BlogEditor() {
         <SectionHeader
           label={
             pending === 0
-              ? 'Pronto para publicar'
-              : `Checklist de publicação — ${pending} pendente(s)`
+              ? 'Checklist de publicação sem pontos pendentes'
+              : `Checklist de publicação — ${pending} ponto(s) para revisar`
           }
-          hint="Nada aqui bloqueia o salvar. É o que garante que o post apareça bem no Google e no LinkedIn."
+          hint="Recomendações editoriais; não bloqueiam salvar e não garantem posição na busca. Revise clareza, fontes e utilidade antes de publicar."
           action={
             <button
               type="button"

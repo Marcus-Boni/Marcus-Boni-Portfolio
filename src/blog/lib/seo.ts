@@ -1,63 +1,52 @@
 import { useEffect } from 'react'
 
 import type { PostMeta } from '@/blog/types'
+import { profile, socials } from '@/data/profile'
+import type { Locale } from '@/i18n/translations'
+import {
+  articleSchema, BLOG_DESCRIPTION, BLOG_TITLE, blogSchema, breadcrumbSchema,
+  DEFAULT_OG, DEFAULT_OG_META, postDescription, postUrl, reciprocalTranslation, safeImage,
+  SITE_NAME, SITE_URL, validDate,
+} from '../../../netlify/lib/blog-seo'
 
 import { formatPostDate } from './text'
 
-/**
- * Client-side `<head>` management for blog routes.
- *
- * This is the *second* half of the SEO story, not the whole of it. Social
- * crawlers (LinkedIn, Slack, WhatsApp, X) never run JavaScript, so the tags
- * that matter for link previews are injected at the edge before the HTML is
- * served — see `netlify/edge-functions/blog-meta.ts`. What runs here keeps the
- * document honest during client-side navigation, where no new HTML is fetched:
- * the tab title, the canonical URL, and the structured data.
- *
- * Both paths write the same values, so a crawler and a reader always agree.
- */
+export { SITE_URL }
 
-export const SITE_URL = 'https://marcusboni.com.br'
-const SITE_NAME = 'Marcus Boni'
-const DEFAULT_OG = `${SITE_URL}/og-image.png`
+function removeHead(selector: string) {
+  document.head.querySelectorAll(selector).forEach((node) => node.remove())
+}
 
-function setMeta(selector: string, attr: 'name' | 'property', key: string, content: string) {
-  let tag = document.head.querySelector<HTMLMetaElement>(selector)
-  if (!tag) {
-    tag = document.createElement('meta')
-    tag.setAttribute(attr, key)
-    document.head.appendChild(tag)
-  }
+function setMeta(attr: 'name' | 'property', key: string, content: string) {
+  removeHead(`meta[${attr}="${key}"]`)
+  const tag = document.createElement('meta')
+  tag.setAttribute(attr, key)
   tag.setAttribute('content', content)
+  document.head.appendChild(tag)
 }
 
-function setLink(rel: string, href: string, hreflang?: string) {
-  const selector = hreflang
-    ? `link[rel="${rel}"][hreflang="${hreflang}"]`
-    : `link[rel="${rel}"]:not([hreflang])`
-  let tag = document.head.querySelector<HTMLLinkElement>(selector)
-  if (!tag) {
-    tag = document.createElement('link')
-    tag.rel = rel
-    if (hreflang) tag.hreflang = hreflang
-    document.head.appendChild(tag)
-  }
-  tag.href = href
+function setLink(rel: string, href: string, attributes: Record<string, string> = {}) {
+  const tag = document.createElement('link')
+  tag.setAttribute('rel', rel)
+  tag.setAttribute('href', href)
+  for (const [key, value] of Object.entries(attributes)) tag.setAttribute(key, value)
+  document.head.appendChild(tag)
 }
-
-const JSONLD_ID = 'blog-jsonld'
 
 function setJsonLd(data: object | null) {
-  const existing = document.getElementById(JSONLD_ID)
-  if (!data) {
-    existing?.remove()
-    return
-  }
-  const script =
-    existing ?? Object.assign(document.createElement('script'), { id: JSONLD_ID })
+  // Older delivered HTML used an anonymous script. Remove it too so
+  // navigation never leaves two conflicting articles in the same document.
+  document.head.querySelectorAll('script[type="application/ld+json"]').forEach((node) => {
+    if (node.id === 'blog-jsonld' || node.id === 'site-jsonld' || /"@type"\s*:\s*"(?:BlogPosting|Blog|BreadcrumbList)"/.test(node.textContent ?? '')) {
+      node.remove()
+    }
+  })
+  if (!data) return
+  const script = document.createElement('script')
+  script.id = 'blog-jsonld'
   script.setAttribute('type', 'application/ld+json')
   script.textContent = JSON.stringify(data)
-  if (!existing) document.head.appendChild(script)
+  document.head.appendChild(script)
 }
 
 interface HeadInput {
@@ -65,123 +54,135 @@ interface HeadInput {
   description: string
   path: string
   image?: string
+  imageAlt?: string
   type?: 'website' | 'article'
-  locale?: 'pt' | 'en'
+  locale?: Locale
+  noindex?: boolean
+  canonical?: boolean
   jsonLd?: object | null
 }
 
-function applyHead({
-  title,
-  description,
-  path,
-  image = DEFAULT_OG,
-  type = 'website',
-  locale = 'pt',
-  jsonLd = null,
+function applyHead({ title, description, path, image = DEFAULT_OG, imageAlt = SITE_NAME,
+  type = 'website', locale = 'pt', noindex = false, canonical = true, jsonLd = null,
 }: HeadInput) {
   const url = `${SITE_URL}${path}`
   document.title = title
-
-  setMeta('meta[name="description"]', 'name', 'description', description)
-  setMeta('meta[name="title"]', 'name', 'title', title)
-  setLink('canonical', url)
-
-  setMeta('meta[property="og:title"]', 'property', 'og:title', title)
-  setMeta('meta[property="og:description"]', 'property', 'og:description', description)
-  setMeta('meta[property="og:url"]', 'property', 'og:url', url)
-  setMeta('meta[property="og:image"]', 'property', 'og:image', image)
-  setMeta('meta[property="og:type"]', 'property', 'og:type', type)
-  setMeta('meta[property="og:site_name"]', 'property', 'og:site_name', SITE_NAME)
-  setMeta(
-    'meta[property="og:locale"]',
-    'property',
-    'og:locale',
-    locale === 'pt' ? 'pt_BR' : 'en_US',
-  )
-
-  setMeta('meta[property="twitter:title"]', 'property', 'twitter:title', title)
-  setMeta(
-    'meta[property="twitter:description"]',
-    'property',
-    'twitter:description',
-    description,
-  )
-  setMeta('meta[property="twitter:image"]', 'property', 'twitter:image', image)
-  setMeta('meta[property="twitter:url"]', 'property', 'twitter:url', url)
-
+  document.documentElement.lang = locale === 'pt' ? 'pt-BR' : 'en'
+  removeHead('meta[property^="article:"]')
+  removeHead('meta[property="og:locale:alternate"]')
+  removeHead('link[rel="canonical"]')
+  removeHead('link[rel="alternate"][hreflang]')
+  removeHead('link[rel="alternate"][type="text/markdown"]')
+  removeHead('meta[name^="twitter:"]')
+  removeHead('meta[property^="twitter:"]')
+  removeHead('meta[property="og:image:width"]')
+  removeHead('meta[property="og:image:height"]')
+  removeHead('meta[property="og:image:type"]')
+  setMeta('name', 'description', description)
+  setMeta('name', 'title', title)
+  setMeta('name', 'robots', noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large')
+  if (canonical) {
+    setLink('canonical', url)
+    setLink('alternate', url, { type: 'text/markdown' })
+  }
+  for (const [key, value] of Object.entries({
+    title, description, url, image, type, site_name: SITE_NAME,
+    locale: locale === 'pt' ? 'pt_BR' : 'en_US', 'image:alt': imageAlt,
+  })) setMeta('property', `og:${key}`, value)
+  if (image === DEFAULT_OG) {
+    for (const [key, value] of Object.entries(DEFAULT_OG_META)) setMeta('property', `og:image:${key}`, value)
+  }
+  for (const [key, value] of Object.entries({
+    card: 'summary_large_image', title, description, image, url, 'image:alt': imageAlt,
+  })) setMeta('name', `twitter:${key}`, value)
   setJsonLd(jsonLd)
 }
 
-/** Head for the blog index. */
-export function useBlogIndexHead(title: string, description: string) {
-  useEffect(() => {
-    applyHead({ title: `${title} — ${SITE_NAME}`, description, path: '/blog' })
-  }, [title, description])
-}
-
-/** Head for a single post, including `Article` structured data. */
-export function usePostHead(post: PostMeta | null) {
-  useEffect(() => {
-    if (!post) return
-
-    const path = `/blog/${post.slug}`
-    const description = post.excerpt || post.subtitle || ''
-
-    applyHead({
-      title: `${post.title} — ${SITE_NAME}`,
-      description,
-      path,
-      image: post.cover?.src ?? DEFAULT_OG,
-      type: 'article',
-      locale: post.lang,
-      jsonLd: {
-        '@context': 'https://schema.org',
-        '@type': 'BlogPosting',
-        headline: post.title,
-        description,
-        image: post.cover?.src ?? DEFAULT_OG,
-        datePublished: post.publishedAt ?? undefined,
-        dateModified: post.updatedAt,
-        inLanguage: post.lang === 'pt' ? 'pt-BR' : 'en',
-        keywords: post.tags.join(', ') || undefined,
-        author: {
-          '@type': 'Person',
-          name: SITE_NAME,
-          url: SITE_URL,
-        },
-        publisher: { '@type': 'Person', name: SITE_NAME, url: SITE_URL },
-        mainEntityOfPage: { '@type': 'WebPage', '@id': `${SITE_URL}${path}` },
-      },
-    })
-
-    // A translated counterpart makes the pair eligible for hreflang; a lone
-    // post must not claim one, or Google sees a broken alternate.
-    if (post.translationOf) {
-      const other = post.lang === 'pt' ? 'en' : 'pt'
-      setLink('alternate', `${SITE_URL}${path}`, post.lang)
-      setLink('alternate', `${SITE_URL}/blog/${post.translationOf}`, other)
-    } else {
-      document.head
-        .querySelectorAll('link[rel="alternate"][hreflang]')
-        .forEach((node) => node.remove())
-    }
-  }, [post])
-}
-
-/** Restores the portfolio's own head when leaving the blog. */
-export function restoreSiteHead() {
+/** Shared values keep a direct visit and SPA navigation consistent. */
+export function applyBlogIndexHead(posts: PostMeta[] = [], locale: Locale = 'pt') {
   applyHead({
-    title: 'Marcus Boni — Software Engineer',
-    description:
-      'Marcus Boni — Brazilian software engineer crafting robust, modern web applications. React, TypeScript, Next.js, and backend solutions.',
-    path: '/',
+    title: BLOG_TITLE, description: BLOG_DESCRIPTION, path: '/blog', locale,
+    jsonLd: { '@context': 'https://schema.org', ...blogSchema(posts) },
   })
-  document.head
-    .querySelectorAll('link[rel="alternate"][hreflang]')
-    .forEach((node) => node.remove())
 }
 
-/** Shared by the post header and the edge function's `<meta>` output. */
-export function postDateLine(post: PostMeta, locale: 'pt' | 'en'): string {
+export function useBlogIndexHead(posts: PostMeta[], locale: Locale) {
+  useEffect(() => applyBlogIndexHead(posts, locale), [posts, locale])
+}
+
+export function applyPostHead(post: PostMeta, translation?: PostMeta | null) {
+  const url = postUrl(post.slug)
+  applyHead({
+    title: `${post.title} — ${SITE_NAME}`, description: postDescription(post),
+    path: new URL(url).pathname, image: safeImage(post.cover?.src) ?? DEFAULT_OG,
+    imageAlt: post.cover?.alt || post.title, type: 'article', locale: post.lang,
+    noindex: post.status !== 'published',
+    jsonLd: { '@context': 'https://schema.org', '@graph': [articleSchema(post), breadcrumbSchema(post)] },
+  })
+  const published = validDate(post.publishedAt)
+  const modified = validDate(post.updatedAt)
+  if (published) setMeta('property', 'article:published_time', published)
+  if (modified) setMeta('property', 'article:modified_time', modified)
+  setMeta('property', 'article:author', `${SITE_URL}/about`)
+  for (const tag of post.tags) {
+    const meta = document.createElement('meta')
+    meta.setAttribute('property', 'article:tag')
+    meta.setAttribute('content', tag)
+    document.head.appendChild(meta)
+  }
+  if (reciprocalTranslation(post, translation) && translation) {
+    setLink('alternate', url, { hreflang: post.lang === 'pt' ? 'pt-BR' : 'en' })
+    setLink('alternate', postUrl(translation.slug), { hreflang: translation.lang === 'pt' ? 'pt-BR' : 'en' })
+    setLink('alternate', post.lang === 'pt' ? url : postUrl(translation.slug), { hreflang: 'x-default' })
+    setMeta('property', 'og:locale:alternate', translation.lang === 'pt' ? 'pt_BR' : 'en_US')
+  }
+}
+
+export function applyMissingPostHead(locale: Locale = 'pt', path = '/blog') {
+  applyHead({
+    title: `${locale === 'pt' ? 'Post não encontrado' : 'Post not found'} — ${SITE_NAME}`,
+    description: locale === 'pt' ? 'Este artigo não existe. Consulte os artigos publicados no blog.' : 'This article does not exist. Browse the published articles on the blog.',
+    path, locale, noindex: true, canonical: false,
+  })
+}
+
+export function usePostHead(post: PostMeta | null, status: 'loading' | 'ready' | 'error',
+  translation: PostMeta | null, locale: Locale, path: string) {
+  useEffect(() => {
+    if (post) applyPostHead(post, translation)
+    else if (status === 'ready') applyMissingPostHead(locale, path)
+  }, [post, status, translation, locale, path])
+}
+
+/** Restores the portfolio metadata after client-side navigation. */
+export function restoreSiteHead(locale: Locale = 'pt') {
+  const title = locale === 'pt' ? 'Marcus Boni — Engenheiro de Software' : 'Marcus Boni — Software Engineer'
+  const description = locale === 'pt'
+    ? 'Marcus Boni, engenheiro de software no Espírito Santo. Projetos com React, TypeScript e Node.js, integrações e artigos sobre desenvolvimento web.'
+    : 'Marcus Boni — Brazilian software engineer crafting robust, modern web applications. React, TypeScript, Next.js, and backend solutions.'
+  applyHead({
+    title, description,
+    path: '/', locale,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        { '@type': 'Person', '@id': `${SITE_URL}/about#person`, name: profile.name,
+          alternateName: profile.fullName, url: `${SITE_URL}/about`,
+          image: `${SITE_URL}${profile.avatar}`, jobTitle: profile.role,
+          sameAs: socials.map((link) => link.url) },
+        { '@type': 'WebSite', '@id': `${SITE_URL}/#website`, url: `${SITE_URL}/`,
+          name: SITE_NAME, inLanguage: locale === 'pt' ? 'pt-BR' : 'en',
+          publisher: { '@id': `${SITE_URL}/about#person` } },
+        { '@type': 'WebPage', '@id': `${SITE_URL}/#webpage`, url: `${SITE_URL}/`,
+          name: title, description, inLanguage: locale === 'pt' ? 'pt-BR' : 'en',
+          isPartOf: { '@id': `${SITE_URL}/#website` }, about: { '@id': `${SITE_URL}/about#person` } },
+      ],
+    },
+  })
+  const script = document.getElementById('blog-jsonld')
+  if (script) script.id = 'site-jsonld'
+}
+
+export function postDateLine(post: PostMeta, locale: Locale): string {
   return formatPostDate(post.publishedAt, locale)
 }

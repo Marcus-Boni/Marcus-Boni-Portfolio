@@ -17,7 +17,7 @@ function PostMetaLine({ post, className }: { post: PostMeta; className?: string 
         className,
       )}
     >
-      <span>{formatPostDate(post.publishedAt, locale)}</span>
+      <time dateTime={post.publishedAt ?? undefined}>{formatPostDate(post.publishedAt, locale)}</time>
       <span aria-hidden className="text-line">
         /
       </span>
@@ -96,9 +96,9 @@ export function PostRow({ post }: { post: PostMeta }) {
         className="group flex flex-col gap-4 border-b border-line py-8 transition-colors duration-500 hover:border-ember/40 md:flex-row md:items-baseline md:gap-10"
       >
         <div className="min-w-0 flex-1">
-          <h3 className="font-display text-[clamp(1.5rem,2.6vw,2.25rem)] leading-[1.1] text-bone">
+          <h2 className="font-display text-[clamp(1.5rem,2.6vw,2.25rem)] leading-[1.1] text-bone">
             <HoverItalic text={post.title} />
-          </h3>
+          </h2>
           {post.excerpt && (
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-bone-dim md:text-[15px]">
               {post.excerpt}

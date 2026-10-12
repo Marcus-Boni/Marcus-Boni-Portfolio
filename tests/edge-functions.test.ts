@@ -56,6 +56,8 @@ describe('netlify/edge-functions', () => {
     expect(entries.filter((entry) => entry.isDirectory())).toEqual([])
   })
 
+  // blog-meta pulls in the whole Markdown pipeline; a cold import can exceed
+  // the 5 s default on a busy machine, and a flaky test here fails the deploy.
   it.each(files)('%s default-exports a function', async (name) => {
     const module = await load(name)
     expect(
@@ -63,7 +65,7 @@ describe('netlify/edge-functions', () => {
       `${name} is packaged as an edge function, so it must default-export a handler. ` +
         'Shared modules belong in netlify/lib/.',
     ).toBe('function')
-  })
+  }, 30_000)
 
   it.each(files)('%s declares its routing', async (name) => {
     const module = await load(name)

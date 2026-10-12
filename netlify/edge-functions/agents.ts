@@ -17,7 +17,7 @@ import {
   postMarkdown,
   privacyMarkdown,
 } from '../lib/agent-docs.ts'
-import { getPostBody, isConfigured, listPublished, lookupPost } from '../lib/firestore.ts'
+import { getPostBody, isConfigured, listAllPublished, lookupPost } from '../lib/firestore.ts'
 import { blogSlug, matchRoute, type RouteKind } from '../lib/routes.ts'
 
 /**
@@ -45,6 +45,7 @@ const MARKDOWN_TYPE = 'text/markdown; charset=utf-8'
 interface MarkdownDoc {
   body: string
   status: number
+  noindex?: boolean
 }
 
 export default async function handler(request: Request, context: Context) {
@@ -145,13 +146,16 @@ async function buildMarkdown(
     case 'privacy':
       return { body: privacyMarkdown(), status: 200 }
 
-    case 'blog-index':
-      // An empty list is a real answer for a blog with no posts yet, and the
-      // page's own copy is worth serving either way.
+    case 'blog-index': {
+      // A confirmed empty collection is a real answer; an outage must not
+      // announce the removal of all published articles.
+      const result = isConfigured ? await listAllPublished() : { state: 'found' as const, posts: [] }
+      if (result.state === 'unavailable') return { body: '# Blog temporariamente indisponível\n\nTente novamente em alguns minutos.\n', status: 503 }
       return {
-        body: blogIndexMarkdown(isConfigured ? await listPublished() : []),
+        body: blogIndexMarkdown(result.posts),
         status: 200,
       }
+    }
 
     case 'blog-post':
       return await buildPostMarkdown(url.pathname)
@@ -174,6 +178,7 @@ async function buildPostMarkdown(pathname: string): Promise<MarkdownDoc | null> 
   return {
     body: postMarkdown(lookup.post, content.body, content.media),
     status: 200,
+    noindex: lookup.post.status === 'unlisted',
   }
 }
 
@@ -181,13 +186,14 @@ async function buildPostMarkdown(pathname: string): Promise<MarkdownDoc | null> 
 
 /** A Markdown representation, with the cache policy its status deserves. */
 function markdown(doc: MarkdownDoc, request: Request): Response {
+  const noindex = doc.noindex || doc.status !== 200
+  const cache = noindex ? 'no-store' : 'public, max-age=300'
   return text(doc.body, doc.status, request, {
     'content-type': MARKDOWN_TYPE,
-    'cache-control':
-      doc.status === 200
-        ? 'public, max-age=300, stale-while-revalidate=86400'
-        : // A 404 must not stick: the slug may be published a minute from now.
-          'public, max-age=0, must-revalidate',
+    'cache-control': cache,
+    'Netlify-CDN-Cache-Control': noindex ? 'no-store' : 'public, s-maxage=300',
+    ...(noindex ? { 'X-Robots-Tag': 'noindex, follow' } : {}),
+    ...(doc.status === 503 ? { 'Retry-After': '300' } : {}),
   })
 }
 

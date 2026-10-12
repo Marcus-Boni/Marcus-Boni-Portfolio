@@ -30,7 +30,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, locale)
-    document.documentElement.lang = locale === 'pt' ? 'pt-BR' : 'en'
+    // The article's language belongs to its content, even when the reader
+    // chooses another language for navigation controls.
+    if (!/^\/blog\/[^/]+\/?$/.test(window.location.pathname)) {
+      document.documentElement.lang = locale === 'pt' ? 'pt-BR' : 'en'
+    }
   }, [locale])
 
   const value = useMemo(

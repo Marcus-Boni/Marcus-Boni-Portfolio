@@ -1,3 +1,4 @@
+import { stripMarkdown } from '@/blog/lib/text'
 import type { Post, PostMeta } from '@/blog/types'
 import type {
   ExperienceProject,
@@ -185,8 +186,7 @@ export function postIssues(posts: PostMeta[]): Issue[] {
     if (post.status !== 'published') continue
     const problems: string[] = []
     if (!post.excerpt.trim()) problems.push('sem resumo')
-    if (!post.cover) problems.push('sem capa')
-    else if (!post.cover.alt.trim()) problems.push('capa sem texto alternativo')
+    if (post.cover && !post.cover.alt.trim()) problems.push('capa sem texto alternativo')
     if (post.tags.length === 0) problems.push('sem tags')
     if (problems.length === 0) continue
     issues.push({
@@ -207,6 +207,34 @@ export interface Check {
   hint?: string
 }
 
+/** Ignore Markdown examples so code samples do not trigger editorial warnings. */
+function proseMarkdown(body: string): string {
+  let fence: { marker: string; length: number } | null = null
+  return body
+    .split('\n')
+    .map((line) => {
+      const match = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line)
+      if (fence) {
+        if (
+          match &&
+          match[1][0] === fence.marker &&
+          match[1].length >= fence.length &&
+          !match[2].trim()
+        ) {
+          fence = null
+        }
+        return ''
+      }
+      if (match) {
+        fence = { marker: match[1][0], length: match[1].length }
+        return ''
+      }
+      return /^ {4}|^\t/.test(line) ? '' : line
+    })
+    .join('\n')
+    .replace(/(`+)[\s\S]*?\1/g, '')
+}
+
 /**
  * What "ready to publish" means for a post.
  *
@@ -217,30 +245,62 @@ export interface Check {
 export function publishChecklist(post: Post): Check[] {
   const titleLength = post.title.trim().length
   const excerpt = post.excerpt.trim()
-  const bodyWords = post.body.trim() ? post.body.trim().split(/\s+/).length : 0
+  const body = proseMarkdown(post.body)
+  const bodyWords = stripMarkdown(body).split(/\s+/).filter(Boolean).length
+  const referenceKey = (value: string) => value.trim().replace(/\s+/g, ' ').toLowerCase()
+  const references = new Map(
+    [...body.matchAll(/^ {0,3}\[([^\]]+)\]:\s*(?:<([^>]+)>|(\S+))/gm)].map((match) =>
+      [referenceKey(match[1]), match[2] ?? match[3]],
+    ),
+  )
+  const images = [
+    ...[...body.matchAll(/!\[([^\]]*)\]\(\s*(?:<([^>]+)>|([^\s)]+))/g)].map((match) =>
+      ({ alt: match[1], url: match[2] ?? match[3] }),
+    ),
+    ...[...body.matchAll(/!\[([^\]]*)\]\[([^\]]*)\]/g)].map((match) =>
+      ({ alt: match[1], url: references.get(referenceKey(match[2] || match[1])) ?? '' }),
+    ),
+  ]
+  const missingAlt = images.filter(({ alt, url }) => {
+    const mediaAlt = url.startsWith('media:') ? post.media?.[url.slice(6)]?.alt : ''
+    return !(alt.trim() || mediaAlt?.trim())
+  }).length
+  const links = [
+    ...[...body.matchAll(/(?<!!)\[([^\]]+)\]\(\s*(?:<([^>]+)>|([^\s)]+))/g)].map((match) =>
+      match[2] ?? match[3],
+    ),
+    ...[...body.matchAll(/(?<!!)\[([^\]]+)\]\[([^\]]*)\]/g)].map((match) =>
+      references.get(referenceKey(match[2] || match[1])) ?? '',
+    ),
+  ]
+  const internalLinks = links.filter((url) => {
+    return /^\/(?!\/)/.test(url) || /^https:\/\/marcusboni\.com\.br(?:\/|$)/i.test(url)
+  })
 
   return [
     {
-      label: 'Título entre 20 e 70 caracteres',
-      ok: titleLength >= 20 && titleLength <= 70,
-      hint: `${titleLength} caracteres — abaixo de 20 rende pouco no Google, acima de 70 é cortado.`,
+      label: 'Título claro e específico',
+      ok: titleLength > 0,
+      hint: `${titleLength} caracteres. Cerca de 50–60 costuma ser uma boa referência; o espaço disponível e a consulta variam, e o Google pode reescrever o título.`,
     },
     {
-      label: 'Slug curto e legível',
-      ok: post.slug.length > 0 && post.slug.length <= 60,
-      hint: post.slug ? `/blog/${post.slug}` : 'Defina o título para gerar o slug.',
+      label: 'URL legível, em minúsculas e com hífens',
+      ok: /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(post.slug),
+      hint: post.slug
+        ? `/blog/${post.slug} — mantenha a URL estável depois de publicar.`
+        : 'Defina o título para gerar o slug.',
     },
     {
-      label: 'Resumo escrito à mão',
-      ok: excerpt.length >= 60 && excerpt.length <= 200,
-      hint: `${excerpt.length}/200 — é a meta description e o texto do card. Vazio gera um automático.`,
+      label: 'Resumo específico para este artigo',
+      ok: excerpt.length > 0,
+      hint: `${excerpt.length}/200 caracteres. Cerca de 150–160 é uma referência editorial, sem tamanho obrigatório. Vazio usa o corpo; o Google pode mostrar outro trecho.`,
     },
     {
-      label: 'Capa com texto alternativo',
-      ok: Boolean(post.cover && post.cover.alt.trim()),
+      label: 'Imagem de compartilhamento disponível',
+      ok: !post.cover || Boolean(post.cover.alt.trim()),
       hint: post.cover
-        ? 'A capa existe; descreva a imagem para leitores de tela e para o OG.'
-        : 'Sem capa, o compartilhamento sai sem imagem.',
+        ? 'Descreva a capa para leitores de tela e para o card social.'
+        : 'Sem capa própria, o compartilhamento usa a imagem padrão do site. Uma capa específica ajuda a identificar o artigo.',
     },
     {
       label: 'Pelo menos uma tag',
@@ -248,14 +308,31 @@ export function publishChecklist(post: Post): Check[] {
       hint: 'As tags alimentam os filtros do índice.',
     },
     {
-      label: 'Corpo com mais de 150 palavras',
-      ok: bodyWords >= 150,
-      hint: `${bodyWords} palavras.`,
+      label: 'Conteúdo escrito para responder à dúvida do leitor',
+      ok: bodyWords > 0,
+      hint: `${bodyWords} palavras de texto. Não há mínimo para SEO: inclua exemplos, fontes e experiência própria quando ajudarem a responder ao tema.`,
     },
     {
-      label: 'Pelo menos um subtítulo (##)',
-      ok: /^##\s/m.test(post.body),
-      hint: 'Os títulos de seção montam o índice lateral do post.',
+      label: 'Seções organizadas com subtítulos',
+      ok: /^ {0,3}##\s/m.test(body) || /^.+\n {0,3}-{3,}\s*$/m.test(body),
+      hint: 'Use ## e ### em artigos com seções. ## monta o índice lateral; textos curtos podem dispensar seções.',
+    },
+    {
+      label: 'Título principal reservado ao cabeçalho do artigo',
+      ok: !/^ {0,3}#(?:\s|$)/m.test(body) && !/^.+\n {0,3}=+\s*$/m.test(body),
+      hint: 'O título do artigo já é o H1 da página. No corpo, comece as seções com ## para manter a hierarquia clara.',
+    },
+    {
+      label: 'Imagens do corpo com descrição alternativa',
+      ok: missingAlt === 0,
+      hint: missingAlt
+        ? `${missingAlt} imagem(ns) sem descrição. Descreva imagens informativas; alt vazio pode ser adequado para imagens decorativas.`
+        : 'Imagens informativas precisam de alt descritivo. Imagens decorativas podem usar alt vazio.',
+    },
+    {
+      label: 'Links internos úteis ao leitor',
+      ok: internalLinks.length > 0,
+      hint: 'Quando fizer sentido, conecte outros artigos ou páginas do portfólio com texto descritivo. Use fontes externas para sustentar afirmações; não há quantidade obrigatória de links.',
     },
   ]
 }

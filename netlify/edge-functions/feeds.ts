@@ -1,22 +1,20 @@
 import type { Config, Context } from '@netlify/edge-functions'
 
-import { escapeHtml, isConfigured, listPublished, type EdgePost } from '../lib/firestore.ts'
+import { escapeHtml, isConfigured, listAllPublished, type EdgePost } from '../lib/firestore.ts'
+import { postUrl, reciprocalTranslation, SITE_URL, SITE_NAME, validDate } from '../lib/blog-seo.ts'
 
 /**
  * Dynamic `/rss.xml` and `/sitemap.xml`.
  *
  * Both are generated from Firestore at request time, so publishing a post
- * makes it discoverable immediately — no rebuild, no stale feed. Only
+ * makes it discoverable without a rebuild. Clients may cache feeds briefly. Only
  * `published` posts appear: drafts are invisible and `unlisted` ones are
  * deliberately excluded, which is the whole point of that status.
  *
- * `public/sitemap.xml` stays in the repo as the fallback: if this function
- * cannot reach Firestore it hands the request back to the static file rather
- * than serving an empty sitemap, which search engines treat as a removal.
+ * Configured upstream failures return 503 with Retry-After instead of
+ * announcing that previously published URLs have disappeared.
  */
 
-const SITE_URL = 'https://marcusboni.com.br'
-const SITE_NAME = 'Marcus Boni'
 const AUTHOR_EMAIL = 'mgalvaoboni@gmail.com'
 
 /** Static routes that always belong in the sitemap. */
@@ -30,20 +28,24 @@ const STATIC_ROUTES: { path: string; priority: string; changefreq: string }[] = 
 ]
 
 export default async function handler(request: Request, context: Context) {
+  if (request.method !== 'GET' && request.method !== 'HEAD') return context.next()
   const { pathname } = new URL(request.url)
   const wantsRss = pathname === '/rss.xml'
 
   if (!isConfigured) {
-    return wantsRss ? xml(renderRss([])) : context.next()
+    const response = wantsRss ? xml(renderRss([])) : await context.next()
+    return request.method === 'HEAD' ? new Response(null, response) : response
   }
 
-  const posts = await listPublished()
-
-  // An empty result is ambiguous — no posts yet, or a failed read. Either way,
-  // for the sitemap the static file is the safer answer.
-  if (posts.length === 0 && !wantsRss) return context.next()
-
-  return xml(wantsRss ? renderRss(posts) : renderSitemap(posts))
+  const result = await listAllPublished()
+  if (result.state === 'unavailable' || result.posts.length + STATIC_ROUTES.length > 50000) {
+    return new Response(request.method === 'HEAD' ? null : 'Feed temporariamente indisponível.', {
+      status: 503, headers: { 'content-type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-store', 'Netlify-CDN-Cache-Control': 'no-store', 'Retry-After': '300' },
+    })
+  }
+  const response = xml(wantsRss ? renderRss(result.posts) : renderSitemap(result.posts))
+  return request.method === 'HEAD' ? new Response(null, response) : response
 }
 
 function xml(body: string): Response {
@@ -57,26 +59,24 @@ function xml(body: string): Response {
 }
 
 /** Date only — sitemap `lastmod` accepts W3C dates and full ISO is noise. */
-function isoDate(value: string | null): string {
-  if (!value) return new Date().toISOString().slice(0, 10)
-  const date = new Date(value)
-  return Number.isNaN(date.getTime())
-    ? new Date().toISOString().slice(0, 10)
-    : date.toISOString().slice(0, 10)
+function isoDate(value: string | null): string | undefined {
+  return validDate(value)?.slice(0, 10)
 }
 
-function rfc822(value: string | null): string {
-  const date = value ? new Date(value) : new Date()
-  return (Number.isNaN(date.getTime()) ? new Date() : date).toUTCString()
+function rfc822(value: string | null): string | undefined {
+  const valid = validDate(value)
+  return valid ? new Date(valid).toUTCString() : undefined
 }
 
 function renderSitemap(posts: EdgePost[]): string {
-  const newest = posts[0]?.publishedAt ?? null
+  const newest = posts.map((post) => validDate(post.updatedAt) ?? validDate(post.publishedAt))
+    .filter((value): value is string => Boolean(value)).sort().at(-1) ?? null
+  const bySlug = new Map(posts.map((post) => [post.slug, post]))
 
   const staticEntries = STATIC_ROUTES.map(
     ({ path, priority, changefreq }) => `  <url>
     <loc>${SITE_URL}${path}</loc>
-    <lastmod>${isoDate(path === '/blog' ? newest : null)}</lastmod>
+    ${path === '/blog' && isoDate(newest) ? `<lastmod>${isoDate(newest)}</lastmod>` : ''}
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>
   </url>`,
@@ -85,14 +85,17 @@ function renderSitemap(posts: EdgePost[]): string {
   const postEntries = posts.map((post) => {
     // A translated pair declares each other as alternates, which is what makes
     // Google serve the right language instead of picking one.
-    const alternates = post.translationOf
+    const counterpart = post.translationOf ? bySlug.get(post.translationOf) : undefined
+    const alternates = reciprocalTranslation(post, counterpart)
       ? `
-    <xhtml:link rel="alternate" hreflang="${post.lang}" href="${SITE_URL}/blog/${escapeHtml(post.slug)}"/>
-    <xhtml:link rel="alternate" hreflang="${post.lang === 'pt' ? 'en' : 'pt'}" href="${SITE_URL}/blog/${escapeHtml(post.translationOf)}"/>`
+    <xhtml:link rel="alternate" hreflang="${post.lang === 'pt' ? 'pt-BR' : 'en'}" href="${escapeHtml(postUrl(post.slug))}"/>
+    <xhtml:link rel="alternate" hreflang="${post.lang === 'pt' ? 'en' : 'pt-BR'}" href="${escapeHtml(postUrl(counterpart!.slug))}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeHtml(postUrl(post.lang === 'pt' ? post.slug : counterpart!.slug))}"/>`
       : ''
+    const modified = isoDate(post.updatedAt) ?? isoDate(post.publishedAt)
     return `  <url>
-    <loc>${SITE_URL}/blog/${escapeHtml(post.slug)}</loc>
-    <lastmod>${isoDate(post.updatedAt || post.publishedAt)}</lastmod>
+    <loc>${escapeHtml(postUrl(post.slug))}</loc>
+    ${modified ? `<lastmod>${modified}</lastmod>` : ''}
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>${alternates}
   </url>`
@@ -105,13 +108,17 @@ ${[...staticEntries, ...postEntries].join('\n')}
 }
 
 function renderRss(posts: EdgePost[]): string {
+  const newest = posts.map((post) => validDate(post.updatedAt) ?? validDate(post.publishedAt))
+    .filter((value): value is string => Boolean(value)).sort().at(-1) ?? null
+  const built = rfc822(newest)
   const items = posts.map((post) => {
-    const url = `${SITE_URL}/blog/${post.slug}`
+    const url = postUrl(post.slug)
+    const published = rfc822(post.publishedAt)
     return `    <item>
       <title>${escapeHtml(post.title)}</title>
       <link>${escapeHtml(url)}</link>
       <guid isPermaLink="true">${escapeHtml(url)}</guid>
-      <pubDate>${rfc822(post.publishedAt)}</pubDate>
+      ${published ? `<pubDate>${published}</pubDate>` : ''}
       <description>${escapeHtml(post.excerpt || post.subtitle || post.title)}</description>
       <dc:creator>${SITE_NAME}</dc:creator>
 ${post.tags.map((tag) => `      <category>${escapeHtml(tag)}</category>`).join('\n')}
@@ -126,7 +133,7 @@ ${post.tags.map((tag) => `      <category>${escapeHtml(tag)}</category>`).join('
     <description>Estudos, bastidores de projeto e notas técnicas de um engenheiro de software brasileiro.</description>
     <language>pt-br</language>
     <managingEditor>${AUTHOR_EMAIL} (${SITE_NAME})</managingEditor>
-    <lastBuildDate>${rfc822(posts[0]?.publishedAt ?? null)}</lastBuildDate>
+    ${built ? `<lastBuildDate>${built}</lastBuildDate>` : ''}
     <atom:link href="${SITE_URL}/rss.xml" rel="self" type="application/rss+xml"/>
 ${items.join('\n')}
   </channel>

@@ -29,6 +29,7 @@ export interface EdgePost {
   subtitle: string
   excerpt: string
   coverUrl: string | null
+  coverAlt?: string
   tags: string[]
   readingMinutes: number
   publishedAt: string | null
@@ -76,6 +77,7 @@ function decode(name: string, fields: Record<string, FsValue>): EdgePost {
     excerpt: str(fields.excerpt),
     // The cover is a nested map; `src` is the largest variant.
     coverUrl: fields.cover?.mapValue?.fields?.src?.stringValue ?? null,
+    coverAlt: fields.cover?.mapValue?.fields?.alt?.stringValue,
     tags: strArray(fields.tags),
     readingMinutes: num(fields.readingMinutes, 1),
     publishedAt: fields.publishedAt?.stringValue ?? null,
@@ -118,6 +120,7 @@ export async function lookupPost(slug: string): Promise<PostLookup> {
   try {
     const response = await fetch(`${BASE}/posts/${encodeURIComponent(slug)}`, {
       headers: { accept: 'application/json' },
+      signal: AbortSignal.timeout(8000),
     })
     if (response.status === 404 || response.status === 403) return { state: 'missing' }
     if (!response.ok) return { state: 'unavailable' }
@@ -136,12 +139,12 @@ export async function lookupPost(slug: string): Promise<PostLookup> {
 /** A post's Markdown source and its body images, or `null` when unreadable. */
 export async function getPostBody(
   slug: string,
-): Promise<{ body: string; media: Record<string, { src: string; alt?: string }> } | null> {
+): Promise<{ body: string; media: Record<string, EdgeMedia> } | null> {
   if (!isConfigured || !slug) return null
   try {
     const response = await fetch(
       `${BASE}/posts/${encodeURIComponent(slug)}/content/main`,
-      { headers: { accept: 'application/json' } },
+      { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(8000) },
     )
     if (!response.ok) return null
     const data = (await response.json()) as { fields?: Record<string, FsValue> }
@@ -155,28 +158,46 @@ export async function getPostBody(
   }
 }
 
-/** `media` is a map of id → MediaRef; only `src` and `alt` are needed here. */
+export interface EdgeMedia {
+  src: string
+  alt?: string
+  caption?: string
+  width?: number
+  height?: number
+}
+
+/** Preserve meaningful image captions and dimensions in the delivered HTML. */
 function decodeMedia(
   value: FsValue | undefined,
-): Record<string, { src: string; alt?: string }> {
+): Record<string, EdgeMedia> {
   const fields = value?.mapValue?.fields ?? {}
-  const out: Record<string, { src: string; alt?: string }> = {}
+  const out: Record<string, EdgeMedia> = {}
   for (const [id, entry] of Object.entries(fields)) {
     const ref = entry.mapValue?.fields
     const src = ref?.src?.stringValue
     if (!src) continue
-    out[id] = { src, alt: ref?.alt?.stringValue }
+    out[id] = { src, alt: ref?.alt?.stringValue,
+      caption: ref?.caption?.stringValue,
+      width: ref?.width ? num(ref.width) : undefined,
+      height: ref?.height ? num(ref.height) : undefined,
+    }
   }
   return out
 }
 
 /** Published posts, newest first. Used by the sitemap and the RSS feed. */
-export async function listPublished(limit = 200): Promise<EdgePost[]> {
-  if (!isConfigured) return []
+export type PublishedLookup =
+  | { state: 'found'; posts: EdgePost[] }
+  | { state: 'unavailable' }
+
+/** Query one page with a stable document cursor, distinguishing outages from empty collections. */
+async function publishedPage(limit: number, cursor?: string): Promise<PublishedLookup> {
+  if (!isConfigured) return { state: 'unavailable' }
   try {
     const response = await fetch(`${BASE}:runQuery`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', accept: 'application/json' },
+      signal: AbortSignal.timeout(8000),
       body: JSON.stringify({
         structuredQuery: {
           from: [{ collectionId: 'posts' }],
@@ -187,21 +208,58 @@ export async function listPublished(limit = 200): Promise<EdgePost[]> {
               value: { stringValue: 'published' },
             },
           },
-          orderBy: [{ field: { fieldPath: 'publishedAt' }, direction: 'DESCENDING' }],
+          orderBy: [{ field: { fieldPath: '__name__' }, direction: 'ASCENDING' }],
+          ...(cursor ? { startAt: { values: [{ referenceValue: `${BASE.replace('https://firestore.googleapis.com/v1/', '')}/posts/${cursor}` }], before: false } } : {}),
           limit,
         },
       }),
     })
-    if (!response.ok) return []
+    if (!response.ok) return { state: 'unavailable' }
     const rows = (await response.json()) as {
+      error?: unknown
       document?: { name?: string; fields?: Record<string, FsValue> }
     }[]
-    return rows
+    if (!Array.isArray(rows)) return { state: 'unavailable' }
+    if (rows.some((row) => row.error || (row.document && (!row.document.name || !row.document.fields)))) return { state: 'unavailable' }
+    const posts = rows
       .filter((row) => row.document?.name && row.document.fields)
       .map((row) => decode(row.document!.name!, row.document!.fields!))
+      .filter((post) => post.status === 'published')
+    return { state: 'found', posts }
   } catch {
-    return []
+    return { state: 'unavailable' }
   }
+}
+
+function newestFirst(posts: EdgePost[]): EdgePost[] {
+  return posts.sort((a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''))
+}
+
+/** Read the whole publication catalog; exceeding the bound fails instead of silently dropping URLs. */
+export async function listAllPublished(): Promise<PublishedLookup> {
+  const posts: EdgePost[] = []
+  const seen = new Set<string>()
+  let cursor: string | undefined
+  const started = Date.now()
+  for (let page = 0; page < 50; page++) {
+    if (Date.now() - started > 15000) return { state: 'unavailable' }
+    const result = await publishedPage(1000, cursor)
+    if (result.state !== 'found') return result
+    for (const post of result.posts) {
+      if (seen.has(post.slug)) return { state: 'unavailable' }
+      seen.add(post.slug)
+      posts.push(post)
+    }
+    if (result.posts.length < 1000) return { state: 'found', posts: newestFirst(posts) }
+    cursor = result.posts.at(-1)?.slug
+  }
+  return { state: 'unavailable' }
+}
+
+/** Backward-compatible newest-first API used by public Markdown and JSON consumers. */
+export async function listPublished(limit = 200): Promise<EdgePost[]> {
+  const result = await listAllPublished()
+  return result.state === 'found' ? result.posts.slice(0, limit) : []
 }
 
 /* ─── Escaping ──────────────────────────────────────────────────────────── */

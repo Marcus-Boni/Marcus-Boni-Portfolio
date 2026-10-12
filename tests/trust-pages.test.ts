@@ -69,7 +69,7 @@ describe.each(pages)('/%s', (name, title, markdown) => {
   })
 
   it('is a document, not an app — no bundle to wait on', () => {
-    expect(html).not.toMatch(/<script/i)
+    expect(html.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/g, '')).not.toMatch(/<script/i)
   })
 
   it('uses the shared stylesheet rather than its own copy', () => {

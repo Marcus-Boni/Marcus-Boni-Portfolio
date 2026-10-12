@@ -6,7 +6,7 @@
        reach into `src/`, which is browser code. */
     "lib": ["ES2023", "DOM"],
     "module": "esnext",
-    "types": ["node", "vitest/globals"],
+    "types": ["node", "vitest/globals", "vite/client"],
     "skipLibCheck": true,
     /* `@/data/profile` type-imports `translations.tsx`. */
     "jsx": "react-jsx",

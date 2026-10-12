@@ -224,6 +224,24 @@ dangling or unused `$ref`.
 
 ## Verifying
 
+### Blog SEO and publication
+
+The current implementation also delivers the blog index and the article body
+as HTML, not only a per-post head. `blog-meta.ts` renders the existing Markdown
+vocabulary using `netlify/lib/blog-html.ts`. Shared head values and schema live
+in `netlify/lib/blog-seo.ts`; heading normalization is shared with the browser
+through `src/blog/lib/article-headings.ts`.
+
+Definite absence remains 404. Configured upstream outages now return 503 with
+`Retry-After`, rather than the portfolio shell or a partial publication catalog.
+HEAD requests validate the same publication state without depending on a
+downstream response body. Non-listed posts carry `noindex` and `no-store` in
+both HTML and negotiated Markdown. Do not add manual Edge caching without
+handling visibility invalidation and content negotiation.
+
+See [SEO.md](SEO.md) for the audit, editorial checklist and deployment checks.
+Local tests and Vite builds do not prove Netlify packaging or Google indexing.
+
 ```bash
 pnpm test          # 300+ assertions across the five concerns above
 pnpm build         # tsc -b now covers netlify/ too

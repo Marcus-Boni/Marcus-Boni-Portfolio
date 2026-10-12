@@ -1,6 +1,15 @@
 # Legacy single-language CV URL, kept alive for links shared before the PT/EN split.
 /marcus-boni-cv.pdf    /marcus-boni-cv-pt.pdf    301!
 
+# The share image became a real 1200x630 JPEG; old previews keep resolving.
+/og-image.png      /og-image.jpg      301!
+
+# Published documents have one public URL; preserve incoming legacy .html links.
+/about.html        /about        301!
+/contact.html      /contact      301!
+/privacy.html      /privacy      301!
+/developers.html   /developers   301!
+
 # SPA routes, enumerated on purpose.
 #
 # A catch-all `/*  /index.html  200` used to sit at the bottom of this file,

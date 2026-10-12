@@ -56,6 +56,10 @@
 # nonexistent slug into a real 404 instead of a 200 app shell.
 [[edge_functions]]
   function = "blog-meta"
+  path = "/blog"
+
+[[edge_functions]]
+  function = "blog-meta"
   path = "/blog/*"
 
 # Live RSS + sitemap, generated from Firestore so publishing needs no rebuild.

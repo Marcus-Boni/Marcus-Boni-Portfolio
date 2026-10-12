@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 
 import { FeaturedPostCard, PostRow } from '@/blog/components/PostCard'
 import { useBlogIndexHead } from '@/blog/lib/seo'
+import { useReleaseServerDocument } from '@/blog/lib/server-document'
 import { usePostList } from '@/blog/usePosts'
 import type { PostMeta } from '@/blog/types'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
@@ -30,7 +31,8 @@ export function BlogIndex() {
   const langFilter = (params.get('lang') ?? 'all') as LangFilter
   const tagFilter = params.get('tag') ?? ''
 
-  useBlogIndexHead(t.blog.title, t.blog.lead)
+  useBlogIndexHead(posts, locale)
+  useReleaseServerDocument(status === 'ready')
 
   useEffect(() => {
     trackEvent('blog_index_view')

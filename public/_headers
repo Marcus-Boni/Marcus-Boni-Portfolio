@@ -10,7 +10,7 @@
   Cache-Control: public, max-age=604800, stale-while-revalidate=86400
 /portrait-640.webp
   Cache-Control: public, max-age=604800, stale-while-revalidate=86400
-/og-image.png
+/og-image.jpg
   Cache-Control: public, max-age=604800, stale-while-revalidate=86400
 /favicon.svg
   Cache-Control: public, max-age=604800, stale-while-revalidate=86400
@@ -46,6 +46,17 @@
 /api/*
   Cache-Control: public, max-age=300, stale-while-revalidate=86400
   X-Content-Type-Options: nosniff
+  X-Robots-Tag: noindex
+
+# Management and machine endpoints are reachable without being search results.
+/admin
+  X-Robots-Tag: noindex, nofollow
+/admin/*
+  X-Robots-Tag: noindex, nofollow
+/agent/*
+  X-Robots-Tag: noindex, nofollow
+/404.html
+  X-Robots-Tag: noindex
 
 # The blog's RSS and sitemap are produced by netlify/edge-functions/feeds.ts,
 # which sets its own Cache-Control — do not add rules for them here. The same

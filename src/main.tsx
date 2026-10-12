@@ -4,6 +4,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
 import '@/styles/index.css'
 import App from '@/App'
+import { liftServerDocument } from '@/blog/lib/server-document'
 import { SiteContentProvider } from '@/content/SiteContentContext'
 import { LanguageProvider } from '@/i18n/LanguageContext'
 
@@ -19,7 +20,10 @@ const AdminApp = lazy(() => import('@/admin/AdminApp'))
 // eslint-disable-next-line react-refresh/only-export-components
 const BlogApp = lazy(() => import('@/blog/BlogApp'))
 
-createRoot(document.getElementById('root')!).render(
+const root = document.getElementById('root')!
+liftServerDocument(root)
+
+createRoot(root).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>

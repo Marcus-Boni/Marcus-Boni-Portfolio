@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { AdminContentProvider } from '@/admin/AdminContentContext'
@@ -46,6 +47,13 @@ function AdminShell() {
  * pays for it.
  */
 export default function AdminApp() {
+  useEffect(() => {
+    const robots = document.head.querySelector('meta[name="robots"]')
+      ?? document.head.appendChild(Object.assign(document.createElement('meta'), { name: 'robots' }))
+    robots.setAttribute('content', 'noindex, nofollow')
+    document.head.querySelectorAll('link[rel="canonical"], link[rel="alternate"][hreflang], script[type="application/ld+json"]').forEach((node) => node.remove())
+  }, [])
+
   return (
     <ToastProvider>
       <ConfirmProvider>

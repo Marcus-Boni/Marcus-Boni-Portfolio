@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 
 import { BlogImage } from '@/blog/components/BlogImage'
 import { PostBody } from '@/blog/components/PostBody'
 import { ReadingProgress, TableOfContents } from '@/blog/components/reading'
 import { SITE_URL, usePostHead } from '@/blog/lib/seo'
+import { useReleaseServerDocument } from '@/blog/lib/server-document'
 import { extractToc, formatPostDate } from '@/blog/lib/text'
-import { usePost } from '@/blog/usePosts'
+import { usePost, usePostList } from '@/blog/usePosts'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { trackEvent } from '@/lib/analytics'
+import { reciprocalTranslation, validDate } from '../../../netlify/lib/blog-seo'
 
 /**
  * A single post.
@@ -22,12 +24,31 @@ export function BlogPost() {
   const { slug } = useParams<{ slug: string }>()
   const { locale, t } = useLanguage()
   const { post, status, retry } = usePost(slug)
-  const articleRef = useRef<HTMLElement>(null)
+  const { posts } = usePostList()
+  const { pathname } = useLocation()
+  const articleRef = useRef<HTMLDivElement>(null)
   const titleRef = useScrollReveal<HTMLHeadingElement>({ immediate: true })
 
-  usePostHead(post)
+  const translation = post
+    ? posts.find((candidate) => reciprocalTranslation(post, candidate)) ?? null
+    : null
+  usePostHead(post, status, translation, locale, pathname)
+  useReleaseServerDocument(status === 'ready')
 
   const toc = useMemo(() => (post ? extractToc(post.body) : []), [post])
+  const related = useMemo(() => {
+    if (!post) return []
+    return posts
+      .filter((candidate) => candidate.slug !== post.slug && candidate.slug !== translation?.slug && candidate.lang === post.lang)
+      .map((candidate) => ({
+        post: candidate,
+        score: candidate.tags.filter((tag) => post.tags.includes(tag)).length +
+          (post.series && candidate.series?.id === post.series.id ? 10 : 0),
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map((candidate) => candidate.post)
+  }, [post, posts, translation])
 
   useEffect(() => {
     if (post) trackEvent('post_view', { slug: post.slug, lang: post.lang })
@@ -102,19 +123,16 @@ export function BlogPost() {
     <>
       <ReadingProgress targetRef={articleRef} />
 
-      <div className="mx-auto max-w-6xl px-5 pt-28 pb-24 md:px-8 md:pt-36">
-        <Link
-          to="/blog"
-          className="group inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.22em] text-smoke uppercase transition-colors hover:text-ember"
-        >
-          <span
-            aria-hidden
-            className="transition-transform duration-300 group-hover:-translate-x-1"
-          >
-            ←
-          </span>
-          {t.blog.post.back}
-        </Link>
+      <article lang={post.lang === 'pt' ? 'pt-BR' : 'en'} aria-labelledby="post-title" className="mx-auto max-w-6xl px-5 pt-28 pb-24 md:px-8 md:pt-36">
+        <nav aria-label={locale === 'pt' ? 'Caminho de navegação' : 'Breadcrumb'}>
+          <ol className="flex flex-wrap items-center gap-2 font-mono text-[10px] tracking-[0.12em] text-smoke">
+            <li><Link to="/" className="hover:text-ember">Marcus Boni</Link></li>
+            <li aria-hidden>/</li>
+            <li><Link to="/blog" className="hover:text-ember">Blog</Link></li>
+            <li aria-hidden>/</li>
+            <li aria-current="page" className="text-bone-dim">{post.title}</li>
+          </ol>
+        </nav>
 
         {post.status === 'unlisted' && (
           <p className="mt-6 border border-dashed border-ember/40 px-4 py-2.5 font-mono text-[10px] tracking-[0.16em] text-ember uppercase">
@@ -125,7 +143,7 @@ export function BlogPost() {
         {/* ─── Masthead ──────────────────────────────────────────── */}
         <header className="mt-8 border-b border-line pb-10">
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] tracking-[0.22em] text-smoke uppercase">
-            <span>{formatPostDate(post.publishedAt, locale)}</span>
+            {validDate(post.publishedAt) && <time dateTime={validDate(post.publishedAt)}>{formatPostDate(post.publishedAt, locale)}</time>}
             <span aria-hidden className="text-line">/</span>
             <span>{t.blog.readingTime(post.readingMinutes)}</span>
             <span aria-hidden className="text-line">/</span>
@@ -141,6 +159,7 @@ export function BlogPost() {
           </p>
 
           <h1
+            id="post-title"
             ref={titleRef}
             data-reveal
             className="mt-6 max-w-4xl font-display text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] text-bone"
@@ -154,6 +173,11 @@ export function BlogPost() {
             </p>
           )}
 
+          <p className="mt-5 text-sm text-bone-dim">
+            {locale === 'pt' ? 'Por ' : 'By '}
+            <a href="/about" rel="author" className="text-bone hover:text-ember">Marcus Boni</a>
+          </p>
+
           <div className="mt-8 flex flex-wrap items-center gap-3">
             {post.tags.map((tag) => (
               <Link
@@ -164,9 +188,10 @@ export function BlogPost() {
                 {tag}
               </Link>
             ))}
-            {post.translationOf && (
+            {translation && (
               <Link
-                to={`/blog/${post.translationOf}`}
+                to={`/blog/${translation.slug}`}
+                hrefLang={translation.lang === 'pt' ? 'pt-BR' : 'en'}
                 className="border border-ember/50 px-2.5 py-1 font-mono text-[9px] tracking-[0.18em] text-ember uppercase transition-colors hover:bg-ember hover:text-ink"
               >
                 {t.blog.post.translationAvailable}
@@ -186,25 +211,39 @@ export function BlogPost() {
 
         {/* ─── Article + TOC ─────────────────────────────────────── */}
         <div className="mt-14 grid gap-14 xl:grid-cols-[minmax(0,1fr)_15rem] xl:gap-16">
-          <article ref={articleRef} className="min-w-0 max-w-[68ch]">
+          <div ref={articleRef} className="min-w-0 max-w-[68ch]">
             <PostBody markdown={post.body} media={post.media} />
-          </article>
+          </div>
 
           <aside className="hidden xl:block">
             <TableOfContents entries={toc} label={t.blog.post.toc} />
           </aside>
         </div>
 
+        {related.length > 0 && (
+          <section aria-labelledby="related-posts" className="mt-16 border-t border-line pt-8">
+            <h2 id="related-posts" className="font-display text-3xl text-bone">{t.blog.post.readAlso}</h2>
+            <ul className="mt-5 space-y-4">
+              {related.map((candidate) => (
+                <li key={candidate.slug}>
+                  <Link to={`/blog/${candidate.slug}`} className="text-bone-dim hover:text-ember">{candidate.title}</Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         <PostFooter
           slug={post.slug}
           title={post.title}
           updated={t.blog.post.updated(formatPostDate(post.updatedAt, locale))}
+          updatedAt={validDate(post.updatedAt)}
           shareLabel={t.blog.post.share}
           copyLabel={t.blog.post.copyLink}
           copiedLabel={t.blog.post.copied}
           backLabel={t.blog.post.backToIndex}
         />
-      </div>
+      </article>
     </>
   )
 }
@@ -213,6 +252,7 @@ function PostFooter({
   slug,
   title,
   updated,
+  updatedAt,
   shareLabel,
   copyLabel,
   copiedLabel,
@@ -221,6 +261,7 @@ function PostFooter({
   slug: string
   title: string
   updated: string
+  updatedAt?: string
   shareLabel: string
   copyLabel: string
   copiedLabel: string
@@ -248,7 +289,7 @@ function PostFooter({
     <footer className="mt-20 border-t border-line pt-8">
       <div className="flex flex-wrap items-center justify-between gap-6">
         <p className="font-mono text-[10px] tracking-[0.2em] text-smoke uppercase">
-          {updated}
+          <time dateTime={updatedAt}>{updated}</time>
         </p>
 
         <div className="flex flex-wrap items-center gap-4">
