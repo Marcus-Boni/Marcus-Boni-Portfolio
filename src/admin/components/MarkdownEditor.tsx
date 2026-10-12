@@ -15,6 +15,8 @@ interface MarkdownEditorProps {
   value: string
   onChange: (next: string) => void
   onRequestImage: () => void
+  /** Receives an image pasted or dropped straight into the textarea. */
+  onDropImage?: (file: File) => void
   className?: string
 }
 
@@ -76,6 +78,7 @@ export function MarkdownEditor({
   value,
   onChange,
   onRequestImage,
+  onDropImage,
   className,
 }: MarkdownEditorProps) {
   const ref = useRef<HTMLTextAreaElement>(null)
@@ -154,8 +157,24 @@ export function MarkdownEditor({
     }
   }
 
+  const words = value.trim() ? value.trim().split(/\s+/).length : 0
+
+  const takeImage = (files: FileList | null) => {
+    const file = Array.from(files ?? []).find((item) => item.type.startsWith('image/'))
+    if (file && onDropImage) {
+      onDropImage(file)
+      return true
+    }
+    return false
+  }
+
   return (
-    <div className={cn('flex min-h-0 flex-col border border-line', className)}>
+    <div
+      className={cn(
+        'flex min-h-0 flex-col border border-line focus-within:border-bone/30',
+        className,
+      )}
+    >
       <div className="flex flex-wrap items-center gap-1 border-b border-line bg-ink-soft/60 px-2 py-2">
         {ACTIONS.map((action) => (
           <ToolButton
@@ -177,10 +196,26 @@ export function MarkdownEditor({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={onKeyDown}
+        onPaste={(event) => {
+          // An image on the clipboard is the fastest way to get a screenshot
+          // into a post; without this it pastes as nothing at all.
+          if (takeImage(event.clipboardData?.files ?? null)) event.preventDefault()
+        }}
+        onDrop={(event) => {
+          if (takeImage(event.dataTransfer?.files ?? null)) event.preventDefault()
+        }}
         spellCheck
         placeholder="Escreva em Markdown…"
         className="min-h-[28rem] flex-1 resize-none bg-ink px-4 py-4 font-mono text-[13px] leading-relaxed text-bone placeholder:text-smoke focus:outline-none"
       />
+
+      <footer className="flex items-center gap-4 border-t border-line px-3 py-2 font-mono text-[9px] tracking-[0.16em] text-smoke uppercase">
+        <span className="tabular-nums">{words} palavras</span>
+        <span className="tabular-nums">{value.length} caracteres</span>
+        <span className="ml-auto hidden sm:inline">
+          cole uma imagem para enviar
+        </span>
+      </footer>
     </div>
   )
 }

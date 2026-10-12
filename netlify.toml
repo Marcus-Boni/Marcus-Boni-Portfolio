@@ -56,6 +56,10 @@
 # nonexistent slug into a real 404 instead of a 200 app shell.
 [[edge_functions]]
   function = "blog-meta"
+  path = "/blog"
+
+[[edge_functions]]
+  function = "blog-meta"
   path = "/blog/*"
 
 # Live RSS + sitemap, generated from Firestore so publishing needs no rebuild.
@@ -66,3 +70,10 @@
 [[edge_functions]]
   function = "feeds"
   path = "/sitemap.xml"
+
+# Authenticated write surface for trusted agents. Public blog reads remain under
+# /api/v1/posts; this endpoint creates and revises posts only after a bearer-
+# token-authorized request.
+[[edge_functions]]
+  function = "agent-publish"
+  path = "/agent/v1/posts"

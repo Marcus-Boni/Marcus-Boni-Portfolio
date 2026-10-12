@@ -15,6 +15,7 @@ import {
   YouTube,
 } from '@/blog/components/directives'
 import { remarkBlogDirectives } from '@/blog/lib/remark-blog'
+import { articleHeadings } from '@/blog/lib/article-headings'
 import type { MediaRef } from '@/blog/types'
 
 interface PostBodyProps {
@@ -25,7 +26,7 @@ interface PostBodyProps {
 
 /** Plugin arrays are stable module constants so react-markdown can memoise. */
 const REMARK_PLUGINS = [remarkGfm, remarkDirective, remarkBlogDirectives]
-const REHYPE_PLUGINS = [rehypeSlug]
+const REHYPE_PLUGINS = [rehypeSlug, articleHeadings]
 
 /**
  * `media:` is our own scheme for images uploaded through the admin — it is

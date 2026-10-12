@@ -2,9 +2,9 @@
 <!--
   Fallback only. The live sitemap is generated per request from Firestore by
   netlify/edge-functions/feeds.ts so new posts are discoverable without a
-  rebuild; this file is what that function falls back to if Firestore cannot
-  be reached, because an empty sitemap reads to a crawler as "these pages are
-  gone".
+  rebuild. This file is used when Firebase is not configured. A configured
+  database outage returns 503 with Retry-After, preserving previously known
+  article URLs instead of replacing the catalog with this static subset.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>

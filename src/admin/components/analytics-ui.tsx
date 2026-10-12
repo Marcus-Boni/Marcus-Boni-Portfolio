@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 
 import { Sparkline } from '@/admin/components/charts'
+import { AdminButton, Segmented, StatusDot } from '@/admin/components/ui'
 import {
   RANGES,
   deltaPercent,
@@ -28,48 +29,25 @@ export function RangeFilter({
   live: boolean
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-3 border-y border-line py-3">
-      <div
-        className="flex items-center gap-1"
-        role="group"
-        aria-label="Período"
-      >
-        {(Object.keys(RANGES) as RangeKey[]).map((key) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => onChange(key)}
-            aria-pressed={value === key}
-            className={cn(
-              'border px-3 py-1.5 font-mono text-[10px] tracking-[0.16em] uppercase transition-colors',
-              value === key
-                ? 'border-ember text-ember'
-                : 'border-line text-smoke hover:border-bone/40 hover:text-bone-dim',
-            )}
-          >
-            {RANGES[key].label}
-          </button>
-        ))}
-      </div>
+    <div className="sticky top-14 z-10 mb-6 flex flex-wrap items-center gap-x-4 gap-y-3 border-y border-line bg-ink/95 py-3 backdrop-blur lg:top-0">
+      <Segmented
+        label="Período"
+        value={value}
+        onChange={onChange}
+        options={(Object.keys(RANGES) as RangeKey[]).map((key) => ({
+          value: key,
+          label: RANGES[key].label,
+        }))}
+      />
 
       <span className="flex items-center gap-2 font-mono text-[10px] tracking-[0.16em] text-smoke uppercase">
-        <span
-          aria-hidden
-          className={cn(
-            'size-1.5 rounded-full',
-            live ? 'animate-pulse bg-ember' : 'bg-line',
-          )}
-        />
+        <StatusDot tone={live ? 'live' : 'off'} pulse={live} />
         {live ? 'ao vivo' : 'offline'}
       </span>
 
-      <button
-        type="button"
-        onClick={onExport}
-        className="ml-auto border border-line px-3 py-1.5 font-mono text-[10px] tracking-[0.16em] text-bone-dim uppercase transition-colors hover:border-ember hover:text-ember"
-      >
-        Exportar CSV
-      </button>
+      <AdminButton variant="subtle" size="sm" className="ml-auto" onClick={onExport}>
+        ↓ Exportar CSV
+      </AdminButton>
     </div>
   )
 }

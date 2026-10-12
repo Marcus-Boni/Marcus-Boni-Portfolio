@@ -86,20 +86,27 @@ function headingId(text: string): string {
  * renderer has mounted.
  */
 export function extractToc(markdown: string): TocEntry[] {
-  const withoutCode = markdown.replace(/```[\s\S]*?```/g, '')
+  const withoutCode = markdown.replace(/(`{3,}|~{3,})[^\n]*\n[\s\S]*?\1/g, '')
+  const headings = [...withoutCode.matchAll(/^ {0,3}(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$|^([^\n]+)\n {0,3}(=+|-+)[ \t]*$/gm)]
+  const offset = headings.some((match) => match[1]?.length === 1 || match[4]?.startsWith('=')) ? 1 : 0
   const entries: TocEntry[] = []
-  const seen = new Map<string, number>()
+  const seen = new Set<string>()
 
-  for (const match of withoutCode.matchAll(/^(#{2,3})\s+(.+?)\s*#*$/gm)) {
-    const depth = match[1].length as 2 | 3
-    const text = stripMarkdown(match[2])
+  for (const match of headings) {
+    const originalDepth = match[1]?.length ?? (match[4].startsWith('=') ? 1 : 2)
+    const depth = Math.min(6, originalDepth + offset)
+    const text = stripMarkdown((match[2] ?? match[3]).replace(/`([^`]+)`/g, '$1'))
     if (!text) continue
 
     // github-slugger de-duplicates by appending -1, -2, … — mirror that.
     const base = headingId(text)
-    const count = seen.get(base) ?? 0
-    seen.set(base, count + 1)
-    entries.push({ id: count === 0 ? base : `${base}-${count}`, text, depth })
+    let id = base
+    let count = 0
+    while (seen.has(id)) id = `${base}-${++count}`
+    seen.add(id)
+    if (depth === 2 || depth === 3) {
+      entries.push({ id, text, depth })
+    }
   }
   return entries
 }

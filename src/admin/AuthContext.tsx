@@ -8,6 +8,7 @@ import {
 } from 'react'
 import {
   onAuthStateChanged,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
   type User,
@@ -21,6 +22,8 @@ interface AuthValue {
   configured: boolean
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  /** Sends the Firebase reset link. The only self-service recovery path here. */
+  resetPassword: (email: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthValue | null>(null)
@@ -49,6 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       logout: async () => {
         await signOut(requireAuth())
+      },
+      resetPassword: async (email) => {
+        await sendPasswordResetEmail(requireAuth(), email)
       },
     }),
     [user, loading],
@@ -86,6 +92,10 @@ export function authErrorMessage(error: unknown): string {
       return 'Muitas tentativas. Tente novamente em alguns minutos.'
     case 'auth/network-request-failed':
       return 'Falha de rede. Verifique sua conexão.'
+    case 'auth/missing-password':
+      return 'Digite a senha.'
+    case 'auth/operation-not-allowed':
+      return 'O provedor e-mail/senha está desabilitado no console do Firebase.'
     default:
       return 'Não foi possível entrar. Tente novamente.'
   }

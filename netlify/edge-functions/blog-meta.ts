@@ -1,179 +1,150 @@
 import type { Config, Context } from '@netlify/edge-functions'
 
+import { renderArticle, renderBlogIndex } from '../lib/blog-html.ts'
 import {
-  escapeHtml,
-  escapeJsonLd,
-  isConfigured,
-  lookupPost,
-  type EdgePost,
+  articleSchema, BLOG_DESCRIPTION, BLOG_TITLE, blogSchema, breadcrumbSchema,
+  DEFAULT_OG, DEFAULT_OG_META, postDescription, postUrl, reciprocalTranslation, safeImage, SITE_NAME, SITE_URL, validDate,
+} from '../lib/blog-seo.ts'
+import {
+  escapeHtml, escapeJsonLd, getPostBody, listAllPublished, lookupPost, type EdgePost,
 } from '../lib/firestore.ts'
 
-/**
- * Per-post `<head>` injection and 404 status for `/blog/:slug`.
- *
- * This is the half of the SEO story that JavaScript cannot do. LinkedIn, Slack,
- * WhatsApp and X fetch the HTML and never execute scripts, so without this
- * every shared post would preview as the generic portfolio card. The client
- * writes the same values on navigation (`src/blog/lib/seo.ts`); this makes them
- * true in the delivered HTML.
- *
- * The whole `<!-- SEO:START -->…<!-- SEO:END -->` block from index.html is
- * replaced in one shot. Anything unexpected — no project id, an unreadable
- * Firestore, a missing marker — falls through to the untouched response, so a
- * failure here degrades to the site's default card rather than to an error
- * page.
- *
- * A slug Firestore *definitely* does not have is the one case that changes the
- * status: the app shell still renders (React shows its own not-found view, so
- * the visual result is unchanged) but it is delivered as a real 404 instead of
- * a 200. `/blog/anything` answering 200 is the same soft-404 that
- * `public/_redirects` fixes for the rest of the site — it just needs a
- * database read to detect.
- */
+const HEAD_MARKER = /<!-- SEO:START -->[\s\S]*?<!-- SEO:END -->/
+const BODY_MARKER = /<!-- BODY:START -->[\s\S]*?<!-- BODY:END -->/
 
-const SITE_URL = 'https://marcusboni.com.br'
-const SITE_NAME = 'Marcus Boni'
-const DEFAULT_OG = `${SITE_URL}/og-image.png`
-const MARKER = /<!-- SEO:START -->[\s\S]*?<!-- SEO:END -->/
-
+/** Useful HTML for every visitor, including crawlers that do not execute JavaScript. */
 export default async function handler(request: Request, context: Context) {
+  if (request.method !== 'GET' && request.method !== 'HEAD') return context.next()
+  // One URL per document: `/blog/` and `/blog/slug/` would otherwise answer 200
+  // as duplicates of their canonical form.
+  const requested = new URL(request.url)
+  if (requested.pathname !== '/blog' && requested.pathname.endsWith('/')) {
+    requested.pathname = requested.pathname.replace(/\/+$/, '')
+    return Response.redirect(requested.toString(), 301)
+  }
   const response = await context.next()
+  if (!(response.headers.get('content-type') ?? '').includes('text/html')) return response
+  const path = new URL(request.url).pathname
+  let slug: string
+  try { slug = decodeURIComponent(path.replace(/^\/blog\/?/, '').replace(/\/$/, '')) }
+  catch { return errorPage(request, 404) }
+  if (slug.includes('/')) return errorPage(request, 404)
 
-  if (!isConfigured) return response
-
-  // Only rewrite the document itself; assets and data requests pass through.
-  const contentType = response.headers.get('content-type') ?? ''
-  if (!contentType.includes('text/html')) return response
-
-  const url = new URL(request.url)
-  const slug = url.pathname.replace(/^\/blog\/?/, '').replace(/\/$/, '')
-  // `/blog` itself is the index — it has no post-specific head to build.
-  if (!slug || slug.includes('/')) return response
-
-  const lookup = await lookupPost(slug)
-  // `unavailable` is not `missing`: a Firestore outage must not turn every
-  // post on the site into a 404 that crawlers act on.
-  if (lookup.state === 'unavailable') return response
-
-  const html = await response.text()
-  if (!MARKER.test(html)) return response
-
-  const missing = lookup.state === 'missing'
-  const rewritten = html.replace(
-    MARKER,
-    missing ? buildNotFoundHead(slug) : buildHead(lookup.post),
-  )
+  let head: string
+  let body: string
+  let lang = 'pt-BR'
+  let unlisted = false
+  if (!slug) {
+    const result = await listAllPublished()
+    if (result.state === 'unavailable') return errorPage(request, 503)
+    head = buildIndexHead(result.posts)
+    body = renderBlogIndex(result.posts)
+  } else {
+    const lookup = await lookupPost(slug)
+    if (lookup.state === 'missing') return errorPage(request, 404)
+    if (lookup.state === 'unavailable') return errorPage(request, 503)
+    const post = lookup.post
+    const [content, translation] = await Promise.all([
+      getPostBody(slug),
+      post.status === 'published' && post.translationOf ? lookupPost(post.translationOf) : Promise.resolve(null),
+    ])
+    if (!content) return errorPage(request, 503)
+    const counterpart = translation?.state === 'found' && reciprocalTranslation(post, translation.post)
+      ? translation.post : undefined
+    head = buildHead(post, counterpart)
+    try { body = renderArticle(post, content.body, content.media) }
+    catch { return errorPage(request, 503) }
+    lang = post.lang === 'pt' ? 'pt-BR' : 'en'
+    unlisted = post.status === 'unlisted'
+  }
 
   const headers = new Headers(response.headers)
-  // Cached at the edge so a crawler storm costs a handful of Firestore reads,
-  // not one per request. Browsers revalidate on every visit.
-  headers.set('Netlify-CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=86400')
-  headers.set('Cache-Control', 'public, max-age=0, must-revalidate')
   headers.delete('content-length')
+  headers.delete('content-encoding')
+  headers.delete('last-modified')
+  headers.delete('etag')
+  headers.set('Netlify-CDN-Cache-Control', unlisted ? 'no-store' : 'public, s-maxage=300')
+  headers.set('Cache-Control', unlisted ? 'no-store' : 'public, max-age=0, must-revalidate')
+  if (unlisted) headers.set('X-Robots-Tag', 'noindex, follow')
+  // The origin legitimately omits HEAD bytes, so status validation cannot rely on HTML markers.
+  if (request.method === 'HEAD') return new Response(null, { status: 200, headers })
+  // Clone before reading: never return a response whose body has already been consumed.
+  const html = await response.clone().text()
+  if (!HEAD_MARKER.test(html) || !BODY_MARKER.test(html)) return errorPage(request, 503)
+  const rewritten = html.replace(HEAD_MARKER, () => head)
+    .replace(/<script\b[^>]*\bid=["']site-jsonld["'][^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(BODY_MARKER, () => `<!-- BODY:START -->${body}<!-- BODY:END -->`)
+    .replace(/<html\b[^>]*>/i, `<html lang="${lang}">`)
+  return new Response(rewritten, { status: 200, headers })
+}
 
-  return new Response(rewritten, {
-    // The shell is delivered as-is — React renders its own not-found view —
-    // but the status tells the truth about the URL.
-    status: missing ? 404 : response.status,
-    headers,
+function errorPage(request: Request, status: 404 | 503): Response {
+  const unavailable = status === 503
+  const title = unavailable ? 'Blog temporariamente indisponível' : 'Artigo não encontrado'
+  return new Response(request.method === 'HEAD' ? null : `<!doctype html><html lang="pt-BR"><head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>${title} — ${SITE_NAME}</title><meta name="robots" content="noindex, follow">
+    </head><body><main><h1>${title}</h1><p>${unavailable ? 'Tente novamente em alguns minutos.' : 'Este endereço não contém um artigo disponível.'}</p>
+    <a href="/blog">Ver artigos</a><a href="/">Marcus Boni</a></main></body></html>`, {
+    status, headers: {
+      'content-type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store',
+      'Netlify-CDN-Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, follow',
+      ...(unavailable ? { 'Retry-After': '300' } : {}),
+    },
   })
 }
 
-/**
- * `<head>` for a slug that does not exist.
- *
- * Kept minimal on purpose: no canonical (there is no canonical URL for a page
- * that isn't there) and an explicit `noindex`, so a crawler that followed a
- * stale link drops it instead of indexing an error state.
- */
-function buildNotFoundHead(slug: string): string {
-  const title = `Post não encontrado — ${SITE_NAME}`
-  return `<!-- SEO:START -->
-    <title>${escapeHtml(title)}</title>
-    <meta name="title" content="${escapeHtml(title)}" />
-    <meta
-      name="description"
-      content="Não existe um post em /blog/${escapeHtml(slug)}. Veja o índice em ${SITE_URL}/blog."
-    />
-    <meta name="robots" content="noindex, follow" />
-    <link rel="alternate" type="text/markdown" href="${SITE_URL}/blog/${escapeHtml(slug)}" />
-    <meta name="theme-color" content="#0d0c0a" />
+function commonHead(title: string, description: string, url: string, image: string, type: string, robots: string) {
+  return `<title>${escapeHtml(title)}</title>
+    <meta name="title" content="${escapeHtml(title)}">
+    <meta name="description" content="${escapeHtml(description)}">
+    <meta name="robots" content="${robots}">
+    <link rel="canonical" href="${escapeHtml(url)}">
+    <link rel="alternate" type="text/markdown" href="${escapeHtml(url)}">
+    <meta name="theme-color" content="#0d0c0a">
+    <meta property="og:type" content="${type}">
+    <meta property="og:url" content="${escapeHtml(url)}">
+    <meta property="og:title" content="${escapeHtml(title)}">
+    <meta property="og:description" content="${escapeHtml(description)}">
+    <meta property="og:image" content="${escapeHtml(image)}">
+    ${image === DEFAULT_OG ? Object.entries(DEFAULT_OG_META).map(([key, value]) => `<meta property="og:image:${key}" content="${value}">`).join('\n    ') : ''}
+    <meta property="og:site_name" content="${SITE_NAME}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="${escapeHtml(url)}">
+    <meta name="twitter:title" content="${escapeHtml(title)}">
+    <meta name="twitter:description" content="${escapeHtml(description)}">
+    <meta name="twitter:image" content="${escapeHtml(image)}">`
+}
 
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="${escapeHtml(title)}" />
-    <meta property="og:site_name" content="${SITE_NAME}" />
-    <meta property="og:image" content="${DEFAULT_OG}" />
+function buildIndexHead(posts: EdgePost[]): string {
+  return `<!-- SEO:START -->${commonHead(BLOG_TITLE, BLOG_DESCRIPTION, `${SITE_URL}/blog`, DEFAULT_OG, 'website', 'index, follow, max-image-preview:large')}
+    <meta property="og:locale" content="pt_BR">
+    <script id="blog-jsonld" type="application/ld+json">${escapeJsonLd({ '@context': 'https://schema.org', '@graph': [blogSchema(posts)] })}</script>
     <!-- SEO:END -->`
 }
 
-function buildHead(post: EdgePost): string {
-  const url = `${SITE_URL}/blog/${post.slug}`
-  const title = `${post.title} — ${SITE_NAME}`
-  const description = post.excerpt || post.subtitle || post.title
-  const image = post.coverUrl ?? DEFAULT_OG
-  const locale = post.lang === 'pt' ? 'pt_BR' : 'en_US'
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
-    headline: post.title,
-    description,
-    image,
-    datePublished: post.publishedAt ?? undefined,
-    dateModified: post.updatedAt || undefined,
-    inLanguage: post.lang === 'pt' ? 'pt-BR' : 'en',
-    keywords: post.tags.length > 0 ? post.tags.join(', ') : undefined,
-    author: { '@type': 'Person', name: SITE_NAME, url: SITE_URL },
-    publisher: { '@type': 'Person', name: SITE_NAME, url: SITE_URL },
-    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
-  }
-
-  // An unlisted post is shareable but must never be indexed.
-  const robots =
-    post.status === 'unlisted'
-      ? '<meta name="robots" content="noindex, follow" />'
-      : '<meta name="robots" content="index, follow" />'
-
-  // hreflang is only valid when a counterpart actually exists.
-  const alternates = post.translationOf
-    ? [
-        `<link rel="alternate" hreflang="${post.lang}" href="${escapeHtml(url)}" />`,
-        `<link rel="alternate" hreflang="${post.lang === 'pt' ? 'en' : 'pt'}" href="${SITE_URL}/blog/${escapeHtml(post.translationOf)}" />`,
-      ].join('\n    ')
-    : ''
-
-  return `<!-- SEO:START -->
-    <title>${escapeHtml(title)}</title>
-    <meta name="title" content="${escapeHtml(title)}" />
-    <meta name="description" content="${escapeHtml(description)}" />
-    ${robots}
-    <link rel="canonical" href="${escapeHtml(url)}" />
+function buildHead(post: EdgePost, counterpart?: EdgePost): string {
+  const url = postUrl(post.slug)
+  const image = safeImage(post.coverUrl) ?? DEFAULT_OG
+  const published = validDate(post.publishedAt)
+  const modified = validDate(post.updatedAt)
+  const robots = post.status === 'unlisted' ? 'noindex, follow' : 'index, follow, max-image-preview:large'
+  const alternates = counterpart ? [
+    `<link rel="alternate" hreflang="${post.lang === 'pt' ? 'pt-BR' : 'en'}" href="${escapeHtml(url)}">`,
+    `<link rel="alternate" hreflang="${counterpart.lang === 'pt' ? 'pt-BR' : 'en'}" href="${escapeHtml(postUrl(counterpart.slug))}">`,
+    `<link rel="alternate" hreflang="x-default" href="${escapeHtml(postUrl(post.lang === 'pt' ? post.slug : counterpart.slug))}">`,
+  ].join('\n') : ''
+  return `<!-- SEO:START -->${commonHead(`${post.title} — ${SITE_NAME}`, postDescription(post), url, image, 'article', robots)}
+    <meta property="og:locale" content="${post.lang === 'pt' ? 'pt_BR' : 'en_US'}">
+    <meta property="og:image:alt" content="${escapeHtml(post.coverAlt || post.title)}">
+    <meta name="twitter:image:alt" content="${escapeHtml(post.coverAlt || post.title)}">
+    ${published ? `<meta property="article:published_time" content="${published}">` : ''}
+    ${modified ? `<meta property="article:modified_time" content="${modified}">` : ''}
+    <meta property="article:author" content="${SITE_URL}/about">
+    ${post.tags.map((tag) => `<meta property="article:tag" content="${escapeHtml(tag)}">`).join('\n')}
     ${alternates}
-    <link rel="alternate" type="text/markdown" href="${escapeHtml(url)}" />
-    <meta name="theme-color" content="#0d0c0a" />
-
-    <meta property="og:type" content="article" />
-    <meta property="og:url" content="${escapeHtml(url)}" />
-    <meta property="og:title" content="${escapeHtml(post.title)}" />
-    <meta property="og:description" content="${escapeHtml(description)}" />
-    <meta property="og:image" content="${escapeHtml(image)}" />
-    <meta property="og:site_name" content="${SITE_NAME}" />
-    <meta property="og:locale" content="${locale}" />
-    <meta property="article:published_time" content="${escapeHtml(post.publishedAt ?? '')}" />
-    <meta property="article:modified_time" content="${escapeHtml(post.updatedAt)}" />
-    <meta property="article:author" content="${SITE_NAME}" />
-    ${post.tags.map((tag) => `<meta property="article:tag" content="${escapeHtml(tag)}" />`).join('\n    ')}
-
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="${escapeHtml(url)}" />
-    <meta property="twitter:title" content="${escapeHtml(post.title)}" />
-    <meta property="twitter:description" content="${escapeHtml(description)}" />
-    <meta property="twitter:image" content="${escapeHtml(image)}" />
-
-    <script type="application/ld+json">${escapeJsonLd(jsonLd)}</script>
+    <script id="blog-jsonld" type="application/ld+json">${escapeJsonLd({ '@context': 'https://schema.org', '@graph': [articleSchema(post), breadcrumbSchema(post)] })}</script>
     <!-- SEO:END -->`
 }
 
-export const config: Config = {
-  path: '/blog/*',
-}
+export const config: Config = { path: ['/blog', '/blog/*'] }

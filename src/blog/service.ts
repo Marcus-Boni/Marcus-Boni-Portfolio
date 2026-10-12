@@ -69,14 +69,14 @@ function normalizeMeta(slug: string, data: Partial<PostMeta>): PostMeta {
  * composite index instead of one per filter combination, plus instant
  * (read-free) filter switches in the UI.
  */
-export async function fetchPublishedPosts(max = 100): Promise<PostMeta[]> {
+export async function fetchPublishedPosts(max?: number): Promise<PostMeta[]> {
   if (!isFirebaseConfigured || !db) return []
   const snap = await getDocs(
     query(
       collection(db, POSTS),
       where('status', '==', 'published'),
       orderBy('publishedAt', 'desc'),
-      limitTo(max),
+      ...(max === undefined ? [] : [limitTo(max)]),
     ),
   )
   return snap.docs.map((d) => normalizeMeta(d.id, d.data() as Partial<PostMeta>))

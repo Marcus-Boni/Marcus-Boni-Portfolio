@@ -294,6 +294,10 @@ function firestore(): typeof fetch {
       // right answer for a crawler.
       return new Response('{}', { status: 403 })
     }
+    if (url.endsWith('/posts/nao-listado')) {
+      return Response.json({ name: 'projects/p/…/posts/nao-listado', fields: { ...POST_FIELDS, status: { stringValue: 'unlisted' } } })
+    }
+    if (url.endsWith('/posts/nao-listado/content/main')) return Response.json({ fields: BODY_FIELDS })
     if (url.includes('/posts/')) {
       return new Response('{}', { status: 404 })
     }
@@ -342,6 +346,8 @@ describe('agents — blog routes with Firestore', () => {
   it('404s a slug that does not exist', async () => {
     const response = await handler(get('https://x/blog/fantasma', 'text/markdown'), ctx())
     expect(response.status).toBe(404)
+    expect(response.headers.get('X-Robots-Tag')).toBe('noindex, follow')
+    expect(response.headers.get('Cache-Control')).toBe('no-store')
     expect(response.headers.get('content-type')).toBe('text/markdown; charset=utf-8')
     expect(await response.text()).toContain('/blog/fantasma')
   })
@@ -349,5 +355,30 @@ describe('agents — blog routes with Firestore', () => {
   it('404s a draft, which the rules refuse to hand over', async () => {
     const response = await handler(get('https://x/blog/rascunho', 'text/markdown'), ctx())
     expect(response.status).toBe(404)
+  })
+
+  it('keeps unlisted Markdown readable but noindex and uncached, including HEAD', async () => {
+    for (const method of ['GET', 'HEAD']) {
+      const response = await handler(get('https://x/blog/nao-listado', 'text/markdown', method), ctx())
+      expect(response.status).toBe(200)
+      expect(response.headers.get('X-Robots-Tag')).toBe('noindex, follow')
+      expect(response.headers.get('Cache-Control')).toBe('no-store')
+      expect(response.headers.get('Netlify-CDN-Cache-Control')).toBe('no-store')
+      expect(response.headers.get('Vary')).toBe('Accept, Accept-Encoding')
+      if (method === 'HEAD') expect(await response.text()).toBe('')
+    }
+  })
+
+  it('does not serve an empty index when the configured publication query fails', async () => {
+    vi.stubGlobal('fetch', async () => new Response('{}', { status: 503 }))
+    try {
+      const response = await handler(get('https://x/blog', 'text/markdown'), ctx())
+      expect(response.status).toBe(503)
+      expect(response.headers.get('Retry-After')).toBe('300')
+      expect(response.headers.get('X-Robots-Tag')).toBe('noindex, follow')
+      expect(response.headers.get('Cache-Control')).toBe('no-store')
+    } finally {
+      vi.stubGlobal('fetch', firestore())
+    }
   })
 })

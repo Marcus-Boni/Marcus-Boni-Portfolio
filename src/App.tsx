@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 
 import { Cursor } from '@/components/cursor/Cursor'
+import { restoreSiteHead } from '@/blog/lib/seo'
 import { Header } from '@/components/layout/Header'
 import { SectionRail } from '@/components/layout/SectionRail'
 import { SmoothScroll } from '@/components/layout/SmoothScroll'
@@ -67,6 +68,10 @@ export default function App() {
   usePointerTracking()
   usePageTracking()
   const { locale, t } = useLanguage()
+
+  useEffect(() => {
+    restoreSiteHead(locale)
+  }, [locale])
 
   return (
     <SmoothScroll>
