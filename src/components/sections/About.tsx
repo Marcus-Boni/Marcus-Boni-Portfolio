@@ -7,7 +7,8 @@ import { SectionHeading } from '@/components/ui/SectionHeading'
 import { CodePortrait } from '@/components/ui/CodePortrait'
 
 /**
- * Editorial about: an oversized serif statement revealed line by line,
+ * Editorial about: an oversized serif statement inked in word by word as it
+ * is read,
  * a portrait assembled from code, and a mono fact sheet.
  */
 export function About() {
@@ -20,8 +21,8 @@ export function About() {
     ? '/portrait-640.webp' : profile.avatar
   const age = calculateAge(BIRTH_DATE)
   const statementRef = useScrollReveal<HTMLParagraphElement>({
-    mode: 'lines',
-    stagger: 0.1,
+    mode: 'ink',
+    start: 'top 84%',
   })
 
   const scopeRef = useGsapScope<HTMLElement>(({ root }) => {

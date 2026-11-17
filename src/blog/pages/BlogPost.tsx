@@ -3,10 +3,17 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 
 import { BlogImage } from '@/blog/components/BlogImage'
 import { PostBody } from '@/blog/components/PostBody'
-import { ReadingProgress, TableOfContents } from '@/blog/components/reading'
+import { RelatedCard } from '@/blog/components/PostCard'
+import { PostPlate } from '@/blog/components/PostPlate'
+import {
+  MobileReadingBar,
+  ReadingProgress,
+  ReadingStatus,
+  TableOfContents,
+} from '@/blog/components/reading'
 import { SITE_URL, usePostHead } from '@/blog/lib/seo'
 import { useReleaseServerDocument } from '@/blog/lib/server-document'
-import { extractToc, formatPostDate } from '@/blog/lib/text'
+import { entryNumber, extractToc, formatPostDate, formatPostDateCompact } from '@/blog/lib/text'
 import { usePost, usePostList } from '@/blog/usePosts'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 import { useLanguage } from '@/i18n/LanguageContext'
@@ -17,8 +24,12 @@ import { reciprocalTranslation, validDate } from '../../../netlify/lib/blog-seo'
  * A single post.
  *
  * Reading measure is capped near 68 characters — the article column is sized
- * for prose, with the table of contents living in the outer margin on wide
- * screens rather than stealing from the text.
+ * for prose, with the reading rail (time left, table of contents) living in
+ * the outer margin on wide screens rather than stealing from the text. On
+ * narrower screens the same rail docks to the bottom edge.
+ *
+ * A post without a cover wears its field plate in the masthead: the same
+ * terrain it carries on the index, so the entry is recognisable on arrival.
  */
 export function BlogPost() {
   const { slug } = useParams<{ slug: string }>()
@@ -27,7 +38,6 @@ export function BlogPost() {
   const { posts } = usePostList()
   const { pathname } = useLocation()
   const articleRef = useRef<HTMLDivElement>(null)
-  const titleRef = useScrollReveal<HTMLHeadingElement>({ immediate: true })
 
   const translation = post
     ? posts.find((candidate) => reciprocalTranslation(post, candidate)) ?? null
@@ -36,6 +46,13 @@ export function BlogPost() {
   useReleaseServerDocument(status === 'ready')
 
   const toc = useMemo(() => (post ? extractToc(post.body) : []), [post])
+  // The entry's place in the journal, oldest first. Unlisted posts are not in
+  // the published list, so they simply carry no number.
+  const ordinals = useMemo(
+    () => new Map(posts.map((candidate, index) => [candidate.slug, posts.length - index])),
+    [posts],
+  )
+  const ordinal = post ? ordinals.get(post.slug) : undefined
   const related = useMemo(() => {
     if (!post) return []
     return posts
@@ -141,9 +158,10 @@ export function BlogPost() {
         )}
 
         {/* ─── Masthead ──────────────────────────────────────────── */}
-        <header className="mt-8 border-b border-line pb-10">
+        <header className="mt-8 grid gap-10 border-b border-line pb-10 lg:grid-cols-12 lg:items-end lg:gap-12">
+          <div className={post.cover ? 'lg:col-span-12' : 'lg:col-span-8'}>
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] tracking-[0.22em] text-smoke uppercase">
-            {validDate(post.publishedAt) && <time dateTime={validDate(post.publishedAt)}>{formatPostDate(post.publishedAt, locale)}</time>}
+            {validDate(post.publishedAt) && <time dateTime={validDate(post.publishedAt)}>{formatPostDateCompact(post.publishedAt, locale)}</time>}
             <span aria-hidden className="text-line">/</span>
             <span>{t.blog.readingTime(post.readingMinutes)}</span>
             <span aria-hidden className="text-line">/</span>
@@ -158,14 +176,7 @@ export function BlogPost() {
             )}
           </p>
 
-          <h1
-            id="post-title"
-            ref={titleRef}
-            data-reveal
-            className="mt-6 max-w-4xl font-display text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] text-bone"
-          >
-            {post.title}
-          </h1>
+          <PostTitle key={post.slug}>{post.title}</PostTitle>
 
           {post.subtitle && (
             <p className="mt-5 max-w-2xl font-display-italic text-[clamp(1.15rem,2.2vw,1.6rem)] leading-snug text-bone-dim">
@@ -198,6 +209,22 @@ export function BlogPost() {
               </Link>
             )}
           </div>
+          </div>
+
+          {!post.cover && (
+            <div className="relative lg:col-span-4">
+              <PostPlate
+                seed={post.slug}
+                motion="drift"
+                className="aspect-[16/10] border border-line lg:aspect-[4/3]"
+              />
+              {ordinal !== undefined && (
+                <span className="absolute bottom-3 left-3 bg-ink/85 px-2.5 py-1 font-mono text-[10px] tracking-[0.22em] text-bone-dim uppercase">
+                  {t.blog.entry(entryNumber(ordinal))}
+                </span>
+              )}
+            </div>
+          )}
         </header>
 
         {post.cover && (
@@ -216,17 +243,20 @@ export function BlogPost() {
           </div>
 
           <aside className="hidden xl:block">
-            <TableOfContents entries={toc} label={t.blog.post.toc} />
+            <div className="sticky top-28 max-h-[calc(100svh-9rem)] overflow-y-auto">
+              <ReadingStatus minutes={post.readingMinutes} />
+              <TableOfContents entries={toc} label={t.blog.post.toc} />
+            </div>
           </aside>
         </div>
 
         {related.length > 0 && (
-          <section aria-labelledby="related-posts" className="mt-16 border-t border-line pt-8">
-            <h2 id="related-posts" className="font-display text-3xl text-bone">{t.blog.post.readAlso}</h2>
-            <ul className="mt-5 space-y-4">
+          <section aria-labelledby="related-posts" className="mt-20 border-t border-line pt-10">
+            <h2 id="related-posts" className="font-display text-[clamp(1.75rem,3vw,2.5rem)] leading-none text-bone">{t.blog.post.readAlso}</h2>
+            <ul className="mt-8 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((candidate) => (
                 <li key={candidate.slug}>
-                  <Link to={`/blog/${candidate.slug}`} className="text-bone-dim hover:text-ember">{candidate.title}</Link>
+                  <RelatedCard post={candidate} ordinal={ordinals.get(candidate.slug)} />
                 </li>
               ))}
             </ul>
@@ -244,7 +274,29 @@ export function BlogPost() {
           backLabel={t.blog.post.backToIndex}
         />
       </article>
+
+      <MobileReadingBar entries={toc} label={t.blog.post.toc} minutes={post.readingMinutes} />
     </>
+  )
+}
+
+/**
+ * The headline owns its reveal. The hook wires the animation in an effect
+ * that runs when *this* component mounts — and that has to be after the post
+ * arrived. Calling it from `BlogPost` would run the effect during the loading
+ * state, find no `<h1>`, and leave the title `visibility: hidden` for good.
+ */
+function PostTitle({ children }: { children: string }) {
+  const ref = useScrollReveal<HTMLHeadingElement>({ immediate: true })
+  return (
+    <h1
+      id="post-title"
+      ref={ref}
+      data-reveal
+      className="mt-6 max-w-4xl font-display text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] text-balance text-bone"
+    >
+      {children}
+    </h1>
   )
 }
 

@@ -9,12 +9,17 @@ import { cn } from '@/lib/utils'
 /**
  * Fixed vertical index on the left edge — the site's primary wayfinding.
  * Tracks the active section with an IntersectionObserver.
+ *
+ * Everything stays inside the page gutter. The active section's name runs
+ * vertically up the page edge like a running head, so it is always readable
+ * and never sits on top of the content beside the rail; the horizontal label
+ * of any other section appears only on hover or keyboard focus.
  */
 export function SectionRail() {
   const isDesktop = useIsDesktop()
   const [active, setActive] = useState<SectionId>('hero')
   const lenis = useLenis()
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
 
   useEffect(() => {
     if (!isDesktop) return
@@ -31,15 +36,27 @@ export function SectionRail() {
       if (el) observer.observe(el)
     }
     return () => observer.disconnect()
-  }, [isDesktop])
+    // `locale` re-keys <main>, which remounts every section: observe the new
+    // nodes or the rail goes on watching elements that left the document.
+  }, [isDesktop, locale])
 
   if (!isDesktop) return null
 
   return (
     <nav
-      aria-label="Seções"
-      className="fixed left-8 top-1/2 z-30 -translate-y-1/2 mix-blend-difference"
+      aria-label={t.sections.rail}
+      className="fixed left-3 top-1/2 z-30 flex -translate-y-1/2 items-center gap-2.5"
     >
+      <span
+        aria-hidden
+        className="flex h-28 w-3 rotate-180 items-center justify-center overflow-hidden font-mono text-[10px] leading-none tracking-[0.3em] text-bone-dim uppercase [writing-mode:vertical-rl]"
+      >
+        {/* keyed so each new section name plays the entrance again */}
+        <span key={active} className="animate-rail-label whitespace-nowrap">
+          {t.sections[active]}
+        </span>
+      </span>
+
       <ul className="flex flex-col gap-5">
         {sectionIds.map((id, index) => {
           const isActive = active === id
@@ -66,18 +83,13 @@ export function SectionRail() {
                 </span>
                 <span
                   className={cn(
-                    'block h-px bg-bone transition-all duration-500',
-                    isActive ? 'w-10 bg-ember' : 'w-4 opacity-40 group-hover:w-7 group-hover:opacity-80',
+                    'block h-px transition-[width,background-color,opacity] duration-500 ease-out-expo',
+                    isActive
+                      ? 'w-7 bg-ember'
+                      : 'w-4 bg-bone opacity-40 group-hover:w-7 group-hover:opacity-80',
                   )}
                 />
-                <span
-                  className={cn(
-                    'font-mono text-[10px] tracking-[0.2em] uppercase transition-all duration-300',
-                    isActive
-                      ? 'translate-x-0 text-bone opacity-100'
-                      : '-translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-60',
-                  )}
-                >
+                <span className="-translate-x-2 bg-ink/90 px-1.5 py-0.5 font-mono text-[10px] tracking-[0.2em] text-bone uppercase opacity-0 transition-[opacity,translate] duration-300 ease-out-expo group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">
                   {t.sections[id]}
                 </span>
               </button>

@@ -5,7 +5,11 @@ import { gsap, ScrollTrigger } from '@/animations/gsap'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { shouldSkipIntro } from '@/lib/defer'
 
-type RevealMode = 'lines' | 'chars' | 'words'
+/**
+ * `ink` is the odd one out: instead of a one-shot entrance it ties the text to
+ * the scroll, word by word — ghosted until read, inked once passed.
+ */
+type RevealMode = 'lines' | 'chars' | 'words' | 'ink'
 
 interface ScrollRevealOptions {
   /** What unit of text to stagger. Defaults to lines. */
@@ -48,6 +52,33 @@ export function useScrollReveal<T extends HTMLElement = HTMLHeadingElement>(
       // than the animation is worth (and would push LCP to animation end).
       el.style.visibility = 'visible'
       return
+    }
+
+    if (mode === 'ink') {
+      // Words only: a word split survives reflow, so no re-split on resize.
+      const split = new SplitType(el, { types: 'words', tagName: 'span' })
+      const words = split.words
+      if (!words || words.length === 0) {
+        el.style.visibility = 'visible'
+        return
+      }
+      gsap.set(el, { visibility: 'visible' })
+      const tween = gsap.fromTo(
+        words,
+        { opacity: 0.16 },
+        {
+          opacity: 1,
+          ease: 'none',
+          duration: 0.6,
+          stagger: { each: 0.12 },
+          scrollTrigger: { trigger: el, start, end: 'bottom 58%', scrub: 0.6 },
+        },
+      )
+      return () => {
+        tween.scrollTrigger?.kill()
+        tween.kill()
+        split.revert()
+      }
     }
 
     const split = new SplitType(el, {

@@ -33,6 +33,9 @@
   --text-editorial: clamp(1.75rem, 4.2vw, 3.75rem);
 
   --animate-marquee: marquee 28s linear infinite;
+  --animate-scroll-cue: scroll-cue 2.4s var(--ease-in-out-quart) infinite;
+  --animate-rail-label: rail-label 0.7s var(--ease-out-expo) both;
+  --animate-ledger-row: ledger-row 0.7s var(--ease-out-expo) both;
 
   @keyframes marquee {
     from {
@@ -40,6 +43,38 @@
     }
     to {
       transform: translateX(-50%);
+    }
+  }
+
+  /* The section name on the rail: slides along its own (vertical) baseline
+     and sharpens as it lands. */
+  @keyframes rail-label {
+    from {
+      opacity: 0;
+      filter: blur(4px);
+      transform: translateY(-0.9em);
+    }
+  }
+
+  /* Journal rows arriving after a filter change. The delay is capped by the
+     component (`--row` never exceeds 8) so a long list never keeps a reader
+     waiting on choreography. */
+  @keyframes ledger-row {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+  }
+
+  /* A short ember segment falling through a hairline: enters above, exits
+     below, rests out of sight before the next pass. */
+  @keyframes scroll-cue {
+    0% {
+      transform: translateY(-110%);
+    }
+    60%,
+    100% {
+      transform: translateY(260%);
     }
   }
 }
@@ -73,6 +108,18 @@ body {
 ::selection {
   background: var(--color-ember);
   color: var(--color-ink);
+}
+
+/* Keyboard focus and the text caret are drawn from the palette too — one
+   hairline of ember, the same accent every other state uses. */
+:focus-visible {
+  outline: 1px solid var(--color-ember);
+  outline-offset: 4px;
+}
+
+input,
+textarea {
+  caret-color: var(--color-ember);
 }
 
 /* Custom cursor takes over on precise pointers only */
@@ -138,6 +185,10 @@ body {
   75% {
     transform: translate(-1%, -1%);
   }
+}
+
+.animate-ledger-row {
+  animation-delay: calc(var(--row, 0) * 45ms);
 }
 
 /* SplitType line masking */
@@ -389,10 +440,9 @@ html.reduced-motion [data-reveal] {
   color: inherit;
 }
 
-.shiki-host .line {
-  display: block;
-  min-height: 1.7em;
-}
+/* Shiki's lines stay inline. The <pre> already breaks on the newline between
+   each `.line`; making them block boxes as well would break every line twice
+   and double the spacing the moment highlighting lands. */
 
 /* ─── Admin: overlay motion ─────────────────────────────────
    Three keyframes shared by the toast stack, the modal scrim and the command
