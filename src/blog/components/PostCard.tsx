@@ -1,15 +1,45 @@
+import { useState, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 
 import { BlogImage } from '@/blog/components/BlogImage'
-import { formatPostDate } from '@/blog/lib/text'
+import { PostPlate } from '@/blog/components/PostPlate'
+import { entryNumber, formatPostDateCompact } from '@/blog/lib/text'
 import type { PostMeta } from '@/blog/types'
 import { HoverItalic } from '@/components/ui/HoverItalic'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { cn } from '@/lib/utils'
 
-/** Mono metadata line shared by both card shapes. */
-function PostMetaLine({ post, className }: { post: PostMeta; className?: string }) {
+/** Mono metadata line shared by every card shape. */
+function PostMetaLine({
+  post,
+  className,
+  dateClassName,
+}: {
+  post: PostMeta
+  className?: string
+  /** Lets a layout that already prints the date elsewhere drop it here. */
+  dateClassName?: string
+}) {
   const { locale, t } = useLanguage()
+  const date = formatPostDateCompact(post.publishedAt, locale)
+  const parts: { key: string; node: React.ReactNode; className?: string }[] = []
+  if (date) {
+    parts.push({
+      key: 'date',
+      className: dateClassName,
+      node: <time dateTime={post.publishedAt ?? undefined}>{date}</time>,
+    })
+  }
+  if (typeof post.readingMinutes === 'number') {
+    parts.push({ key: 'reading', node: t.blog.readingTime(post.readingMinutes) })
+  }
+  if (post.lang) {
+    parts.push({ key: 'lang', node: <span className="text-bone-dim">{post.lang.toUpperCase()}</span> })
+  }
+  if (post.series) {
+    parts.push({ key: 'series', node: <span className="text-ember">{post.series.title}</span> })
+  }
+
   return (
     <p
       className={cn(
@@ -17,45 +47,51 @@ function PostMetaLine({ post, className }: { post: PostMeta; className?: string 
         className,
       )}
     >
-      <time dateTime={post.publishedAt ?? undefined}>{formatPostDate(post.publishedAt, locale)}</time>
-      <span aria-hidden className="text-line">
-        /
-      </span>
-      <span>{t.blog.readingTime(post.readingMinutes)}</span>
-      <span aria-hidden className="text-line">
-        /
-      </span>
-      <span className="text-bone-dim">{post.lang.toUpperCase()}</span>
-      {post.series && (
-        <>
-          <span aria-hidden className="text-line">
-            /
-          </span>
-          <span className="text-ember">{post.series.title}</span>
-        </>
-      )}
+      {parts.map((part) => (
+        <span
+          key={part.key}
+          className={cn(
+            'flex items-center gap-3 [&:not(:last-child)]:after:text-line [&:not(:last-child)]:after:content-["/"]',
+            part.className,
+          )}
+        >
+          {part.node}
+        </span>
+      ))}
     </p>
   )
 }
 
+/** Hover and keyboard focus both set a card's plate moving. */
+function useActive() {
+  const [active, setActive] = useState(false)
+  return {
+    active,
+    handlers: {
+      onPointerEnter: () => setActive(true),
+      onPointerLeave: () => setActive(false),
+      onFocus: () => setActive(true),
+      onBlur: () => setActive(false),
+    },
+  }
+}
+
 /**
- * The lead slot on the index: full-bleed cover with the title over a ruled
- * baseline. Only ever rendered once, for the newest featured post.
+ * The lead slot on the index: the entry's cover — or its field plate when it
+ * has none — beside an oversized title. Rendered once, for the featured post.
  */
-export function FeaturedPostCard({ post }: { post: PostMeta }) {
+export function FeaturedPostCard({ post, ordinal }: { post: PostMeta; ordinal?: number }) {
   const { t } = useLanguage()
+  const { active, handlers } = useActive()
 
   return (
     <Link
       to={`/blog/${post.slug}`}
       data-cursor="view"
-      className="group block border-t border-line pt-6"
+      {...handlers}
+      className="group grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:items-end lg:gap-14"
     >
-      <p className="mb-5 font-mono text-[10px] tracking-[0.3em] text-ember uppercase">
-        {t.blog.featured}
-      </p>
-
-      <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:items-center">
+      <div className="relative">
         {post.cover ? (
           <BlogImage
             media={post.cover}
@@ -64,48 +100,94 @@ export function FeaturedPostCard({ post }: { post: PostMeta }) {
             className="border border-line transition-opacity duration-500 group-hover:opacity-90"
           />
         ) : (
-          <div className="aspect-[16/10] border border-line bg-gradient-to-br from-ink-soft to-ink" />
+          <PostPlate
+            seed={post.slug}
+            motion="drift"
+            active={active}
+            className="aspect-[16/10] border border-line transition-colors duration-500 group-hover:border-ember/60"
+          />
         )}
+        <span className="absolute top-0 left-0 bg-ember px-2.5 py-1 font-mono text-[10px] tracking-[0.22em] text-ink uppercase">
+          {t.blog.featured}
+        </span>
+        {ordinal !== undefined && (
+          <span className="absolute bottom-3 left-3 bg-ink/85 px-2.5 py-1 font-mono text-[10px] tracking-[0.22em] text-bone-dim uppercase">
+            {t.blog.entry(entryNumber(ordinal))}
+          </span>
+        )}
+      </div>
 
-        <div>
-          <h2 className="font-display text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] text-bone">
-            <HoverItalic text={post.title} />
-          </h2>
-          {post.subtitle && (
-            <p className="mt-4 max-w-lg text-base leading-relaxed text-bone-dim">
-              {post.subtitle}
-            </p>
-          )}
-          <PostMetaLine post={post} className="mt-6" />
-        </div>
+      <div>
+        <PostMetaLine post={post} />
+        {/* Colour carries the hover here: at this size the upright and italic
+            faces of a long title wrap differently, and stacking them (as
+            HoverItalic does) would reserve a line that is never filled. */}
+        <h2 className="mt-5 font-display text-[clamp(2.25rem,4.6vw,4rem)] leading-[1.02] text-balance text-bone transition-colors duration-500 group-hover:text-ember">
+          {post.title}
+        </h2>
+        {(post.subtitle || post.excerpt) && (
+          <p className="mt-5 max-w-lg text-base leading-relaxed text-pretty text-bone-dim">
+            {post.subtitle || post.excerpt}
+          </p>
+        )}
+        <span className="mt-8 inline-flex items-center gap-3 font-mono text-[11px] tracking-[0.22em] text-bone uppercase transition-colors duration-300 group-hover:text-ember">
+          <span className="h-px w-10 bg-current transition-[width] duration-500 ease-out-expo group-hover:w-16" />
+          {t.blog.readEntry}
+        </span>
       </div>
     </Link>
   )
 }
 
 /**
- * Ruled index row. The whole row is the target; the arrow and the italic
- * cross-fade carry the affordance instead of a button.
+ * One line of the ledger: ordinal and date in the margin, the entry in the
+ * middle, its plate at the end. The whole row is the target; the italic
+ * cross-fade and the plate coming alive carry the affordance.
  */
-export function PostRow({ post }: { post: PostMeta }) {
+export function PostRow({
+  post,
+  ordinal,
+  index,
+}: {
+  post: PostMeta
+  ordinal: number
+  /** Position in the visible list — staggers the row's entrance. */
+  index: number
+}) {
+  const { locale, t } = useLanguage()
+  const { active, handlers } = useActive()
+
   return (
-    <li>
+    <li
+      className="animate-ledger-row"
+      style={{ '--row': Math.min(index, 8) } as CSSProperties}
+    >
       <Link
         to={`/blog/${post.slug}`}
         data-cursor="view"
-        className="group flex flex-col gap-4 border-b border-line py-8 transition-colors duration-500 hover:border-ember/40 md:flex-row md:items-baseline md:gap-10"
+        {...handlers}
+        className="group grid gap-x-8 gap-y-3 border-b border-line py-8 transition-colors duration-500 hover:border-ember/50 md:grid-cols-[7.5rem_minmax(0,1fr)_9.5rem] lg:grid-cols-[8.5rem_minmax(0,1fr)_11.5rem]"
       >
-        <div className="min-w-0 flex-1">
-          <h2 className="font-display text-[clamp(1.5rem,2.6vw,2.25rem)] leading-[1.1] text-bone">
+        <p className="flex items-baseline gap-3 font-mono text-[11px] tracking-[0.18em] text-smoke uppercase md:flex-col md:gap-2 md:pt-2">
+          <span className="transition-colors duration-300 group-hover:text-ember">
+            {t.blog.entry(entryNumber(ordinal))}
+          </span>
+          <span className="text-[10px] tracking-[0.2em] whitespace-nowrap max-md:hidden">
+            {formatPostDateCompact(post.publishedAt, locale)}
+          </span>
+        </p>
+
+        <div className="min-w-0">
+          <h2 className="font-display text-[clamp(1.6rem,2.7vw,2.4rem)] leading-[1.08] text-bone">
             <HoverItalic text={post.title} />
           </h2>
           {post.excerpt && (
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-bone-dim md:text-[15px]">
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-pretty text-bone-dim md:text-[15px]">
               {post.excerpt}
             </p>
           )}
-          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-            <PostMetaLine post={post} />
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <PostMetaLine post={post} dateClassName="md:hidden" />
             {post.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
@@ -117,13 +199,47 @@ export function PostRow({ post }: { post: PostMeta }) {
           </div>
         </div>
 
-        <span
-          aria-hidden
-          className="shrink-0 self-start font-display-italic text-3xl text-line transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-ember md:self-center"
-        >
-          ↗
-        </span>
+        <PostPlate
+          seed={post.slug}
+          active={active}
+          className="aspect-[16/10] border border-line transition-colors duration-500 group-hover:border-ember/60 max-md:hidden"
+        />
       </Link>
     </li>
+  )
+}
+
+/** "Read next" card: plate or cover, title, the essentials. */
+export function RelatedCard({ post, ordinal }: { post: PostMeta; ordinal?: number }) {
+  const { t } = useLanguage()
+  const { active, handlers } = useActive()
+
+  return (
+    <Link to={`/blog/${post.slug}`} data-cursor="view" {...handlers} className="group block">
+      <div className="relative">
+        {post.cover ? (
+          <BlogImage
+            media={post.cover}
+            sizes="(min-width: 768px) 30vw, 100vw"
+            className="border border-line"
+          />
+        ) : (
+          <PostPlate
+            seed={post.slug}
+            active={active}
+            className="aspect-[16/10] border border-line transition-colors duration-500 group-hover:border-ember/60"
+          />
+        )}
+        {ordinal !== undefined && (
+          <span className="absolute bottom-2 left-2 bg-ink/85 px-2 py-0.5 font-mono text-[9px] tracking-[0.22em] text-bone-dim uppercase">
+            {t.blog.entry(entryNumber(ordinal))}
+          </span>
+        )}
+      </div>
+      <h3 className="mt-4 font-display text-2xl leading-[1.1] text-balance text-bone">
+        <HoverItalic text={post.title} />
+      </h3>
+      <PostMetaLine post={post} className="mt-3" />
+    </Link>
   )
 }

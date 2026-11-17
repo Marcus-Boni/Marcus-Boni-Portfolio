@@ -198,6 +198,33 @@ pequenos, não 40 artigos inteiros. `status` é espelhado no documento do corpo 
 escrito no **mesmo `writeBatch`**, para as regras poderem filtrar sem um `get()`
 — um `get()` nas regras cobra uma leitura por requisição.
 
+### Pranchas de campo
+
+Todo registro tem uma prancha: um mapa de curvas de nível de um terreno que só
+existe para ele. O terreno é função pura do slug (`src/blog/lib/plate.ts`:
+hash FNV-1a, PRNG com semente, um campo de alturas e um pintor que desenha as
+curvas pixel a pixel), então o mesmo post mostra a mesma prancha no índice, no
+cabeçalho e em "Leia também". Ela é a capa quando o post não tem imagem; com
+`cover`, a imagem vence.
+
+`PostPlate` pinta num `<canvas>` só quando a prancha chega perto da tela e só
+anima enquanto está visível, com a aba em primeiro plano e sem
+`prefers-reduced-motion`. Mudar o slug muda a prancha.
+
+### Ver o Diário sem publicar
+
+No servidor de desenvolvimento, `/blog?demo=1` troca o Firestore pelos
+registros de exemplo de `src/blog/dev-fixtures.ts`, e `/blog?demo=0` desfaz. A
+marca fica em `sessionStorage`, porque o índice reescreve a própria query
+string. No build de produção o ramo inteiro é código morto e o arquivo não é
+emitido.
+
+### Numeração dos registros
+
+O "Nº 007" é a posição do post na lista publicada, do mais antigo para o mais
+novo. Não é um campo salvo: despublicar um registro antigo renumera os
+seguintes.
+
 ### Publicação por agentes
 
 Agentes confiáveis publicam por `POST /agent/v1/posts` e revisam posts existentes

@@ -15,6 +15,8 @@ export interface Translation {
     experience: string
     craft: string
     contact: string
+    /** Accessible name of the section rail. */
+    rail: string
   }
   header: {
     menu: string
@@ -70,7 +72,11 @@ export interface Translation {
   craft: {
     label: string
     statement: ReactNode
+    intro: string
+    seeProjects: string
+    figcaption: string
     categories: { frontend: string; backend: string; data: string; ops: string }
+    descriptions: { frontend: string; backend: string; data: string; ops: string }
   }
   contact: {
     label: string
@@ -109,9 +115,23 @@ export interface Translation {
     retry: string
     featured: string
     unlistedNotice: string
+    /** Ordinal of an entry in the journal, e.g. "Nº 012". */
+    entry: (number: string) => string
+    readEntry: string
+    rss: string
+    /** Labels of the masthead figures, all derived from the published list. */
+    stats: {
+      entries: string
+      topics: string
+      reading: string
+      updated: string
+      minutes: (minutes: number) => string
+    }
     post: {
       back: string
       toc: string
+      remaining: (minutes: number) => string
+      finished: string
       updated: (date: string) => string
       share: string
       copyLink: string
@@ -136,6 +156,7 @@ export const translations: Record<Locale, Translation> = {
       experience: 'Carreira',
       craft: 'Stack',
       contact: 'Contato',
+      rail: 'Seções',
     },
     header: {
       menu: 'MENU',
@@ -218,10 +239,19 @@ export const translations: Record<Locale, Translation> = {
         </>
       ),
       categories: {
-        frontend: 'Interface',
-        backend: 'Serviços',
+        frontend: 'Interfaces',
+        backend: 'Serviços & APIs',
         data: 'Dados',
-        ops: 'Infra',
+        ops: 'Infraestrutura',
+      },
+      intro: 'Da interface à operação: as ferramentas que uso para construir e evoluir produtos.',
+      seeProjects: 'Ver nos projetos',
+      figcaption: 'fig. 02 — a pilha',
+      descriptions: {
+        frontend: 'Aplicações web e mobile, interfaces e interação.',
+        backend: 'Lógica de negócio, integrações e serviços.',
+        data: 'Persistência, consultas e plataformas de dados.',
+        ops: 'Ambientes, entrega e operação das aplicações.',
       },
     },
     contact: {
@@ -268,9 +298,22 @@ export const translations: Record<Locale, Translation> = {
       featured: 'Em destaque',
       unlistedNotice:
         'Este registro não está listado publicamente — você chegou por link direto.',
+      entry: (number) => `Nº ${number}`,
+      readEntry: 'Ler registro',
+      rss: 'Assinar por RSS',
+      stats: {
+        entries: 'Registros',
+        topics: 'Temas',
+        reading: 'Leitura',
+        updated: 'Atualizado',
+        minutes: (minutes) => `${minutes} min`,
+      },
       post: {
         back: 'Voltar ao diário',
         toc: 'Nesta página',
+        remaining: (minutes) =>
+          minutes <= 1 ? 'Menos de 1 min restante' : `${minutes} min restantes`,
+        finished: 'Leitura concluída',
         updated: (date) => `Atualizado em ${date}`,
         share: 'Compartilhar',
         copyLink: 'Copiar link',
@@ -295,6 +338,7 @@ export const translations: Record<Locale, Translation> = {
       experience: 'Career',
       craft: 'Stack',
       contact: 'Contact',
+      rail: 'Sections',
     },
     header: {
       menu: 'MENU',
@@ -378,10 +422,19 @@ export const translations: Record<Locale, Translation> = {
         </>
       ),
       categories: {
-        frontend: 'Interface',
-        backend: 'Services',
+        frontend: 'Interfaces',
+        backend: 'Services & APIs',
         data: 'Data',
-        ops: 'Infra',
+        ops: 'Infrastructure',
+      },
+      intro: 'From interface to operations: the tools I use to build and evolve products.',
+      seeProjects: 'See in projects',
+      figcaption: 'fig. 02 — the stack',
+      descriptions: {
+        frontend: 'Web and mobile applications, interfaces and interaction.',
+        backend: 'Business logic, integrations and services.',
+        data: 'Persistence, queries and data platforms.',
+        ops: 'Environments, delivery and application operations.',
       },
     },
     contact: {
@@ -426,9 +479,22 @@ export const translations: Record<Locale, Translation> = {
       featured: 'Featured',
       unlistedNotice:
         'This entry is not publicly listed — you arrived through a direct link.',
+      entry: (number) => `No. ${number}`,
+      readEntry: 'Read entry',
+      rss: 'Subscribe via RSS',
+      stats: {
+        entries: 'Entries',
+        topics: 'Topics',
+        reading: 'Reading',
+        updated: 'Updated',
+        minutes: (minutes) => `${minutes} min`,
+      },
       post: {
         back: 'Back to notes',
         toc: 'On this page',
+        remaining: (minutes) =>
+          minutes <= 1 ? 'Under 1 min left' : `${minutes} min left`,
+        finished: 'Finished',
         updated: (date) => `Updated ${date}`,
         share: 'Share',
         copyLink: 'Copy link',

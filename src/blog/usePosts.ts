@@ -6,6 +6,25 @@ import { isFirebaseConfigured } from '@/lib/firebase-config'
 type Status = 'loading' | 'ready' | 'error'
 
 /**
+ * Development only. `/blog?demo=1` swaps Firestore for the sample entries in
+ * `dev-fixtures.ts` (and `?demo=0` swaps it back), so the journal can be
+ * designed and reviewed without publishing anything. The flag lives in
+ * sessionStorage because the index rewrites its own query string.
+ *
+ * Call sites test `import.meta.env.DEV` themselves, right beside the dynamic
+ * import. That constant is replaced at build time, so the whole branch is dead
+ * code in production and the fixtures chunk is never emitted — hiding the
+ * check inside this function would leave the bundler unable to prove it.
+ */
+function demoMode(): boolean {
+  if (typeof window === 'undefined') return false
+  const flag = new URLSearchParams(window.location.search).get('demo')
+  if (flag === '1') window.sessionStorage.setItem('blog-demo', '1')
+  if (flag === '0') window.sessionStorage.removeItem('blog-demo')
+  return window.sessionStorage.getItem('blog-demo') === '1'
+}
+
+/**
  * Blog data loading.
  *
  * The Firestore SDK is reached through a dynamic `import()` of `./service`, the
@@ -32,8 +51,17 @@ export function usePostList() {
   }, [])
 
   useEffect(() => {
-    if (!isFirebaseConfigured) return
     let cancelled = false
+
+    if (import.meta.env.DEV && demoMode()) {
+      void import('./dev-fixtures').then(({ fixturePosts }) => {
+        if (!cancelled) setPosts(fixturePosts)
+      })
+      return () => {
+        cancelled = true
+      }
+    }
+    if (!isFirebaseConfigured) return
 
     void import('./service')
       .then(({ fetchPublishedPosts }) => fetchPublishedPosts())
@@ -75,8 +103,19 @@ export function usePost(slug: string | undefined) {
   }, [])
 
   useEffect(() => {
-    if (!isFirebaseConfigured || !slug) return
+    if (!slug) return
     let cancelled = false
+
+    if (import.meta.env.DEV && demoMode()) {
+      void import('./dev-fixtures').then(({ fixturePosts }) => {
+        const post = fixturePosts.find((candidate) => candidate.slug === slug) ?? null
+        if (!cancelled) setResult({ slug, post })
+      })
+      return () => {
+        cancelled = true
+      }
+    }
+    if (!isFirebaseConfigured) return
 
     void import('./service')
       .then(({ fetchPost }) => fetchPost(slug))

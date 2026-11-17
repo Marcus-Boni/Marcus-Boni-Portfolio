@@ -70,7 +70,7 @@ export function Hero() {
       id="hero"
       ref={scopeRef}
       className="relative flex h-svh flex-col justify-end overflow-hidden"
-      aria-label="Apresentação"
+      aria-label={t.sections.hero}
     >
       {/* static backdrop, painted immediately — the WebGL canvas mounts over
           it only after the first user interaction so it never blocks load */}
@@ -134,9 +134,12 @@ export function Hero() {
           </p>
           <div className="flex flex-col items-end gap-1 font-mono text-[10px] tracking-[0.25em] text-smoke uppercase">
             <span>{t.hero.scrollLine1}</span>
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-3">
               {t.hero.scrollLine2}
-              <span className="inline-block animate-bounce text-ember">↓</span>
+              {/* a signal running down a hairline, in place of a bouncing arrow */}
+              <span aria-hidden className="relative block h-7 w-px overflow-hidden bg-line">
+                <span className="absolute inset-x-0 top-0 block h-3 animate-scroll-cue bg-ember" />
+              </span>
             </span>
           </div>
         </div>

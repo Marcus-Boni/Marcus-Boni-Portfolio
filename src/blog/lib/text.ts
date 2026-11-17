@@ -111,6 +111,31 @@ export function extractToc(markdown: string): TocEntry[] {
   return entries
 }
 
+/**
+ * `2026-09-03` → `03 set 2026` (pt) / `03 Sep 2026` (en).
+ *
+ * Day–month–year in both languages and always the same width, for the places
+ * where dates stack in a column: the journal's ledger margin and its figures.
+ */
+export function formatPostDateCompact(iso: string | null | undefined, locale: 'pt' | 'en'): string {
+  if (!iso) return ''
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  const parts = new Intl.DateTimeFormat(locale === 'pt' ? 'pt-BR' : 'en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'America/Sao_Paulo',
+  }).formatToParts(date)
+  const pick = (type: string) => parts.find((part) => part.type === type)?.value ?? ''
+  return `${pick('day')} ${pick('month').replace('.', '')} ${pick('year')}`
+}
+
+/** `12` → `012`: the ordinal an entry carries across the journal. */
+export function entryNumber(ordinal: number): string {
+  return String(ordinal).padStart(3, '0')
+}
+
 /** `2026-09-03` → `3 set 2026` (pt) / `Sep 3, 2026` (en). */
 export function formatPostDate(iso: string | null, locale: 'pt' | 'en'): string {
   if (!iso) return ''

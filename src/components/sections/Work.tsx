@@ -3,12 +3,15 @@ import { useLayoutEffect, useRef, type PointerEvent } from 'react'
 import { useSiteContent } from '@/content/SiteContentContext'
 import type { Project } from '@/data/profile'
 import { gsap } from '@/animations/gsap'
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { useGsapScope } from '@/hooks/useScrollReveal'
 import { useScramble } from '@/hooks/useScramble'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { trackEvent } from '@/lib/analytics'
+import { cn } from '@/lib/utils'
 import { HoverItalic } from '@/components/ui/HoverItalic'
 import { SectionHeading } from '@/components/ui/SectionHeading'
+import { WORK_TRAVEL_RATIO, workTrackDistance } from '@/lib/work-layout'
 
 function ProjectPanel({ project }: { project: Project }) {
   const { locale, t } = useLanguage()
@@ -58,7 +61,7 @@ function ProjectPanel({ project }: { project: Project }) {
       onPointerMove={onMove}
       onPointerLeave={onLeave}
       onClick={() => trackEvent('outbound_click', { label: project.title })}
-      className="group relative flex w-[86vw] shrink-0 flex-col justify-between border-l border-line px-6 py-10 md:w-[44rem] md:px-12 md:py-14"
+      className="group relative flex w-[86vw] shrink-0 flex-col justify-between border-l border-line px-6 py-10 md:w-[44rem] md:px-12 lg:py-10 lg-short:py-8 xl:py-14"
     >
       <span
         ref={numberRef}
@@ -96,6 +99,7 @@ function ProjectPanel({ project }: { project: Project }) {
  */
 export function Work() {
   const { t } = useLanguage()
+  const reduced = usePrefersReducedMotion()
   const { content } = useSiteContent()
   const { projects, profile } = content
 
@@ -103,19 +107,38 @@ export function Work() {
     const track = root.querySelector<HTMLElement>('[data-track]')
     if (!track) return
 
+    const count = root.querySelector<HTMLElement>('[data-work-count]')
+    const bar = root.querySelector<HTMLElement>('[data-work-progress]')
+    let shown = 0
+
     const mm = gsap.matchMedia()
     mm.add('(min-width: 1024px)', () => {
-      const distance = () => track.scrollWidth - window.innerWidth
+      const distance = () =>
+        workTrackDistance({
+          trackWidth: track.scrollWidth,
+          visibleWidth: track.clientWidth,
+        })
       gsap.to(track, {
         x: () => -distance(),
         ease: 'none',
         scrollTrigger: {
           trigger: root,
           start: 'top top',
-          end: () => `+=${distance()}`,
+          end: () => `+=${distance() * WORK_TRAVEL_RATIO}`,
           pin: true,
           scrub: 1,
           invalidateOnRefresh: true,
+          // Position readout, written straight to the DOM: the panel count is
+          // read live so content arriving from the CMS never leaves it stale.
+          onUpdate: (self) => {
+            if (bar) bar.style.transform = `scaleX(${self.progress})`
+            const total = track.children.length
+            const current = Math.min(total, Math.floor(self.progress * total) + 1)
+            if (count && current !== shown) {
+              shown = current
+              count.textContent = String(current).padStart(2, '0')
+            }
+          },
         },
       })
     })
@@ -124,24 +147,44 @@ export function Work() {
 
   return (
     <section id="work" ref={scopeRef} aria-label={t.work.label}>
-      <div className="px-5 pt-28 md:px-8 md:pt-40 lg:h-svh lg:overflow-hidden lg:pl-24">
+      <div
+        className={cn(
+          'px-5 pt-28 md:px-8 md:pt-32 lg:pl-24 lg:pt-24 lg-short:pt-16 xl:pt-32',
+          !reduced && 'lg:h-svh lg:overflow-hidden',
+        )}
+      >
         <SectionHeading number="03" label={t.work.label} />
 
         <div className="mt-10 flex items-end justify-between lg:mt-12">
           <h2 className="wdth-condensed font-sans text-mega leading-[0.9] font-bold uppercase">
             {t.work.title}
           </h2>
-          <p
-            data-cursor="drag"
-            className="hidden pb-4 font-mono text-[10px] tracking-[0.25em] text-smoke uppercase lg:block"
-          >
-            {t.work.hint}
-          </p>
+          {!reduced && (
+            <div className="hidden pb-4 font-mono text-[10px] tracking-[0.25em] text-smoke uppercase lg:flex lg:flex-col lg:items-end lg:gap-3">
+              <p data-cursor="drag">{t.work.hint}</p>
+              <p aria-hidden className="flex items-center gap-4">
+                <span className="tabular-nums">
+                  <span data-work-count className="text-bone">01</span>
+                  {' / '}
+                  {String(projects.length + 1).padStart(2, '0')}
+                </span>
+                <span className="block h-px w-28 bg-line">
+                  <span
+                    data-work-progress
+                    className="block h-px w-full origin-left scale-x-0 bg-ember"
+                  />
+                </span>
+              </p>
+            </div>
+          )}
         </div>
 
         <div
           data-track
-          className="mt-12 flex flex-col gap-16 will-change-transform lg:mt-16 lg:flex-row lg:gap-0"
+          className={cn(
+            'mt-12 flex flex-col gap-16 will-change-transform lg:mt-10 lg-short:mt-6 xl:mt-16',
+            !reduced && 'lg:flex-row lg:gap-0',
+          )}
         >
           {projects.map((project) => (
             <ProjectPanel key={project.title} project={project} />
@@ -153,7 +196,7 @@ export function Work() {
             rel="noreferrer"
             data-cursor="view"
             onClick={() => trackEvent('outbound_click', { label: 'GitHub archive' })}
-            className="group flex w-[86vw] shrink-0 flex-col items-start justify-center gap-6 border-l border-line px-6 py-10 md:w-[36rem] md:px-12"
+            className="group flex w-[86vw] shrink-0 flex-col items-start justify-center gap-6 border-l border-line px-6 py-10 md:w-[36rem] md:px-12 lg:py-10 lg-short:py-8 xl:py-14"
           >
             <span className="font-mono text-[10px] tracking-[0.25em] text-smoke uppercase">
               {t.work.others(profile.repoCount - projects.length)}
