@@ -1,5 +1,5 @@
 {
-  "count": 16,
+  "count": 24,
   "items": [
     {
       "name": "React",
@@ -19,6 +19,14 @@
     },
     {
       "name": "React Native",
+      "category": "frontend"
+    },
+    {
+      "name": "Astro",
+      "category": "frontend"
+    },
+    {
+      "name": "Flutter",
       "category": "frontend"
     },
     {
@@ -54,6 +62,18 @@
       "category": "data"
     },
     {
+      "name": "SQLite",
+      "category": "data"
+    },
+    {
+      "name": "Neon",
+      "category": "data"
+    },
+    {
+      "name": "Turso",
+      "category": "data"
+    },
+    {
       "name": "Docker",
       "category": "ops"
     },
@@ -63,6 +83,18 @@
     },
     {
       "name": "Azure DevOps",
+      "category": "ops"
+    },
+    {
+      "name": "Portainer",
+      "category": "ops"
+    },
+    {
+      "name": "IIS",
+      "category": "ops"
+    },
+    {
+      "name": "Netlify",
       "category": "ops"
     }
   ]

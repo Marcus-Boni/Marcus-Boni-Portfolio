@@ -122,10 +122,10 @@ end to end, across seven sectors:
 
 ## Technical stack
 
-- **Interface:** React, Next.js, TypeScript, Tailwind CSS, React Native
+- **Interface:** React, Next.js, TypeScript, Tailwind CSS, React Native, Astro, Flutter
 - **Services:** C#, Java, Python, Node.js
-- **Data:** PostgreSQL, SQL Server, Supabase, Firebase
-- **Infrastructure:** Docker, Azure, Azure DevOps
+- **Data:** PostgreSQL, SQL Server, Supabase, Firebase, SQLite, Neon, Turso
+- **Infrastructure:** Docker, Azure, Azure DevOps, Portainer, IIS, Netlify
 
 ## Writing
 

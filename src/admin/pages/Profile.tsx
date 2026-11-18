@@ -24,6 +24,7 @@ import {
 } from '@/admin/components/ui'
 import { isValidEmail, isValidUrl, socialIssues } from '@/admin/lib/health'
 import { useSortable } from '@/admin/lib/use-sortable'
+import { defaultSiteContent } from '@/content/defaults'
 import { makeId } from '@/content/ids'
 import type { SiteProfile, SocialLink, TechItem } from '@/content/types'
 import { cn } from '@/lib/utils'
@@ -158,6 +159,22 @@ export function Profile() {
     for (const tech of draft.techStack) groups.get(tech.category)?.push(tech)
     return groups
   }, [draft.techStack])
+
+  // Technologies the code's defaults carry that the published list does not.
+  // The public site paints the defaults first and the published list after, so
+  // while the two differ the Stack section visibly changes on load.
+  const missingTech = useMemo(() => {
+    const published = new Set(draft.techStack.map((tech) => tech.name.trim().toLowerCase()))
+    return defaultSiteContent.techStack.filter((tech) => !published.has(tech.name.toLowerCase()))
+  }, [draft.techStack])
+
+  const addMissingTech = () =>
+    update((d) => {
+      for (const { name, category } of missingTech) {
+        d.techStack.push({ id: makeId('tech'), name, category })
+      }
+      return d
+    })
 
   if (loading) {
     return (
@@ -358,6 +375,20 @@ export function Profile() {
             />
           }
         />
+
+        {missingTech.length > 0 && (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border border-dashed border-line px-3 py-2.5">
+            <p className="max-w-2xl text-xs leading-relaxed text-bone-dim">
+              {missingTech.length === 1
+                ? '1 tecnologia do padrão do código ainda não está na lista publicada: '
+                : `${missingTech.length} tecnologias do padrão do código ainda não estão na lista publicada: `}
+              <span className="text-bone">{missingTech.map((tech) => tech.name).join(', ')}</span>.
+            </p>
+            <AdminButton size="sm" onClick={addMissingTech}>
+              Adicionar à lista
+            </AdminButton>
+          </div>
+        )}
 
         <div className="flex flex-col gap-6">
           {CATEGORIES.filter(

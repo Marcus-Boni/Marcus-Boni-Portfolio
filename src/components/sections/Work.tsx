@@ -13,7 +13,7 @@ import { HoverItalic } from '@/components/ui/HoverItalic'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { WORK_TRAVEL_RATIO, workTrackDistance } from '@/lib/work-layout'
 
-function ProjectPanel({ project }: { project: Project }) {
+function ProjectPanel({ project, gallery }: { project: Project; gallery: boolean }) {
   const { locale, t } = useLanguage()
   const numberRef = useRef<HTMLSpanElement>(null)
   const { ref: ctaRef, scramble: scrambleCta } = useScramble<HTMLSpanElement>(
@@ -61,18 +61,36 @@ function ProjectPanel({ project }: { project: Project }) {
       onPointerMove={onMove}
       onPointerLeave={onLeave}
       onClick={() => trackEvent('outbound_click', { label: project.title })}
-      className="group relative flex w-[86vw] shrink-0 flex-col justify-between border-l border-line px-6 py-10 md:w-[44rem] md:px-12 lg:py-10 lg-short:py-8 xl:py-14"
+      className={cn(
+        'group relative flex w-[86vw] shrink-0 flex-col justify-between border-l border-line px-6 py-10 md:w-[44rem] md:px-12 lg:py-10 lg-short:py-8 xl:py-14',
+        gallery && 'lg:[container-type:size]',
+      )}
     >
       <span
         ref={numberRef}
         aria-hidden
-        className="text-outline pointer-events-none absolute -top-2 right-4 font-sans text-[clamp(5rem,10vw,9rem)] font-bold transition-colors duration-500 will-change-transform group-hover:text-outline-ember"
+        className={cn(
+          'text-outline pointer-events-none absolute -top-2 right-4 font-sans text-[clamp(5rem,10vw,9rem)] font-bold transition-colors duration-500 will-change-transform group-hover:text-outline-ember',
+          // In the gallery a panel is as tall as the screen allows, and the
+          // numeral takes the band the title and the description leave between
+          // them. The panel is a size container, so the numeral is sized from
+          // the panel's own height: what is left of its content box once the
+          // title and the copy (about 16.5rem between them) are taken out.
+          gallery &&
+            'lg:top-[48%] lg:right-10 lg:-translate-y-1/2 lg:text-[clamp(4rem,calc(100cqh-16.5rem),11rem)] lg:leading-none',
+        )}
       >
         {project.index}
       </span>
 
       <header>
-        <p className="font-mono text-[10px] tracking-[0.25em] text-smoke uppercase">
+        {/* Wherever the numeral sits in the top corner, the line stops short of it. */}
+        <p
+          className={cn(
+            'font-mono text-[10px] leading-relaxed tracking-[0.25em] text-smoke uppercase',
+            gallery ? 'max-lg:pr-28' : 'pr-28',
+          )}
+        >
           {project.year} — {project.stack.join(' / ')}
         </p>
         <h3 className="mt-6 text-[clamp(2.4rem,5vw,4.5rem)] leading-[0.95] text-bone">
@@ -150,7 +168,9 @@ export function Work() {
       <div
         className={cn(
           'px-5 pt-28 md:px-8 md:pt-32 lg:pl-24 lg:pt-24 lg-short:pt-16 xl:pt-32',
-          !reduced && 'lg:h-svh lg:overflow-hidden',
+          // A column, so the track below can take whatever height the heading
+          // leaves: the panels then run to the bottom edge of the screen.
+          !reduced && 'lg:flex lg:h-svh lg:flex-col lg:overflow-hidden',
         )}
       >
         <SectionHeading number="03" label={t.work.label} />
@@ -183,11 +203,11 @@ export function Work() {
           data-track
           className={cn(
             'mt-12 flex flex-col gap-16 will-change-transform lg:mt-10 lg-short:mt-6 xl:mt-16',
-            !reduced && 'lg:flex-row lg:gap-0',
+            !reduced && 'lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-0',
           )}
         >
           {projects.map((project) => (
-            <ProjectPanel key={project.title} project={project} />
+            <ProjectPanel key={project.title} project={project} gallery={!reduced} />
           ))}
 
           <a

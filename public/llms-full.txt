@@ -42,10 +42,10 @@ Projetos entregues para clientes:
 
 ## Stack técnica
 
-- Interface: React, Next.js, TypeScript, Tailwind CSS, React Native
+- Interface: React, Next.js, TypeScript, Tailwind CSS, React Native, Astro, Flutter
 - Serviços: C#, Java, Python, Node.js
-- Dados: PostgreSQL, SQL Server, Supabase, Firebase
-- Infra: Docker, Azure, Azure DevOps
+- Dados: PostgreSQL, SQL Server, Supabase, Firebase, SQLite, Neon, Turso
+- Infra: Docker, Azure, Azure DevOps, Portainer, IIS, Netlify
 
 ## Como chamar este site
 
