@@ -6,6 +6,7 @@ import type { TechItem } from '@/data/profile'
 import { gsap, ScrollTrigger } from '@/animations/gsap'
 import { useGsapScope } from '@/hooks/useScrollReveal'
 import { useLanguage } from '@/i18n/LanguageContext'
+import { cn } from '@/lib/utils'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 
 type Category = TechItem['category']
@@ -100,6 +101,9 @@ export function Stack() {
     category,
     technologies: content.techStack.filter((tech) => tech.category === category),
   })).filter((group) => group.technologies.length > 0)
+  // The lists set one size for the whole figure, chosen by the fullest layer:
+  // a long list tightens every layer rather than making one look louder.
+  const dense = groups.some((group) => group.technologies.length > 5)
 
   const scopeRef = useGsapScope<HTMLElement>(({ root }) => {
     const figure = root.querySelector<HTMLElement>('[data-figure]')
@@ -322,7 +326,12 @@ export function Stack() {
                       </p>
                     </div>
                     <ul role="list"
-                      className="mt-2.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[1.0625rem] leading-snug font-medium text-bone sm:gap-x-5 md:text-lg [&>li:not(:last-child)]:after:ml-3 sm:[&>li:not(:last-child)]:after:ml-5 [&>li:not(:last-child)]:after:font-normal [&>li:not(:last-child)]:after:text-smoke [&>li:not(:last-child)]:after:content-['/']">
+                      className={cn(
+                        "mt-2.5 flex flex-wrap gap-y-0.5 leading-snug font-medium text-bone [&>li:not(:last-child)]:after:font-normal [&>li:not(:last-child)]:after:text-smoke [&>li:not(:last-child)]:after:content-['/']",
+                        dense
+                          ? 'gap-x-2.5 text-[0.9375rem] sm:gap-x-3.5 md:text-base [&>li:not(:last-child)]:after:ml-2.5 sm:[&>li:not(:last-child)]:after:ml-3.5'
+                          : 'gap-x-3 text-[1.0625rem] sm:gap-x-5 md:text-lg [&>li:not(:last-child)]:after:ml-3 sm:[&>li:not(:last-child)]:after:ml-5',
+                      )}>
                       {technologies.map((tech) => (
                         <li key={tech.id ?? tech.name}>{tech.name}</li>
                       ))}

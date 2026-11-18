@@ -67,6 +67,16 @@ pnpm test     # vitest run
    mapa de componentes do `PostBody`, o de `netlify/lib/blog-html.ts` e o mock
    de `directives` em `tests/blog-client-seo.test.ts`.
 
+7. **O conteúdo publicado vem do CMS.** Perfil, projetos, experiência e
+   tecnologias são lidos do Firestore (`content/site`) e substituem os padrões
+   de `src/data/profile.ts` assim que carregam. Mudar o padrão não muda o site
+   publicado: a lista precisa ser salva em `/admin`. Para tecnologias,
+   `/admin → Perfil` mostra as que faltam e as adiciona com um clique. Os
+   padrões têm cópias que os testes conferem: o texto estático de
+   `index.html`, `public/llms-full.txt`, `netlify/lib/agent-docs.ts` e
+   `public/api/v1/*.json` (este último se regenera com
+   `pnpm exec vitest run tests/api-payloads.test.ts -u`).
+
 ## Diário em desenvolvimento
 
 Sem posts publicados o índice mostra o estado vazio. Para desenhar e revisar com

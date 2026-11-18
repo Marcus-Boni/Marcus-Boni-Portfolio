@@ -208,6 +208,8 @@ export const techStack: TechItem[] = [
   { name: 'TypeScript', category: 'frontend' },
   { name: 'Tailwind CSS', category: 'frontend' },
   { name: 'React Native', category: 'frontend' },
+  { name: 'Astro', category: 'frontend' },
+  { name: 'Flutter', category: 'frontend' },
   { name: 'C#', category: 'backend' },
   { name: 'Java', category: 'backend' },
   { name: 'Python', category: 'backend' },
@@ -216,10 +218,21 @@ export const techStack: TechItem[] = [
   { name: 'SQL Server', category: 'data' },
   { name: 'Supabase', category: 'data' },
   { name: 'Firebase', category: 'data' },
+  { name: 'SQLite', category: 'data' },
+  { name: 'Neon', category: 'data' },
+  { name: 'Turso', category: 'data' },
   { name: 'Docker', category: 'ops' },
   { name: 'Azure', category: 'ops' },
   { name: 'Azure DevOps', category: 'ops' },
+  { name: 'Portainer', category: 'ops' },
+  // The two below come from the site itself: IIS from the Unimed engagement
+  // above, Netlify from where this portfolio is deployed.
+  { name: 'IIS', category: 'ops' },
+  { name: 'Netlify', category: 'ops' },
 ]
+// New entries go at the end of their category. The published list lives in the
+// CMS; the admin's "add the missing defaults" appends, so this order is the one
+// that makes the first paint and the published list agree.
 
 export const socials: SocialLink[] = [
   {

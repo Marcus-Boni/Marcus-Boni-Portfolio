@@ -198,8 +198,10 @@ textarea {
 
 /* Experience ledger — scroll spotlight. The class is added by the GSAP
    scope, so no-JS / reduced-motion readers keep full-contrast entries. */
+/* Entries away from the reading line step back, but stay readable: at 0.66
+   their body text still clears 4.5:1 against the page. */
 .exp-focus [data-entry] {
-  opacity: 0.35;
+  opacity: 0.66;
   transition: opacity 0.55s var(--ease-out-expo);
 }
 
