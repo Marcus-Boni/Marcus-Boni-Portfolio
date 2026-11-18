@@ -90,6 +90,7 @@ export function extractToc(markdown: string): TocEntry[] {
   const headings = [...withoutCode.matchAll(/^ {0,3}(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$|^([^\n]+)\n {0,3}(=+|-+)[ \t]*$/gm)]
   const offset = headings.some((match) => match[1]?.length === 1 || match[4]?.startsWith('=')) ? 1 : 0
   const entries: TocEntry[] = []
+  const sections: { entry: TocEntry; at: number }[] = []
   const seen = new Set<string>()
 
   for (const match of headings) {
@@ -105,9 +106,17 @@ export function extractToc(markdown: string): TocEntry[] {
     while (seen.has(id)) id = `${base}-${++count}`
     seen.add(id)
     if (depth === 2 || depth === 3) {
-      entries.push({ id, text, depth })
+      const entry: TocEntry = { id, text, depth }
+      entries.push(entry)
+      if (depth === 2) sections.push({ entry, at: match.index })
     }
   }
+
+  // Each section's share of the reading time, from its title to the next one.
+  sections.forEach(({ entry, at }, index) => {
+    const end = sections[index + 1]?.at ?? withoutCode.length
+    entry.minutes = readingMinutes(withoutCode.slice(at, end))
+  })
   return entries
 }
 

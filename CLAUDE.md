@@ -61,6 +61,12 @@ pnpm test     # vitest run
    `tests/blog-article-semantics.test.ts` (um `h1`, `lang`, datas em `<time>`,
    trilha e links relacionados). Mudou a marcação? Rode `pnpm test`.
 
+6. **Blocos do corpo do post.** `PostBody` renderiza fora do `LanguageProvider`
+   (preview do admin, testes): dentro dele use `useBodyLabels()`, nunca
+   `useLanguage`. Diretiva nova passa por quatro lugares: `remark-blog.ts`, o
+   mapa de componentes do `PostBody`, o de `netlify/lib/blog-html.ts` e o mock
+   de `directives` em `tests/blog-client-seo.test.ts`.
+
 ## Diário em desenvolvimento
 
 Sem posts publicados o índice mostra o estado vazio. Para desenhar e revisar com

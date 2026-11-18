@@ -14,14 +14,20 @@ const NOTICE = '> Registro de exemplo — visível apenas em desenvolvimento (`/
 
 const LONG_BODY = `${NOTICE}
 
-Toda planilha que sobrevive tempo demais vira um sistema sem dono. Este registro
-acompanha a troca de uma delas por uma aplicação de verdade, do primeiro
+Toda planilha que sobrevive tempo demais vira um sistema sem dono.[^dono] Este
+registro acompanha a troca de uma delas por uma aplicação de verdade, do primeiro
 levantamento até a semana em que a planilha foi arquivada.
+
+:::takeaways
+- Planilha compartilhada é sistema sem dono: o custo aparece na fatura, não no erro.
+- Parar de copiar vem antes de automatizar.
+- A migração só termina quando ninguém mais abre o arquivo antigo.
+:::
 
 ## O problema de partida
 
 A estimativa de horas vivia em um arquivo compartilhado. Cada linha era um item
-de trabalho copiado à mão, e cada cópia era uma chance de erro.
+de trabalho copiado à mão, e cada cópia era uma chance de erro.[^copia]
 
 - Itens duplicados entre abas
 - Fórmulas quebradas por quem só queria ordenar uma coluna
@@ -37,7 +43,7 @@ fatura fechar.
 O primeiro corte foi parar de copiar. A aplicação passou a buscar os itens na
 API e a tratar a planilha como exportação, nunca como origem.
 
-\`\`\`ts title="src/work-items.ts"
+\`\`\`ts title="src/work-items.ts" {4}
 export async function fetchWorkItems(ids: number[]): Promise<WorkItem[]> {
   const response = await client.post('/wit/workitemsbatch', {
     ids,
@@ -49,14 +55,58 @@ export async function fetchWorkItems(ids: number[]): Promise<WorkItem[]> {
 
 ### Limites e paginação
 
-A API devolve no máximo duzentos itens por chamada. Fatiar a lista resolve, mas
-só se a ordem for preservada na volta.
+A API devolve no máximo duzentos itens por chamada.[^limite] Fatiar a lista
+resolve, mas só se a ordem for preservada na volta.
 
-\`\`\`ts
+\`\`\`ts add={2-4} del={1}
+const items = await fetchWorkItems(ids)
 const chunks = chunk(ids, 200)
 const pages = await Promise.all(chunks.map(fetchWorkItems))
 const items = pages.flat()
 \`\`\`
+
+## A importação, passo a passo
+
+Com a leitura resolvida, a importação inteira cabe em uma função. Role para
+acompanhar cada parte.
+
+::::steps
+\`\`\`ts title="src/import.ts" numbers
+export async function importEstimate(queryId: string) {
+  const ids = await runQuery(queryId)
+  if (ids.length === 0) return []
+
+  const pages = await Promise.all(chunk(ids, 200).map(fetchWorkItems))
+  const items = pages.flat()
+
+  const known = await loadEstimates()
+  return items.map((item) => ({
+    ...item,
+    hours: known.get(item.id) ?? item.originalEstimate,
+  }))
+}
+\`\`\`
+
+:::step{lines=2-3}
+**A consulta manda.** A lista de itens vem de uma consulta salva, não de uma
+seleção manual. Se ela volta vazia, a importação termina ali.
+:::
+
+:::step{lines=5-6}
+**Fatias de duzentos.** As páginas são pedidas em paralelo e juntadas na ordem
+em que foram pedidas, não na ordem em que chegaram.[^ordem]
+:::
+
+:::step{lines=8}
+**O que já foi estimado.** As horas ajustadas por alguém ficam em um mapa por
+identificador, carregado uma única vez.
+:::
+
+:::step{lines=9-12}
+**Quem vence.** Se existe um ajuste, ele vale. Caso contrário, entra a
+estimativa original do item.
+:::
+::::
 
 ## O que mudou no dia a dia
 
@@ -77,6 +127,11 @@ A melhor parte foi parar de perguntar qual versão da planilha era a certa.
 3. Aposentar a planilha de vez
 
 O restante fica para o próximo registro.
+
+[^dono]: Ninguém responde por ela, mas todo mundo depende dela para fechar o mês.
+[^copia]: Em um mês comum eram cerca de trezentas linhas copiadas à mão.
+[^limite]: O limite é da API de itens de trabalho, não da aplicação. Mudar o tamanho da página do lado de cá não ajuda.
+[^ordem]: \`Promise.all\` devolve os resultados na ordem das promessas, seja qual for a ordem de conclusão.
 `
 
 const SHORT_BODY = `${NOTICE}

@@ -419,30 +419,417 @@ html.reduced-motion [data-reveal] {
    not-yet-highlighted `<pre>` occupy identical space and the swap is invisible.
 */
 
-.shiki-host,
-.shiki-host pre {
+.shiki-host {
+  --num-w: 0rem;
+  --diff-w: 0rem;
   margin: 0;
-  background: transparent !important;
-}
-
-.shiki-host pre,
-.shiki-host > code {
-  display: block;
-  padding: 1.15rem 1.25rem;
+  overflow-x: auto;
+  padding-block: 1.15rem;
+  background: transparent;
   font-family: var(--font-mono);
   font-size: 0.82rem;
   line-height: 1.7;
   tab-size: 2;
+  scrollbar-color: var(--color-line) transparent;
+  scrollbar-width: thin;
 }
 
+/* The focus ring sits inside the frame the <figure> already draws. */
+.shiki-host:focus-visible {
+  outline-offset: -1px;
+}
+
+/* As wide as its longest line, so a marked line is tinted edge to edge even
+   when the block scrolls sideways. */
 .shiki-host code {
+  display: block;
+  width: max-content;
+  min-width: 100%;
   background: none;
   color: inherit;
+  font: inherit;
+  counter-reset: line;
 }
 
-/* Shiki's lines stay inline. The <pre> already breaks on the newline between
-   each `.line`; making them block boxes as well would break every line twice
-   and double the spacing the moment highlighting lands. */
+/* One block per line, each ending in its own newline (see `CodeBlock`): the
+   newline keeps an empty line tall and a copied selection intact. The side
+   padding lives here, not on the <pre>, so a tint reaches the frame. */
+.shiki-host .line {
+  position: relative;
+  display: block;
+  padding-inline: calc(1.25rem + var(--num-w) + var(--diff-w)) 1.25rem;
+  counter-increment: line;
+  transition:
+    opacity 0.45s var(--ease-out-expo),
+    background-color 0.45s var(--ease-out-expo);
+}
+
+.shiki-host.is-wrapped {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.shiki-host.is-wrapped code {
+  width: auto;
+}
+
+.shiki-host.has-numbers {
+  --num-w: 2.4rem;
+}
+
+.shiki-host.has-numbers .line::before {
+  position: absolute;
+  top: 0;
+  left: 1.25rem;
+  width: 1.5rem;
+  color: var(--color-smoke);
+  content: counter(line);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  user-select: none;
+}
+
+.shiki-host .line.is-marked {
+  background-color: color-mix(in srgb, var(--color-ember) 12%, transparent);
+}
+
+/* A diff says which way a line went with a sign, not with colour alone. */
+.shiki-host.has-diff {
+  --diff-w: 1.15rem;
+}
+
+/* `top` matters: left to its static position, the sign would sit after the
+   line's own newline, which is on the next line. */
+.shiki-host .line:is(.is-added, .is-removed)::after {
+  position: absolute;
+  top: 0;
+  left: calc(1.25rem + var(--num-w));
+  user-select: none;
+}
+
+.shiki-host .line.is-added {
+  background-color: color-mix(in srgb, var(--color-bone) 8%, transparent);
+}
+
+.shiki-host .line.is-added::after {
+  color: var(--color-bone);
+  content: '+';
+}
+
+.shiki-host .line.is-removed {
+  background-color: color-mix(in srgb, var(--color-ember-deep) 18%, transparent);
+}
+
+.shiki-host .line.is-removed::after {
+  color: var(--color-ember);
+  content: '−';
+}
+
+.shiki-host .line.is-removed > span {
+  opacity: 0.55;
+}
+
+/* Inside a walkthrough the lines a step is not about step back. */
+.shiki-host.is-focused .line:not(.is-marked) {
+  opacity: 0.4;
+}
+
+/* ─── Blog: the notebook page ───────────────────────────────
+   On a wide screen the article column keeps its reading measure and the space
+   to its right is a margin. Things reach into it the way they do in print: a
+   float pushed out of the column by a negative margin equal to its own width
+   plus the gap. It therefore takes no room in the text, starts on the line
+   that cites it, and `clear` stacks two neighbours instead of overlapping
+   them — no script measures anything.
+*/
+
+.has-margin {
+  --note-w: 17rem;
+  --note-gap: 3.5rem;
+}
+
+@media (min-width: 80rem) {
+  .has-margin .in-margin,
+  .note-body[data-pinned] {
+    float: right;
+    clear: right;
+    width: var(--note-w);
+    margin: 0.3rem calc(-1 * (var(--note-w) + var(--note-gap))) 1.5rem 0;
+  }
+}
+
+/* Section titles carry their number, and the number is the section's link. */
+.post-prose {
+  counter-reset: section;
+}
+
+.post-prose .heading-anchor {
+  position: relative;
+  color: var(--color-ember);
+  text-decoration: none;
+}
+
+.post-prose h2 > .heading-anchor {
+  margin-right: 0.95rem;
+  counter-increment: section;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  vertical-align: 0.55em;
+}
+
+.post-prose h2 > .heading-anchor::before {
+  content: counter(section, decimal-leading-zero);
+}
+
+.post-prose h2 > .heading-anchor:hover::before {
+  text-decoration: underline;
+  text-underline-offset: 0.35em;
+}
+
+.post-prose h3 > .heading-anchor {
+  display: inline-block;
+  margin-left: 0.6rem;
+  color: var(--color-smoke);
+  opacity: 0;
+  vertical-align: 0.05em;
+  transition:
+    opacity 0.3s var(--ease-out-expo),
+    color 0.3s var(--ease-out-expo);
+}
+
+.post-prose h3:hover > .heading-anchor,
+.post-prose h3 > .heading-anchor:focus-visible {
+  opacity: 1;
+}
+
+.post-prose h3 > .heading-anchor:hover {
+  color: var(--color-ember);
+}
+
+/* No hover to reveal it on a touch screen, so it is simply there. */
+@media (hover: none) {
+  .post-prose h3 > .heading-anchor {
+    opacity: 0.6;
+  }
+}
+
+.heading-copied {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 0.4rem;
+  color: var(--color-bone-dim);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Margin notes. Folded under their sentence by default; pinned in the margin
+   when the page has one (`MarginNote` decides, and says so with data-pinned). */
+.note-ref {
+  margin-inline: 0.12em 0.04em;
+  color: var(--color-ember);
+  font-family: var(--font-mono);
+  font-size: 0.62em;
+  font-variant-numeric: tabular-nums;
+  line-height: 0;
+  vertical-align: super;
+}
+
+/* A 24px tap target around a 10px digit, without moving the line it sits on. */
+button.note-ref {
+  margin: -1.2em -0.85em;
+  padding: 1.2em 1em;
+}
+
+button.note-ref[aria-expanded='true'] {
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+.note-body {
+  display: none;
+  color: var(--color-bone-dim);
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.6;
+  text-wrap: pretty;
+  transition: color 0.3s var(--ease-out-expo);
+}
+
+.note-body[data-open] {
+  display: block;
+  margin-block: 0.75rem 0.9rem;
+  border-block: 1px solid var(--color-line);
+  padding-block: 0.75rem;
+}
+
+.note-body[data-pinned] {
+  display: block;
+}
+
+.note:hover > .note-body[data-pinned] {
+  color: var(--color-bone);
+}
+
+.note-number {
+  margin-right: 0.6em;
+  color: var(--color-ember);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+}
+
+/* A pinned note inks in as its sentence comes up the page. Scroll-driven, so
+   it costs no script; without support the note is simply there. */
+@supports (animation-timeline: view()) {
+  @media (min-width: 80rem) and (prefers-reduced-motion: no-preference) {
+    .note-body[data-pinned] {
+      animation: note-ink linear both;
+      animation-range: entry 0% cover 28%;
+      animation-timeline: view();
+    }
+  }
+}
+
+@keyframes note-ink {
+  from {
+    opacity: 0.18;
+    translate: 0.75rem 0;
+  }
+}
+
+/* The few notes that stay in a list at the end (see `rehypeSidenotes`). */
+.post-prose .footnotes {
+  margin-top: 3.5em;
+  border-top: 1px solid var(--color-line);
+  padding-top: 1.5em;
+  font-size: 0.85em;
+}
+
+/* ─── Blog: walkthrough ─────────────────────────────────────
+   `::::steps`. The stage is pinned; the steps scroll past it. Narrow: stage
+   above the text. Wide (`data-wide`, set where the page has a margin): the
+   block grows into the margin and the stage stands beside the steps.
+*/
+
+.steps {
+  clear: right;
+  margin-block: 3.5rem;
+}
+
+/* Pinned flush under the header; the padding is part of the stage, so no
+   line of a step shows through between the two. */
+.steps-stage {
+  position: sticky;
+  top: 3.5rem;
+  z-index: 5;
+  display: grid;
+  padding-block: 0.75rem;
+  background: var(--color-ink);
+}
+
+/* Panes share one cell, so the stage is as tall as its tallest pane and a
+   change of pane is a cross-fade, never a jump. */
+.steps-pane {
+  grid-area: 1 / 1;
+  min-width: 0;
+  transition:
+    opacity 0.5s var(--ease-out-expo),
+    visibility 0.5s;
+}
+
+.steps-pane:not([data-shown]) {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.steps-pane > * {
+  margin-block: 0;
+}
+
+.steps-stage .shiki-host {
+  max-height: 36svh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.post-prose .steps-notes {
+  padding-left: 0;
+  list-style: none;
+}
+
+.post-prose .step {
+  min-height: 34svh;
+  margin: 0;
+  border-top: 1px solid var(--color-line);
+  padding-block: 1.6rem;
+  opacity: 0.66;
+  transition: opacity 0.5s var(--ease-out-expo);
+}
+
+.post-prose .step[data-current] {
+  opacity: 1;
+}
+
+.step-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.1rem;
+  margin-bottom: 0.7rem;
+  color: var(--color-smoke);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.step[data-current] .step-meta > :first-child {
+  color: var(--color-ember);
+}
+
+.step-body {
+  font-size: 0.95em;
+}
+
+.step-body > * + * {
+  margin-top: 0.8em;
+}
+
+@media (min-width: 64rem) {
+  .steps[data-wide] {
+    display: grid;
+    grid-template-columns: minmax(0, 21rem) minmax(0, 1fr);
+    gap: 0 2.5rem;
+    align-items: start;
+    width: calc(100% + var(--note-w) + var(--note-gap));
+  }
+
+  .steps[data-wide] .steps-stage {
+    top: 6.5rem;
+    order: 2;
+    padding-block: 0;
+  }
+
+  .steps[data-wide] .shiki-host {
+    max-height: calc(100svh - 12rem);
+  }
+
+  /* Tall enough that one step at a time crosses the middle of the screen. */
+  .steps[data-wide] .step {
+    min-height: 58svh;
+    border-top: 0;
+    padding-block: 0 2rem;
+  }
+
+  .steps[data-wide] .step:last-child {
+    min-height: 34svh;
+  }
+}
 
 /* ─── Admin: overlay motion ─────────────────────────────────
    Three keyframes shared by the toast stack, the modal scrim and the command

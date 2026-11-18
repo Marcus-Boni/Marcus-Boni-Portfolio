@@ -127,6 +127,9 @@ export interface Translation {
       updated: string
       minutes: (minutes: number) => string
     }
+    /** Reading marks on the index, kept on the reader's own device. */
+    read: string
+    inProgress: (percent: number) => string
     post: {
       back: string
       toc: string
@@ -141,6 +144,29 @@ export interface Translation {
       notFound: string
       notFoundBody: string
       backToIndex: string
+      resume: (percent: number) => string
+      resumeAction: string
+      neighbors: string
+      previous: string
+      next: string
+      /** The toolbar that appears over a selected passage. */
+      quote: { toolbar: string; link: string; text: string; copied: string }
+    }
+    /**
+     * Labels printed inside the article body. They follow the language the
+     * post was written in, not the interface language.
+     */
+    body: {
+      copy: string
+      copied: string
+      code: string
+      takeaways: string
+      note: (number: string) => string
+      notes: string
+      step: (current: number, total: number) => string
+      lines: (spec: string) => string
+      sectionLink: string
+      callout: { info: string; tip: string; warn: string; danger: string }
     }
   }
   marquee: string[]
@@ -308,9 +334,34 @@ export const translations: Record<Locale, Translation> = {
         updated: 'Atualizado',
         minutes: (minutes) => `${minutes} min`,
       },
+      read: 'Lido',
+      inProgress: (percent) => `${percent}% lido`,
+      body: {
+        copy: 'Copiar',
+        copied: 'Copiado',
+        code: 'Bloco de código',
+        takeaways: 'Em resumo',
+        note: (number) => `Nota ${number}`,
+        notes: 'Notas',
+        step: (current, total) => `Passo ${current} de ${total}`,
+        lines: (spec) => (/[-,]/.test(spec) ? `Linhas ${spec}` : `Linha ${spec}`),
+        sectionLink: 'Copiar link desta seção',
+        callout: { info: 'Nota', tip: 'Dica', warn: 'Atenção', danger: 'Cuidado' },
+      },
       post: {
         back: 'Voltar ao diário',
-        toc: 'Nesta página',
+        toc: 'Neste registro',
+        resume: (percent) => `Você parou em ${percent}% deste registro.`,
+        resumeAction: 'Continuar de onde parei',
+        neighbors: 'Registros vizinhos',
+        previous: 'Registro anterior',
+        next: 'Próximo registro',
+        quote: {
+          toolbar: 'Compartilhar trecho',
+          link: 'Copiar link',
+          text: 'Copiar citação',
+          copied: 'Copiado',
+        },
         remaining: (minutes) =>
           minutes <= 1 ? 'Menos de 1 min restante' : `${minutes} min restantes`,
         finished: 'Leitura concluída',
@@ -489,9 +540,34 @@ export const translations: Record<Locale, Translation> = {
         updated: 'Updated',
         minutes: (minutes) => `${minutes} min`,
       },
+      read: 'Read',
+      inProgress: (percent) => `${percent}% read`,
+      body: {
+        copy: 'Copy',
+        copied: 'Copied',
+        code: 'Code block',
+        takeaways: 'In short',
+        note: (number) => `Note ${number}`,
+        notes: 'Notes',
+        step: (current, total) => `Step ${current} of ${total}`,
+        lines: (spec) => (/[-,]/.test(spec) ? `Lines ${spec}` : `Line ${spec}`),
+        sectionLink: 'Copy link to this section',
+        callout: { info: 'Note', tip: 'Tip', warn: 'Heads up', danger: 'Careful' },
+      },
       post: {
         back: 'Back to notes',
-        toc: 'On this page',
+        toc: 'In this entry',
+        resume: (percent) => `You stopped at ${percent}% of this entry.`,
+        resumeAction: 'Pick up where I left off',
+        neighbors: 'Neighbouring entries',
+        previous: 'Previous entry',
+        next: 'Next entry',
+        quote: {
+          toolbar: 'Share passage',
+          link: 'Copy link',
+          text: 'Copy quote',
+          copied: 'Copied',
+        },
         remaining: (minutes) =>
           minutes <= 1 ? 'Under 1 min left' : `${minutes} min left`,
         finished: 'Finished',

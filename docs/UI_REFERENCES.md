@@ -37,7 +37,10 @@ Lenis e Canvas 2D, do padrão que as bibliotecas demonstram.
 | Leitura de posição em Projetos | Scroll progress 001 (Skiper `skiper89`) | `src/components/sections/Work.tsx` |
 | Números do Diário | Count Up (React Bits), Animated number (Skiper `skiper37`) | `CountUp` em `src/blog/pages/BlogIndex.tsx` |
 | Pranchas dos registros | Topography (React Bits, fundos) | `src/blog/lib/plate.ts`, `PostPlate` |
-| Trilho de leitura do post | Scroll progress (Skiper) | `src/blog/components/reading.tsx` |
+| Trilho de leitura do post | Scroll progress (Skiper), Side Scroll Navigation (Skiper `skiper60`) | `PostRail` em `src/blog/components/reading.tsx` |
+| Notas de margem | Annotated Text (Componentry) | `MarginNote` em `src/blog/components/directives.tsx`, `src/blog/lib/rehype-sidenotes.ts` |
+| Passo a passo com painel fixo | Sticky Scroll Cards, Scroll Choreography (Componentry), Card stack scroll (Skiper `skiper16`) | `src/blog/components/steps.tsx` |
+| Barra sobre o trecho selecionado | Custom tooltip (Skiper `skiper101`) | `src/blog/components/QuoteShare.tsx` |
 
 ## Bibliotecas
 

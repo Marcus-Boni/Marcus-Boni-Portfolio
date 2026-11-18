@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import Markdown, { defaultUrlTransform, type Components } from 'react-markdown'
 import rehypeSlug from 'rehype-slug'
 import remarkDirective from 'remark-directive'
@@ -9,24 +9,34 @@ import { CodeBlock, InlineCode } from '@/blog/components/CodeBlock'
 import {
   Callout,
   Gallery,
+  MarginNote,
   PullQuote,
   RepoCard,
+  Takeaways,
   Video,
   YouTube,
 } from '@/blog/components/directives'
-import { remarkBlogDirectives } from '@/blog/lib/remark-blog'
+import { Step, Steps, StepsNotes, StepsPane, StepsStage } from '@/blog/components/steps'
 import { articleHeadings } from '@/blog/lib/article-headings'
+import { BodyContext, useBodyLabels } from '@/blog/lib/body-context'
+import { rehypeSidenotes } from '@/blog/lib/rehype-sidenotes'
+import { remarkBlogDirectives } from '@/blog/lib/remark-blog'
 import type { MediaRef } from '@/blog/types'
+import { translations, type Locale } from '@/i18n/translations'
 
 interface PostBodyProps {
   markdown: string
   /** Uploaded images keyed by id, referenced as `![alt](media:{id})`. */
   media?: Record<string, MediaRef>
+  /** Language the post was written in; the labels inside the body follow it. */
+  lang?: Locale
+  /** The page around the body has a margin column for notes and wide blocks. */
+  margin?: boolean
 }
 
 /** Plugin arrays are stable module constants so react-markdown can memoise. */
 const REMARK_PLUGINS = [remarkGfm, remarkDirective, remarkBlogDirectives]
-const REHYPE_PLUGINS = [rehypeSlug, articleHeadings]
+const REHYPE_PLUGINS = [rehypeSlug, articleHeadings, rehypeSidenotes]
 
 /**
  * `media:` is our own scheme for images uploaded through the admin — it is
@@ -47,20 +57,91 @@ function urlTransform(url: string): string {
  * purpose), so a post body cannot inject markup even though the admin is the
  * only author. Every rich embed goes through a typed directive component.
  */
-export function PostBody({ markdown, media }: PostBodyProps) {
+export function PostBody({ markdown, media, lang = 'pt', margin = false }: PostBodyProps) {
   const components = useMemo(() => buildComponents(media ?? {}), [media])
+  const environment = useMemo(() => ({ lang, margin }), [lang, margin])
+  // Names the list of notes that could not move to the margin (see
+  // `rehypeSidenotes`); a note made of plain text never reaches it.
+  const footnotes = useMemo(
+    () => ({
+      footnoteLabel: translations[lang].blog.body.notes,
+      footnoteLabelProperties: { className: ['sr-only'] },
+    }),
+    [lang],
+  )
 
   return (
-    <div className="post-prose">
-      <Markdown
-        remarkPlugins={REMARK_PLUGINS}
-        rehypePlugins={REHYPE_PLUGINS}
-        urlTransform={urlTransform}
-        components={components}
-      >
-        {markdown}
-      </Markdown>
-    </div>
+    <BodyContext value={environment}>
+      <div className="post-prose">
+        <Markdown
+          remarkPlugins={REMARK_PLUGINS}
+          rehypePlugins={REHYPE_PLUGINS}
+          remarkRehypeOptions={footnotes}
+          urlTransform={urlTransform}
+          components={components}
+        >
+          {markdown}
+        </Markdown>
+      </div>
+    </BodyContext>
+  )
+}
+
+/**
+ * A section title that carries its own address. On an `h2` the link is the
+ * section number (drawn by a CSS counter, so it always matches the rail and
+ * the index); on an `h3` it is a small mark after the text. Following it puts
+ * the section in the URL and copies that URL.
+ */
+function ArticleHeading({
+  level: Tag,
+  id,
+  children,
+}: {
+  level: 'h2' | 'h3'
+  id?: string
+  children?: ReactNode
+}) {
+  const labels = useBodyLabels()
+  const [copied, setCopied] = useState(false)
+  const timeout = useRef<number | undefined>(undefined)
+
+  useEffect(() => () => window.clearTimeout(timeout.current), [])
+
+  if (!id) return <Tag>{children}</Tag>
+
+  const copy = () => {
+    navigator.clipboard
+      ?.writeText(`${location.origin}${location.pathname}#${id}`)
+      .then(() => {
+        setCopied(true)
+        timeout.current = window.setTimeout(() => setCopied(false), 1800)
+      })
+      .catch(() => {
+        /* clipboard unavailable — the address bar still has the link */
+      })
+  }
+
+  const anchor = (
+    <a href={`#${id}`} className="heading-anchor" aria-label={labels.sectionLink} onClick={copy}>
+      {Tag === 'h3' && (
+        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2">
+          <path d="M6 8.2a2.8 2.8 0 0 0 4 0l1.8-1.8a2.8 2.8 0 0 0-4-4l-.8.8" />
+          <path d="M8 5.8a2.8 2.8 0 0 0-4 0L2.2 7.6a2.8 2.8 0 0 0 4 4l.8-.8" />
+        </svg>
+      )}
+      <span className="heading-copied" aria-live="polite">
+        {copied ? labels.copied : ''}
+      </span>
+    </a>
+  )
+
+  return (
+    <Tag id={id}>
+      {Tag === 'h2' && anchor}
+      {children}
+      {Tag === 'h3' && anchor}
+    </Tag>
   )
 }
 
@@ -80,6 +161,22 @@ function buildComponents(media: Record<string, MediaRef>): Components {
       const meta = (node?.data as { meta?: string } | undefined)?.meta
       return (
         <CodeBlock code={text.replace(/\n$/, '')} lang={match?.[1]} meta={meta} />
+      )
+    },
+
+    h2({ id, children }) {
+      return (
+        <ArticleHeading level="h2" id={id}>
+          {children}
+        </ArticleHeading>
+      )
+    },
+
+    h3({ id, children }) {
+      return (
+        <ArticleHeading level="h3" id={id}>
+          {children}
+        </ArticleHeading>
       )
     },
 
@@ -180,6 +277,14 @@ function buildComponents(media: Record<string, MediaRef>): Components {
     'x-youtube': YouTube,
     'x-video': Video,
     'x-repo': RepoCard,
+    'x-takeaways': Takeaways,
+    'x-steps': Steps,
+    'x-steps-stage': StepsStage,
+    'x-steps-pane': StepsPane,
+    'x-steps-notes': StepsNotes,
+    'x-step': Step,
+    // Not a directive: `rehypeSidenotes` swaps a footnote reference for it.
+    'x-note': MarginNote,
   }
 
   return { ...standard, ...directives } as unknown as Components

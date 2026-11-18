@@ -9,7 +9,7 @@ import type { PostMeta } from '@/blog/types'
 
 vi.mock('@/blog/components/CodeBlock', () => ({ CodeBlock: () => null, InlineCode: ({ children }: { children: string }) => createElement('code', null, children) }))
 vi.mock('@/blog/components/BlogImage', () => ({ BlogFigure: () => null }))
-vi.mock('@/blog/components/directives', () => ({ Callout: () => null, Gallery: () => null, PullQuote: () => null, RepoCard: () => null, Video: () => null, YouTube: () => null }))
+vi.mock('@/blog/components/directives', () => ({ Callout: () => null, Gallery: () => null, MarginNote: () => null, PullQuote: () => null, RepoCard: () => null, Takeaways: () => null, Video: () => null, YouTube: () => null }))
 
 // A small head-only DOM double keeps navigation regressions in the existing
 // Node test environment without adding a browser or DOM dependency.

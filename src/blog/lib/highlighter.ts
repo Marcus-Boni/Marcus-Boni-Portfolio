@@ -1,4 +1,4 @@
-import { createHighlighterCore, type HighlighterCore } from 'shiki/core'
+import { createHighlighterCore, type HighlighterCore, type ThemedToken } from 'shiki/core'
 import { createJavaScriptRegexEngine } from 'shiki/engine/javascript'
 
 import { signalInkTheme } from './shiki-theme'
@@ -86,11 +86,15 @@ function getHighlighter(): Promise<HighlighterCore> {
  * Highlights `code`, loading the grammar on first use. Returns `null` when the
  * language is unsupported so the caller can fall back to plain text rather
  * than render an error.
+ *
+ * The result is tokens per line, not an HTML string: `CodeBlock` renders the
+ * lines itself, so marking, numbering and dimming a line is ordinary React
+ * state instead of a second pass over injected markup.
  */
 export async function highlight(
   code: string,
   tag: string | undefined,
-): Promise<string | null> {
+): Promise<ThemedToken[][] | null> {
   const lang = resolveLang(tag)
   if (!lang) return null
 
@@ -101,10 +105,5 @@ export async function highlight(
     loaded.add(lang)
   }
 
-  return highlighter.codeToHtml(code, {
-    lang,
-    theme: signalInkTheme.name!,
-    // The surrounding <figure> already paints the surface and padding.
-    structure: 'classic',
-  })
+  return highlighter.codeToTokensBase(code, { lang, theme: signalInkTheme.name! })
 }

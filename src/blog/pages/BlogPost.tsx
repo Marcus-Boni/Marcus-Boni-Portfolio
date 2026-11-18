@@ -5,28 +5,33 @@ import { BlogImage } from '@/blog/components/BlogImage'
 import { PostBody } from '@/blog/components/PostBody'
 import { RelatedCard } from '@/blog/components/PostCard'
 import { PostPlate } from '@/blog/components/PostPlate'
+import { QuoteShare } from '@/blog/components/QuoteShare'
 import {
   MobileReadingBar,
+  PostRail,
   ReadingProgress,
-  ReadingStatus,
-  TableOfContents,
+  ResumeReading,
+  SectionIndex,
 } from '@/blog/components/reading'
 import { SITE_URL, usePostHead } from '@/blog/lib/seo'
 import { useReleaseServerDocument } from '@/blog/lib/server-document'
 import { entryNumber, extractToc, formatPostDate, formatPostDateCompact } from '@/blog/lib/text'
+import type { PostMeta } from '@/blog/types'
 import { usePost, usePostList } from '@/blog/usePosts'
+import { HoverItalic } from '@/components/ui/HoverItalic'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { trackEvent } from '@/lib/analytics'
 import { reciprocalTranslation, validDate } from '../../../netlify/lib/blog-seo'
 
 /**
- * A single post.
+ * A single post, laid out as a notebook page.
  *
- * Reading measure is capped near 68 characters — the article column is sized
- * for prose, with the reading rail (time left, table of contents) living in
- * the outer margin on wide screens rather than stealing from the text. On
- * narrower screens the same rail docks to the bottom edge.
+ * The text keeps a reading measure near 68 characters. On a wide screen the
+ * space to its right is the margin — the section index opens it, and notes sit
+ * in it beside the sentence they comment on — while the page gutter on the
+ * left carries the reading rail. Narrower screens fold the notes under their
+ * paragraph and dock the rail to the bottom edge.
  *
  * A post without a cover wears its field plate in the masthead: the same
  * terrain it carries on the index, so the entry is recognisable on arrival.
@@ -53,10 +58,18 @@ export function BlogPost() {
     [posts],
   )
   const ordinal = post ? ordinals.get(post.slug) : undefined
+  // The entries published just before and just after this one, same language.
+  const { older, newer } = useMemo((): { older?: PostMeta; newer?: PostMeta } => {
+    if (!post) return {}
+    const shelf = posts.filter((candidate) => candidate.lang === post.lang)
+    const at = shelf.findIndex((candidate) => candidate.slug === post.slug)
+    return at < 0 ? {} : { newer: shelf[at - 1], older: shelf[at + 1] }
+  }, [post, posts])
   const related = useMemo(() => {
     if (!post) return []
+    const taken = new Set([post.slug, translation?.slug, older?.slug, newer?.slug])
     return posts
-      .filter((candidate) => candidate.slug !== post.slug && candidate.slug !== translation?.slug && candidate.lang === post.lang)
+      .filter((candidate) => !taken.has(candidate.slug) && candidate.lang === post.lang)
       .map((candidate) => ({
         post: candidate,
         score: candidate.tags.filter((tag) => post.tags.includes(tag)).length +
@@ -65,7 +78,7 @@ export function BlogPost() {
       .sort((a, b) => b.score - a.score)
       .slice(0, 3)
       .map((candidate) => candidate.post)
-  }, [post, posts, translation])
+  }, [post, posts, translation, older, newer])
 
   useEffect(() => {
     if (post) trackEvent('post_view', { slug: post.slug, lang: post.lang })
@@ -209,6 +222,8 @@ export function BlogPost() {
               </Link>
             )}
           </div>
+
+          <ResumeReading key={`resume:${post.slug}`} slug={post.slug} targetRef={articleRef} />
           </div>
 
           {!post.cover && (
@@ -236,19 +251,19 @@ export function BlogPost() {
           />
         )}
 
-        {/* ─── Article + TOC ─────────────────────────────────────── */}
-        <div className="mt-14 grid gap-14 xl:grid-cols-[minmax(0,1fr)_15rem] xl:gap-16">
-          <div ref={articleRef} className="min-w-0 max-w-[68ch]">
-            <PostBody markdown={post.body} media={post.media} />
+        {/* ─── Article and its margin ────────────────────────────── */}
+        {/* `has-margin` sizes the margin column; the index and the notes float
+            out of the text column into it (see index.css). `relative` is for
+            the quote toolbar, which positions itself against this column. */}
+        <div className="has-margin mt-14">
+          <div ref={articleRef} className="relative max-w-[68ch] min-w-0">
+            <SectionIndex entries={toc} label={t.blog.post.toc} />
+            <PostBody markdown={post.body} media={post.media} lang={post.lang} margin />
+            <QuoteShare containerRef={articleRef} slug={post.slug} title={post.title} />
           </div>
-
-          <aside className="hidden xl:block">
-            <div className="sticky top-28 max-h-[calc(100svh-9rem)] overflow-y-auto">
-              <ReadingStatus minutes={post.readingMinutes} />
-              <TableOfContents entries={toc} label={t.blog.post.toc} />
-            </div>
-          </aside>
         </div>
+
+        <Neighbors older={older} newer={newer} ordinals={ordinals} />
 
         {related.length > 0 && (
           <section aria-labelledby="related-posts" className="mt-20 border-t border-line pt-10">
@@ -275,8 +290,56 @@ export function BlogPost() {
         />
       </article>
 
+      <PostRail entries={toc} minutes={post.readingMinutes} label={t.sections.rail} />
       <MobileReadingBar entries={toc} label={t.blog.post.toc} minutes={post.readingMinutes} />
     </>
+  )
+}
+
+/**
+ * The way out of an entry that is not "back to the list": the one written
+ * before it and the one written after, in the order they were published.
+ */
+function Neighbors({
+  older,
+  newer,
+  ordinals,
+}: {
+  older?: PostMeta
+  newer?: PostMeta
+  ordinals: Map<string, number>
+}) {
+  const { t } = useLanguage()
+  if (!older && !newer) return null
+
+  const cell = (post: PostMeta | undefined, label: string, end: boolean) => {
+    if (!post) return <div aria-hidden className="bg-ink max-sm:hidden" />
+    const number = ordinals.get(post.slug)
+    return (
+      <Link
+        to={`/blog/${post.slug}`}
+        data-cursor="view"
+        className={`group flex flex-col gap-3 bg-ink py-8 ${end ? 'sm:items-end sm:pl-8 sm:text-right' : 'sm:pr-8'}`}
+      >
+        <span className="font-mono text-[10px] tracking-[0.2em] text-smoke uppercase transition-colors duration-300 group-hover:text-ember">
+          {label}
+          {number !== undefined && ` / ${t.blog.entry(entryNumber(number))}`}
+        </span>
+        <span className="font-display text-[clamp(1.5rem,2.6vw,2.1rem)] leading-[1.1] text-balance text-bone">
+          <HoverItalic text={post.title} />
+        </span>
+      </Link>
+    )
+  }
+
+  return (
+    <nav
+      aria-label={t.blog.post.neighbors}
+      className="mt-20 grid gap-px border-y border-line bg-line sm:grid-cols-2"
+    >
+      {cell(older, t.blog.post.previous, false)}
+      {cell(newer, t.blog.post.next, true)}
+    </nav>
   )
 }
 

@@ -98,6 +98,8 @@ export interface TocEntry {
   id: string
   text: string
   depth: 2 | 3
+  /** Reading time of the section a depth-2 heading opens. */
+  minutes?: number
 }
 
 /** Filters accepted by the public index. */
