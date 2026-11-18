@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { BlogImage } from '@/blog/components/BlogImage'
 import { PostPlate } from '@/blog/components/PostPlate'
+import { readingProgress } from '@/blog/lib/reading-memory'
 import { entryNumber, formatPostDateCompact } from '@/blog/lib/text'
 import type { PostMeta } from '@/blog/types'
 import { HoverItalic } from '@/components/ui/HoverItalic'
@@ -38,6 +39,18 @@ function PostMetaLine({
   }
   if (post.series) {
     parts.push({ key: 'series', node: <span className="text-ember">{post.series.title}</span> })
+  }
+  // The reader's own mark, from their browser (see `reading-memory.ts`).
+  const progress = readingProgress(post.slug)
+  if (progress >= 8) {
+    parts.push({
+      key: 'progress',
+      node: (
+        <span className="text-bone">
+          {progress >= 100 ? t.blog.read : t.blog.inProgress(progress)}
+        </span>
+      ),
+    })
   }
 
   return (

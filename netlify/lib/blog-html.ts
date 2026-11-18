@@ -53,7 +53,14 @@ export function renderMarkdown(body: string, media: BodyMedia = {}): string {
     },
     a: ({ href, children }) => h('a', { href: href?.startsWith('media:') ? undefined : href }, children),
   }
+  // The interactive blocks read as plain structure here: a walkthrough is its
+  // code followed by a list of steps. Footnotes stay a list at the end.
+  const plain = (tag: string) => ({ children }: DirectiveProps) => h(tag, null, children)
   const directives = {
+    'x-takeaways': ({ children, title }: DirectiveProps) => h('aside', null,
+      h('p', null, h('strong', null, typeof title === 'string' ? title : 'Em resumo')), children),
+    'x-steps': plain('div'), 'x-steps-stage': plain('div'), 'x-steps-pane': plain('div'),
+    'x-steps-notes': plain('ol'), 'x-step': plain('li'),
     'x-callout': ({ children, title, type }: DirectiveProps) => h('aside', null,
       h('p', null, h('strong', null, typeof title === 'string' ? title :
         type === 'tip' ? 'Dica' : type === 'warn' ? 'Atenção' : type === 'danger' ? 'Cuidado' : 'Nota')), children),
@@ -76,6 +83,7 @@ export function renderMarkdown(body: string, media: BodyMedia = {}): string {
   }
   return renderToStaticMarkup(h(Markdown, {
     remarkPlugins: [remarkGfm, remarkDirective, remarkBlogDirectives], rehypePlugins: [rehypeSlug, articleHeadings],
+    remarkRehypeOptions: { footnoteLabel: 'Notas' },
     urlTransform: (url: string) => url.startsWith('media:') ? url : defaultUrlTransform(url),
     components: { ...standard, ...directives } as Components,
     children: body,

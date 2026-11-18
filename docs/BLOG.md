@@ -119,6 +119,35 @@ O texto da citação.
 :::
 ```
 
+### Ideias-chave
+
+```md
+:::takeaways
+- Uma ideia por linha.
+- O que o leitor deve levar do registro.
+:::
+```
+
+Vira o bloco "Em resumo". `title` troca o rótulo: `:::takeaways{title="O que aprendi"}`.
+
+### Notas de margem
+
+Use a nota de rodapé do Markdown. O botão **margem** do editor insere a marca
+onde está o cursor e abre a nota no fim do texto:
+
+```md
+A API devolve no máximo duzentos itens por chamada.[^limite]
+
+[^limite]: O limite é da API, não da aplicação.
+```
+
+Em tela larga a nota aparece na margem, na altura da frase que a cita. Em tela
+estreita o número vira um botão e a nota abre embaixo da frase. O nome entre
+colchetes é só um identificador; a numeração segue a ordem de aparição.
+
+Uma nota com lista ou bloco de código não cabe na margem: ela continua como
+rodapé comum, numa lista no fim do registro.
+
 ### Galeria
 
 ```md
@@ -175,6 +204,64 @@ Linguagens com gramática carregada sob demanda: `typescript`, `tsx`,
 `js`, `sh`, `py`, `yml`, `cs`…). Uma linguagem desconhecida cai para texto
 puro em vez de quebrar.
 
+Depois da linguagem, na mesma linha, vão as anotações do bloco:
+
+| Anotação | Efeito |
+| --- | --- |
+| `title="src/arquivo.ts"` | Nome do arquivo na aba do bloco |
+| `{2,4-6}` | Destaca as linhas 2, 4, 5 e 6 |
+| `add={3-4}` | Marca as linhas como adicionadas (`+`) |
+| `del={2}` | Marca a linha como removida (`−`) |
+| `numbers` | Numera as linhas |
+| `wrap` | Quebra linhas longas em vez de rolar para o lado |
+
+````md
+```ts title="src/retry.ts" {3} numbers
+export async function retry<T>(run: () => Promise<T>) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try { return await run() } catch { await sleep(2 ** attempt * 100) }
+  }
+}
+```
+````
+
+O diff mantém o realce da linguagem; não precisa trocar o bloco para `diff`.
+
+### Passo a passo
+
+O código (ou uma imagem) fica fixo enquanto os passos rolam, e cada passo
+destaca as linhas de que fala. O botão **passos** do editor insere o esqueleto.
+
+````md
+::::steps
+```ts title="src/import.ts" numbers
+const ids = await runQuery(queryId)
+const pages = await Promise.all(chunk(ids, 200).map(fetchWorkItems))
+return pages.flat()
+```
+
+:::step{lines=1}
+A lista de itens vem de uma consulta salva.
+:::
+
+:::step{lines=2-3}
+As páginas são pedidas em paralelo e juntadas na ordem.
+:::
+::::
+````
+
+- O bloco de fora usa **quatro** dois-pontos (`::::steps` … `::::`), porque
+  contém outros blocos. Cada passo usa três.
+- O que vem antes do primeiro passo é o que fica fixo.
+- `lines` aceita o mesmo formato do destaque de código: `3`, `3-5`, `1,4-6`.
+- Um passo que começa com seu próprio bloco de código ou imagem troca o que
+  está fixo a partir dali; um passo sem isso mantém o anterior.
+- Escreva os passos como texto corrido, sem títulos (`##`), para não entrarem
+  no índice do registro.
+
+Em tela larga o painel fica ao lado dos passos; em tela estreita ele gruda no
+topo e os passos passam por baixo.
+
 ---
 
 ## 4. Métricas
@@ -197,6 +284,40 @@ A separação é o que mantém o índice barato: listar 40 posts baixa 40 docume
 pequenos, não 40 artigos inteiros. `status` é espelhado no documento do corpo e
 escrito no **mesmo `writeBatch`**, para as regras poderem filtrar sem um `get()`
 — um `get()` nas regras cobra uma leitura por requisição.
+
+### Página do registro
+
+A página de um post é uma página de caderno (`src/blog/pages/BlogPost.tsx`):
+
+- **Margem.** Em tela larga (≥ 1280px) a coluna de texto mantém a medida de
+  leitura e o espaço à direita é a margem. O índice do registro e as notas
+  entram nela por `float` com margem negativa (classe `in-margin` e
+  `data-pinned`, em `src/styles/index.css`): não ocupam largura no texto,
+  começam na linha que as cita e `clear` empilha vizinhas. Nenhum script mede
+  posição.
+- **Trilho.** `PostRail` é o trilho de seções da home apontado para o post:
+  um traço numerado por `##`, o título da seção atual na borda da página e a
+  posição em porcentagem. Abaixo de 1280px ele dá lugar à `MobileReadingBar`.
+- **Numeração.** O número de cada `##` é um contador CSS no próprio link do
+  título, então trilho, índice e título nunca divergem. Clicar no número copia
+  o link da seção.
+- **Rótulos do corpo.** `PostBody` também renderiza no preview do admin e em
+  testes, fora do `LanguageProvider`. Os blocos leem os rótulos por
+  `useBodyLabels()` (`src/blog/lib/body-context.ts`), que seguem o idioma **do
+  post**, não o da interface.
+- **Link para um trecho.** Selecionar texto abre uma barra (`QuoteShare`) que
+  copia `…/blog/slug#q=primeiras+palavras&e=últimas+palavras`. Na chegada a
+  página procura o trecho, rola até ele e o marca com a Highlight API. Não usa
+  os text fragments do navegador (`#:~:text=`), que são resolvidos antes de o
+  Markdown chegar.
+- **Continuar de onde parou.** `src/blog/lib/reading-memory.ts` guarda a
+  posição de cada registro no `localStorage` do leitor (chave
+  `mb-journal-reading`). Nada é enviado ao servidor. O post oferece retomar; o
+  índice mostra "Lido" ou a porcentagem.
+
+No HTML de servidor (`netlify/lib/blog-html.ts`) os blocos interativos viram
+estrutura simples: o passo a passo é o código seguido de uma lista ordenada, e
+as notas ficam como rodapé no fim.
 
 ### Pranchas de campo
 

@@ -27,6 +27,22 @@ type Edit =
   | { kind: 'linePrefix'; prefix: string }
   /** Insert a block at the start of the next free line. */
   | { kind: 'block'; text: string; caretOffset?: number }
+  /** Mark the caret with `[^n]` and open the note itself at the end. */
+  | { kind: 'footnote' }
+
+const STEPS = `::::steps
+\`\`\`ts title="src/exemplo.ts"
+const resposta = 42
+\`\`\`
+
+:::step{lines=1}
+Explique esta parte do código.
+:::
+
+:::step{lines=1}
+Explique a próxima.
+:::
+::::`
 
 const ACTIONS: { label: string; title: string; edit: Edit }[] = [
   { label: 'B', title: 'Negrito (Ctrl+B)', edit: { kind: 'wrap', before: '**', after: '**', placeholder: 'texto' } },
@@ -40,8 +56,23 @@ const ACTIONS: { label: string; title: string; edit: Edit }[] = [
   { label: '❝', title: 'Citação', edit: { kind: 'linePrefix', prefix: '> ' } },
   {
     label: 'code',
-    title: 'Bloco de código',
+    title: 'Bloco de código — {2,4-6} destaca linhas; add={3} e del={2} marcam um diff; numbers; wrap',
     edit: { kind: 'block', text: '```ts title="src/exemplo.ts"\n\n```', caretOffset: 31 },
+  },
+  {
+    label: 'passos',
+    title: 'Passo a passo — o código fica fixo e cada passo destaca suas linhas',
+    edit: { kind: 'block', text: STEPS, caretOffset: STEPS.indexOf('const resposta') },
+  },
+  {
+    label: 'margem',
+    title: 'Nota de margem — aparece ao lado do trecho',
+    edit: { kind: 'footnote' },
+  },
+  {
+    label: 'resumo',
+    title: 'Ideias-chave do registro',
+    edit: { kind: 'block', text: ':::takeaways\n- \n:::', caretOffset: 15 },
   },
   {
     label: 'nota',
@@ -114,6 +145,15 @@ export function MarkdownEditor({
         next = value.slice(0, lineStart) + prefixed + value.slice(stop)
         caretStart = lineStart
         caretEnd = lineStart + prefixed.length
+      } else if (edit.kind === 'footnote') {
+        const used = [...value.matchAll(/\[\^(\d+)\]/g)].map((match) => Number(match[1]))
+        const mark = `[^${Math.max(0, ...used) + 1}]`
+        const placeholder = 'Texto da nota'
+        const marked = `${value.slice(0, end)}${mark}${value.slice(end)}`.trimEnd()
+        next = `${marked}\n\n${mark}: ${placeholder}\n`
+        // Leaves the placeholder selected, ready to be typed over.
+        caretEnd = next.length - 1
+        caretStart = caretEnd - placeholder.length
       } else {
         // Blocks need their own paragraph — pad with blank lines as needed.
         const before = value.slice(0, start)

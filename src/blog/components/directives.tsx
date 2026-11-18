@@ -1,5 +1,7 @@
-import { useState, type ReactNode } from 'react'
+import { useContext, useId, useState, type ReactNode } from 'react'
 
+import { BodyContext, useBodyLabels } from '@/blog/lib/body-context'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
 
 /**
@@ -22,13 +24,6 @@ const CALLOUT_TONES: Record<CalloutTone, { bar: string; label: string; glyph: st
   danger: { bar: 'border-l-ember-deep', label: 'text-ember', glyph: 'x' },
 }
 
-const CALLOUT_TITLES: Record<CalloutTone, string> = {
-  info: 'Nota',
-  tip: 'Dica',
-  warn: 'Atenção',
-  danger: 'Cuidado',
-}
-
 export function Callout({
   type,
   title,
@@ -38,6 +33,7 @@ export function Callout({
   title?: string
   children?: ReactNode
 }) {
+  const labels = useBodyLabels()
   const tone: CalloutTone =
     type === 'tip' || type === 'warn' || type === 'danger' ? type : 'info'
   const styles = CALLOUT_TONES[tone]
@@ -58,12 +54,77 @@ export function Callout({
         <span aria-hidden className="opacity-60">
           {styles.glyph}
         </span>
-        {title ?? CALLOUT_TITLES[tone]}
+        {title ?? labels.callout[tone]}
       </p>
       <div className="callout-body text-[0.95em] leading-relaxed text-bone-dim">
         {children}
       </div>
     </aside>
+  )
+}
+
+/* ─── Key ideas ─────────────────────────────────────────────────────────── */
+
+/** `:::takeaways` — what the entry comes down to, set apart from the prose. */
+export function Takeaways({ title, children }: { title?: string; children?: ReactNode }) {
+  const labels = useBodyLabels()
+  const name = title ?? labels.takeaways
+
+  return (
+    <section aria-label={name} className="my-12 border border-line bg-ink-soft/50 px-6 py-6 md:px-7">
+      <p className="font-display-italic text-[1.7rem] leading-none text-bone">{name}</p>
+      <div className="callout-body mt-5 text-[0.95em] leading-relaxed text-bone">{children}</div>
+    </section>
+  )
+}
+
+/* ─── Margin note ───────────────────────────────────────────────────────── */
+
+/**
+ * A footnote, moved beside the sentence that cites it (`rehypeSidenotes`).
+ *
+ * Where the page has a margin and the screen is wide enough to use it, the
+ * note is simply there, floated out beside its line. Everywhere else the
+ * number is a button and the note unfolds under the sentence — so it is never
+ * a hover-only tooltip, and never a jump to the bottom of the page and back.
+ */
+export function MarginNote({ n, children }: { n?: string; children?: ReactNode }) {
+  const labels = useBodyLabels()
+  const { margin } = useContext(BodyContext)
+  const wide = useMediaQuery('(min-width: 80rem)')
+  const [open, setOpen] = useState(false)
+  const id = useId()
+  const pinned = margin && wide
+
+  return (
+    <span className="note">
+      {pinned ? (
+        <sup className="note-ref">{n}</sup>
+      ) : (
+        <button
+          type="button"
+          className="note-ref"
+          aria-expanded={open}
+          aria-controls={id}
+          aria-label={labels.note(n ?? '')}
+          onClick={() => setOpen((value) => !value)}
+        >
+          {n}
+        </button>
+      )}
+      <span
+        id={id}
+        role="note"
+        className="note-body"
+        data-pinned={pinned || undefined}
+        data-open={open || undefined}
+      >
+        <span aria-hidden className="note-number">
+          {n}
+        </span>
+        {children}
+      </span>
+    </span>
   )
 }
 
