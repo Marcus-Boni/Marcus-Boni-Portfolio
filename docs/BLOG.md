@@ -82,6 +82,10 @@ Depois que o texto principal estiver de pé, preencha os detalhes:
 - **Tags**: ajudam o índice e agrupam assuntos recorrentes.
 - **Capa e alt text**: tornam o compartilhamento mais forte e acessível.
 - **Idioma e tradução**: declare o par traduzido só quando ele existir de fato.
+  A tradução é outro post, no outro idioma, e o par só vale quando **os dois**
+  apontam um para o outro e estão publicados. Com o par formado, cada versão
+  mostra o link para a outra, e trocar o idioma no cabeçalho (PT / EN) leva o
+  leitor para a versão naquele idioma. Sem par, a troca muda só os controles.
 
 O checklist mostra pontos de atenção sobre título, URL, resumo, capa, tags e
 estrutura do texto antes de trocar a visibilidade para `published`.
@@ -339,6 +343,11 @@ registros de exemplo de `src/blog/dev-fixtures.ts`, e `/blog?demo=0` desfaz. A
 marca fica em `sessionStorage`, porque o índice reescreve a própria query
 string. No build de produção o ramo inteiro é código morto e o arquivo não é
 emitido.
+
+Um rascunho de verdade pode ser lido do mesmo jeito antes de publicar: o
+Markdown fica em `docs/diario/<slug>.md`, só com o corpo, e entra nos exemplos
+por um import `?raw` em `dev-fixtures.ts`. É esse mesmo arquivo que se cola no
+editor do `/admin/blog`.
 
 ### Numeração dos registros
 

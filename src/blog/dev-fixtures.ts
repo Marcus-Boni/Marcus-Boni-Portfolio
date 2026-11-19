@@ -1,13 +1,21 @@
 import type { Post } from '@/blog/types'
 
+import toolboxBody from '../../docs/diario/caixa-de-ferramentas-front-end.md?raw'
+import toolboxBodyEn from '../../docs/diario/my-front-end-toolbox.md?raw'
+
 /**
  * Sample entries for designing the journal — DEVELOPMENT ONLY.
  *
  * Loaded exclusively through `demoMode()` in `usePosts.ts` (visit
- * `/blog?demo=1` on the dev server). Nothing here is real writing by the
- * author and none of it reaches a production build. The bodies exist to put
- * every block the renderer supports on screen at once: headings for the table
- * of contents, code fences, a callout, a pull quote, a table, lists.
+ * `/blog?demo=1` on the dev server). None of it reaches a production build.
+ * The bodies exist to put every block the renderer supports on screen at
+ * once: headings for the table of contents, code fences, a callout, a pull
+ * quote, a table, lists.
+ *
+ * One entry is real writing: the first one, with its English translation,
+ * reads its body from `docs/diario/`, the Markdown that gets pasted into
+ * `/admin/blog`, so a draft can be read on the real page before it is
+ * published. The others are placeholders.
  */
 
 const NOTICE = '> Registro de exemplo — visível apenas em desenvolvimento (`/blog?demo=1`).'
@@ -162,6 +170,35 @@ function entry(
 }
 
 export const fixturePosts: Post[] = [
+  entry({
+    slug: 'caixa-de-ferramentas-front-end',
+    lang: 'pt',
+    title: 'Minha caixa de ferramentas de front-end',
+    subtitle:
+      'Dezesseis endereços que eu abro antes de desenhar uma interface, da pesquisa da marca do cliente ao 3D.',
+    excerpt:
+      'Onde eu busco componentes, movimento e critério de design para construir interfaces: dezesseis ferramentas com versão gratuita e o que conferir antes de copiar.',
+    tags: ['Front-end', 'Design', 'Animação', '3D', 'IA'],
+    readingMinutes: 11,
+    publishedAt: '2026-11-18T12:00:00.000Z',
+    // A pair only counts when each side names the other.
+    translationOf: 'my-front-end-toolbox',
+    body: toolboxBody,
+  }),
+  entry({
+    slug: 'my-front-end-toolbox',
+    lang: 'en',
+    title: 'My front-end toolbox',
+    subtitle:
+      "Sixteen addresses I open before designing an interface, from researching a client's brand to 3D.",
+    excerpt:
+      'Where I get components, motion and design judgment to build interfaces: sixteen tools that are free to use, and what to check before copying.',
+    tags: ['Front-end', 'Design', 'Animation', '3D', 'AI'],
+    readingMinutes: 11,
+    publishedAt: '2026-11-18T12:00:00.000Z',
+    translationOf: 'caixa-de-ferramentas-front-end',
+    body: toolboxBodyEn,
+  }),
   entry({
     slug: 'da-planilha-ao-produto',
     lang: 'pt',
