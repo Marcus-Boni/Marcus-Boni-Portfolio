@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { BlogImage } from '@/blog/components/BlogImage'
 import { PostBody } from '@/blog/components/PostBody'
@@ -21,6 +21,7 @@ import { usePost, usePostList } from '@/blog/usePosts'
 import { HoverItalic } from '@/components/ui/HoverItalic'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 import { useLanguage } from '@/i18n/LanguageContext'
+import { translations } from '@/i18n/translations'
 import { trackEvent } from '@/lib/analytics'
 import { reciprocalTranslation, validDate } from '../../../netlify/lib/blog-seo'
 
@@ -49,6 +50,17 @@ export function BlogPost() {
     : null
   usePostHead(post, status, translation, locale, pathname)
   useReleaseServerDocument(status === 'ready')
+
+  // Picking a language in the header is also asking for the entry in that
+  // language, when its translation exists. Only a change counts, so a reader
+  // who followed a link to the other version stays on it.
+  const navigate = useNavigate()
+  const chosen = useRef(locale)
+  useEffect(() => {
+    const changed = chosen.current !== locale
+    chosen.current = locale
+    if (changed && translation?.lang === locale) navigate(`/blog/${translation.slug}`)
+  }, [locale, translation, navigate])
 
   const toc = useMemo(() => (post ? extractToc(post.body) : []), [post])
   // The entry's place in the journal, oldest first. Unlisted posts are not in
@@ -218,7 +230,9 @@ export function BlogPost() {
                 hrefLang={translation.lang === 'pt' ? 'pt-BR' : 'en'}
                 className="border border-ember/50 px-2.5 py-1 font-mono text-[9px] tracking-[0.18em] text-ember uppercase transition-colors hover:bg-ember hover:text-ink"
               >
-                {t.blog.post.translationAvailable}
+                {/* Named after the entry's language, not the reader's: on a
+                    Portuguese entry the other version is always the English one. */}
+                {translations[post.lang].blog.post.translationAvailable}
               </Link>
             )}
           </div>
