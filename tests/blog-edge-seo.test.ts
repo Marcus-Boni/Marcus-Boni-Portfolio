@@ -247,7 +247,7 @@ describe('publication feeds', () => {
     })
     const xml = await (await feeds(request('/sitemap.xml'), context())).text()
     expect(xml).toContain('/blog/post-1000')
-    expect((xml.match(/<loc>/g) ?? []).length).toBe(1007)
+    expect((xml.match(/<loc>/g) ?? []).length).toBe(1009) // 1001 posts + 8 static routes
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 

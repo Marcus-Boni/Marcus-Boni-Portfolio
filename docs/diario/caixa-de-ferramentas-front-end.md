@@ -18,6 +18,10 @@ licença, a observação está em nota.
 - Antes de copiar, três conferências: licença, movimento reduzido e peso no bundle.
 :::
 
+:::callout{type=tip title="O kit em um link só"}
+Os dezesseis endereços também estão em uma página própria, para abrir, compartilhar e baixar: favoritos que entram no navegador como uma pasta, a lista em Markdown e o comando que instala as skills. [marcusboni.com.br/kit/front-end](/kit/front-end)
+:::
+
 ## O mapa
 
 Para quem só quer o endereço certo, a tabela resolve. O resto do registro

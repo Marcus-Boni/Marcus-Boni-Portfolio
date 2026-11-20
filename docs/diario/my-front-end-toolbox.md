@@ -19,6 +19,10 @@ says so.
 - Before copying, three checks: license, reduced motion and bundle weight.
 :::
 
+:::callout{type=tip title="The kit in one link"}
+The sixteen addresses also live on a page of their own, to open, share and download: bookmarks that land in your browser as one folder, the list in Markdown and the command that installs the skills. [marcusboni.com.br/en/kit/front-end](/en/kit/front-end)
+:::
+
 ## The map
 
 If all you want is the right address, the table is enough. The rest of the entry
