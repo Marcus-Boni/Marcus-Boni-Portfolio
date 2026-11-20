@@ -17,6 +17,7 @@ import {
   postMarkdown,
   privacyMarkdown,
 } from '../lib/agent-docs.ts'
+import { kitMarkdown } from '../lib/kit.ts'
 import { getPostBody, isConfigured, listAllPublished, lookupPost } from '../lib/firestore.ts'
 import { blogSlug, matchRoute, type RouteKind } from '../lib/routes.ts'
 
@@ -145,6 +146,9 @@ async function buildMarkdown(
 
     case 'privacy':
       return { body: privacyMarkdown(), status: 200 }
+
+    case 'kit':
+      return { body: kitMarkdown(url.pathname.startsWith('/en/') ? 'en' : 'pt'), status: 200 }
 
     case 'blog-index': {
       // A confirmed empty collection is a real answer; an outage must not

@@ -349,6 +349,22 @@ Markdown fica em `docs/diario/<slug>.md`, só com o corpo, e entra nos exemplos
 por um import `?raw` em `dev-fixtures.ts`. É esse mesmo arquivo que se cola no
 editor do `/admin/blog`.
 
+### Kit de um registro
+
+Um registro que é uma lista de ferramentas pode ganhar um kit: uma página
+estática com os links, favoritos para importar no navegador, a lista em
+Markdown e o comando das skills. O primeiro é `/kit/front-end` (e
+`/en/kit/front-end`). A fonte é `netlify/lib/kit.ts`; `tests/kit.test.ts`
+gera as páginas e os downloads em `public/`. Depois de editar a lista:
+
+```bash
+pnpm exec vitest run tests/kit.test.ts -u
+```
+
+A página não passa pelo React nem pelo Firestore: abre sem JavaScript,
+compartilha com o próprio título e descrição, e responde em Markdown para
+agentes (`Accept: text/markdown`).
+
 ### Numeração dos registros
 
 O "Nº 007" é a posição do post na lista publicada, do mais antigo para o mais

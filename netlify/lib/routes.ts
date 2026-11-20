@@ -26,6 +26,7 @@ export type RouteKind =
   | 'about'
   | 'contact'
   | 'privacy'
+  | 'kit'
   | 'admin'
 
 export interface Route {
@@ -66,6 +67,10 @@ export const ROUTES: readonly Route[] = [
   { path: '/about', kind: 'about', wildcard: 'none', served: 'static' },
   { path: '/contact', kind: 'contact', wildcard: 'none', served: 'static' },
   { path: '/privacy', kind: 'privacy', wildcard: 'none', served: 'static' },
+  // The front-end kit, one document per language, generated from
+  // netlify/lib/kit.ts by tests/kit.test.ts.
+  { path: '/kit/front-end', kind: 'kit', wildcard: 'none', served: 'static' },
+  { path: '/en/kit/front-end', kind: 'kit', wildcard: 'none', served: 'static' },
   { path: '/admin', kind: 'admin', wildcard: 'none', served: 'spa' },
   { path: '/admin', kind: 'admin', wildcard: 'deep', served: 'spa' },
 ]

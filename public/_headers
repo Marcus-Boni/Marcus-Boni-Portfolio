@@ -48,6 +48,20 @@
   X-Content-Type-Options: nosniff
   X-Robots-Tag: noindex
 
+# The front-end kit. Its fonts are copies of the site's own (OFL), fixed by
+# name, so they cache like the portrait. The downloads are files to keep, not
+# pages: a shared direct link should save them, and none belongs in search.
+/kit/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+/kit/downloads/*
+  Content-Disposition: attachment
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+  X-Robots-Tag: noindex
+/kit/downloads/kit-front-end.md
+  Content-Type: text/markdown; charset=utf-8
+/kit/downloads/front-end-kit.md
+  Content-Type: text/markdown; charset=utf-8
+
 # Management and machine endpoints are reachable without being search results.
 /admin
   X-Robots-Tag: noindex, nofollow

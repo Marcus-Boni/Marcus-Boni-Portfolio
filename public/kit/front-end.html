@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Generated from netlify/lib/kit.ts by tests/kit.test.ts. Edit the source, not this file. -->
+
+    <title>Kit de front-end — Marcus Boni</title>
+    <meta name="description" content="Dezesseis ferramentas para construir interfaces em um link só: componentes, movimento, 3D, skills para agentes e pesquisa de marca. Com favoritos para importar e Markdown para baixar." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://marcusboni.com.br/kit/front-end" />
+    <link rel="alternate" hreflang="pt-BR" href="https://marcusboni.com.br/kit/front-end" />
+    <link rel="alternate" hreflang="en" href="https://marcusboni.com.br/en/kit/front-end" />
+    <link rel="alternate" hreflang="x-default" href="https://marcusboni.com.br/kit/front-end" />
+    <link rel="alternate" type="text/markdown" href="https://marcusboni.com.br/kit/front-end" />
+    <meta name="theme-color" content="#0d0c0a" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://marcusboni.com.br/kit/front-end" />
+    <meta property="og:title" content="Kit de front-end — Marcus Boni" />
+    <meta property="og:description" content="Dezesseis ferramentas para construir interfaces em um link só: componentes, movimento, 3D, skills para agentes e pesquisa de marca. Com favoritos para importar e Markdown para baixar." />
+    <meta property="og:image" content="https://marcusboni.com.br/og-image.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Marcus Boni — Portfolio" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preload" href="/kit/fonts/instrument-serif-400.woff2" as="font" type="font/woff2" crossorigin />
+    <style>
+      @font-face { font-family: 'Instrument Serif'; font-style: normal; font-weight: 400; font-display: swap; src: url('/kit/fonts/instrument-serif-400.woff2') format('woff2'); }
+      @font-face { font-family: 'Instrument Serif'; font-style: italic; font-weight: 400; font-display: swap; src: url('/kit/fonts/instrument-serif-400-italic.woff2') format('woff2'); }
+      @font-face { font-family: 'Archivo Variable'; font-style: normal; font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; src: url('/kit/fonts/archivo-wght.woff2') format('woff2-variations'); }
+      @font-face { font-family: 'Fragment Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url('/kit/fonts/fragment-mono-400.woff2') format('woff2'); }
+
+      :root {
+        --ink: #0d0c0a; --ink-soft: #161412; --bone: #ece7df; --bone-dim: #b5afa4;
+        /* smoke one step lighter than the site token: here it carries small
+           mono text, which needs 4.5:1 (4.7:1), not the 4.2:1 of #7a7368. */
+        --smoke: #827b70; --ember: #ff4d17; --line: #2a2723;
+        --display: 'Instrument Serif', Georgia, serif;
+        --sans: 'Archivo Variable', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        --mono: 'Fragment Mono', 'Courier New', monospace;
+        --ease: cubic-bezier(0.16, 1, 0.3, 1);
+        color-scheme: dark;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body { margin: 0; background: var(--ink); color: var(--bone); font-family: var(--sans); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+      a { color: inherit; }
+      :focus-visible { outline: 1px solid var(--ember); outline-offset: 4px; }
+      .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+      .skip { position: absolute; left: 1rem; top: -4rem; padding: .5rem .75rem; background: var(--ember); color: var(--ink); font-family: var(--mono); font-size: .75rem; z-index: 10; }
+      .skip:focus { top: 1rem; }
+      .mono { font-family: var(--mono); font-size: .6875rem; letter-spacing: .25em; text-transform: uppercase; }
+      .wrap { max-width: 76rem; margin: 0 auto; padding: 0 1.25rem; }
+      @media (min-width: 48rem) { .wrap { padding: 0 2.5rem; } }
+
+      /* Top bar */
+      .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 2rem; padding-block: .75rem; }
+      .wordmark { font-family: var(--display); font-style: italic; font-size: 1.6rem; line-height: 1; text-decoration: none; }
+      .wordmark span { color: var(--ember); }
+      .top nav { display: flex; flex-wrap: wrap; gap: 0 1.5rem; }
+      .top nav a, .index a { display: inline-block; padding-block: .75rem; }
+      .top nav a { color: var(--smoke); text-decoration: none; transition: color .3s; }
+      .top nav a:hover, .top nav a[aria-current] { color: var(--bone); }
+      .top nav a[hreflang] { color: var(--ember); }
+
+      /* Hero */
+      .hero { padding-block: clamp(3rem, 9vw, 7rem) clamp(2.5rem, 6vw, 4.5rem); border-bottom: 1px solid var(--line); }
+      .label { margin: 0; color: var(--ember); }
+      h1 { margin: 1.5rem 0 0; font-weight: 800; font-stretch: 112%; text-transform: uppercase; letter-spacing: -.02em; line-height: .86; font-size: clamp(3.25rem, 12vw, 10rem); }
+      h1 em { display: block; font-family: var(--display); font-style: italic; font-weight: 400; text-transform: none; letter-spacing: -.01em; color: var(--ember); line-height: .95; }
+      .lead { max-width: 46ch; margin: 2rem 0 0; color: var(--bone-dim); font-size: clamp(1.0625rem, 1.6vw, 1.25rem); line-height: 1.55; }
+      .stats { display: flex; flex-wrap: wrap; gap: .5rem 2rem; margin: 2rem 0 0; padding: 0; list-style: none; color: var(--smoke); }
+      .stats li::before { content: '—'; margin-right: .75rem; color: var(--line); }
+      .stats li:first-child::before { content: none; }
+      .actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2.75rem; }
+      .btn { display: inline-flex; align-items: center; gap: .75rem; min-height: 2.875rem; padding: 0 1.25rem; border: 1px solid var(--line); background: transparent; color: var(--bone); font: inherit; font-family: var(--mono); font-size: .6875rem; letter-spacing: .2em; text-transform: uppercase; text-decoration: none; cursor: pointer; transition: border-color .3s, color .3s, background-color .3s; }
+      .btn:hover { border-color: var(--ember); color: var(--ember); }
+      .btn.primary { background: var(--ember); border-color: var(--ember); color: var(--ink); }
+      .btn.primary:hover { background: var(--bone); border-color: var(--bone); color: var(--ink); }
+      .btn svg { width: .875rem; height: .875rem; flex: none; }
+      .hint { margin: 1.25rem 0 0; color: var(--smoke); font-size: .875rem; }
+      .hint a { display: inline-block; padding-block: .5rem; color: var(--bone-dim); text-underline-offset: .25em; text-decoration-color: var(--line); }
+      .hint a:hover { color: var(--ember); text-decoration-color: var(--ember); }
+      .status { min-height: 1.5rem; margin: .75rem 0 0; color: var(--ember); }
+
+      /* Shelf index */
+      .index { display: flex; flex-wrap: wrap; gap: 0 1.75rem; padding-block: .75rem; border-bottom: 1px solid var(--line); }
+      .index a { color: var(--smoke); text-decoration: none; transition: color .3s; }
+      .index a b { color: var(--ember); font-weight: 400; margin-right: .5rem; }
+      .index a:hover { color: var(--bone); }
+
+      /* Shelves */
+      .shelf { display: grid; gap: 1.25rem 3rem; padding-block: 3rem; border-bottom: 1px solid var(--line); scroll-margin-top: 1rem; }
+      @media (min-width: 64rem) { .shelf { grid-template-columns: 15rem minmax(0, 1fr); padding-block: 4rem; } }
+      .shelf h2 { align-self: start; margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(2rem, 3.4vw, 2.75rem); line-height: 1; }
+      @media (min-width: 64rem) { .shelf h2 { position: sticky; top: 2rem; } }
+      .shelf h2 small { display: block; margin-bottom: .875rem; color: var(--ember); }
+      .tools { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+      .tool a { position: relative; display: grid; grid-template-columns: 2.5rem minmax(0, 1fr) auto; gap: .25rem 1rem; padding: 1.5rem 0; border-bottom: 1px solid var(--line); text-decoration: none; }
+      .tool a::before { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--ember); transform: scaleX(0); transform-origin: left; transition: transform .6s var(--ease); }
+      .tool a:hover::before, .tool a:focus-visible::before { transform: scaleX(1); }
+      .tool .n { grid-row: span 2; padding-top: .55rem; color: var(--smoke); }
+      .tool .name { font-family: var(--display); font-size: clamp(1.75rem, 3vw, 2.5rem); line-height: 1.05; transition: color .3s; }
+      .tool a:hover .name, .tool a:focus-visible .name { font-style: italic; color: var(--ember); }
+      .tool .arrow { align-self: start; padding-top: .5rem; color: var(--smoke); font-family: var(--display); font-size: 1.5rem; line-height: 1; transition: transform .4s var(--ease), color .3s; }
+      .tool a:hover .arrow, .tool a:focus-visible .arrow { color: var(--ember); transform: translate(.2rem, -.2rem); }
+      .tool .body { grid-column: 2 / -1; display: grid; gap: .5rem; }
+      .tool .desc { max-width: 60ch; color: var(--bone-dim); font-size: .9375rem; }
+      .tool .meta { display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; color: var(--smoke); letter-spacing: .18em; }
+      .tool .lic { color: var(--bone-dim); }
+
+      /* Skills, import, entry */
+      .panel { display: grid; gap: 1.25rem 3rem; padding-block: 4rem; border-bottom: 1px solid var(--line); scroll-margin-top: 1rem; }
+      @media (min-width: 64rem) { .panel { grid-template-columns: 15rem minmax(0, 1fr); } }
+      .panel h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(2rem, 3.4vw, 2.75rem); line-height: 1; }
+      .panel p { max-width: 60ch; margin: 0 0 1.25rem; color: var(--bone-dim); }
+      .panel ol { margin: 0; padding-left: 1.25rem; color: var(--bone-dim); display: grid; gap: .625rem; }
+      .panel ol strong { color: var(--bone); font-weight: 600; }
+      .code { position: relative; margin: 0 0 1rem; border: 1px solid var(--line); background: var(--ink-soft); }
+      .code pre { margin: 0; padding: 1.25rem 1.25rem; overflow-x: auto; font-family: var(--mono); font-size: .8125rem; line-height: 1.9; color: var(--bone); }
+      .entry-link { display: inline-flex; gap: .75rem; align-items: baseline; font-family: var(--display); font-style: italic; font-size: clamp(1.75rem, 3vw, 2.5rem); line-height: 1.1; color: var(--bone); text-decoration: none; transition: color .3s; }
+      .entry-link:hover { color: var(--ember); }
+      footer { padding-block: 3rem 5rem; color: var(--smoke); font-size: .8125rem; }
+      footer p { max-width: 70ch; margin: 0 0 1rem; }
+
+      /* Motion: an entrance for the hero, rows that ink in as they scroll by. */
+      @media (prefers-reduced-motion: no-preference) {
+        .rise { animation: rise .9s var(--ease) both; }
+        .rise:nth-child(2) { animation-delay: .08s; } .rise:nth-child(3) { animation-delay: .16s; }
+        .rise:nth-child(4) { animation-delay: .24s; } .rise:nth-child(5) { animation-delay: .32s; }
+        .rise:nth-child(6) { animation-delay: .4s; } .rise:nth-child(7) { animation-delay: .48s; }
+        @supports (animation-timeline: view()) {
+          .tool { animation: ink linear both; animation-timeline: view(); animation-range: entry 0% entry 60%; }
+        }
+      }
+      @keyframes rise { from { opacity: 0; transform: translateY(1.25rem); } }
+      @keyframes ink { from { opacity: .15; transform: translateY(.75rem); } }
+    </style>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","@id":"https://marcusboni.com.br/kit/front-end#kit","url":"https://marcusboni.com.br/kit/front-end","name":"Kit de front-end — Marcus Boni","description":"Dezesseis ferramentas para construir interfaces em um link só: componentes, movimento, 3D, skills para agentes e pesquisa de marca. Com favoritos para importar e Markdown para baixar.","inLanguage":"pt-BR","numberOfItems":16,"author":{"@type":"Person","name":"Marcus Boni","url":"https://marcusboni.com.br/about"},"itemListElement":[{"@type":"ListItem","position":1,"name":"shadcn/ui","url":"https://ui.shadcn.com/"},{"@type":"ListItem","position":2,"name":"React Bits","url":"https://www.reactbits.dev/get-started/introduction"},{"@type":"ListItem","position":3,"name":"Skiper UI","url":"https://skiper-ui.com/components"},{"@type":"ListItem","position":4,"name":"Componentry","url":"https://componentry.dev/docs"},{"@type":"ListItem","position":5,"name":"KokonutUI","url":"https://kokonutui.com/docs/ai/ai-token-alternatives"},{"@type":"ListItem","position":6,"name":"Bklit UI","url":"https://bklit.com/"},{"@type":"ListItem","position":7,"name":"GSAP","url":"https://gsap.com/"},{"@type":"ListItem","position":8,"name":"Lenis","url":"https://lenis.dev/"},{"@type":"ListItem","position":9,"name":"Motion","url":"https://motion.dev/docs"},{"@type":"ListItem","position":10,"name":"Anime.js","url":"https://animejs.com/documentation/"},{"@type":"ListItem","position":11,"name":"Three.js","url":"https://github.com/mrdoob/three.js/"},{"@type":"ListItem","position":12,"name":"Impeccable","url":"https://impeccable.style/docs/impeccable/"},{"@type":"ListItem","position":13,"name":"Taste Skill","url":"https://www.tasteskill.dev/"},{"@type":"ListItem","position":14,"name":"emilkowalski/skills","url":"https://github.com/emilkowalski/skills"},{"@type":"ListItem","position":15,"name":"research","url":"https://github.com/mattpocock/skills/tree/main/skills/engineering/research"},{"@type":"ListItem","position":16,"name":"Firecrawl","url":"https://www.firecrawl.dev/"}]}</script>
+  </head>
+  <body>
+    <a class="skip" href="#base">Pular para a lista</a>
+    <div class="wrap">
+      <header class="top">
+        <a class="wordmark" href="/" aria-label="Marcus Boni — Início">mb<span>.</span></a>
+        <nav class="mono" aria-label="Site">
+          <a href="/">Início</a>
+          <a href="/blog">Diário</a>
+          <a href="/en/kit/front-end" hreflang="en" lang="en" aria-label="Read this kit in English">English</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero" aria-labelledby="kit-title">
+          <p class="label mono rise">Kit 01 · Front-end</p>
+          <h1 id="kit-title" class="rise">Caixa de <em>ferramentas</em></h1>
+          <p class="lead rise">Os dezesseis endereços que eu abro antes de desenhar uma interface, em seis prateleiras. Todos podem ser usados de graça; a licença está ao lado de cada um.</p>
+          <ul class="stats mono rise"><li>16 ferramentas</li><li>6 prateleiras</li><li>Conferido em nov. 2026</li></ul>
+          <div class="actions rise">
+            <a class="btn primary" href="/kit/downloads/kit-front-end-favoritos.html" download><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M8 2v8.5M4.5 7 8 10.5 11.5 7M2.5 13.5h11"/></svg>Baixar favoritos</a>
+            <a class="btn" href="/kit/downloads/kit-front-end.md" download><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M8 2v8.5M4.5 7 8 10.5 11.5 7M2.5 13.5h11"/></svg>Baixar Markdown</a>
+            <button class="btn" type="button" data-action="links" data-done="Links copiados."><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5"/><path d="M11 5V2.5H2.5V11H5"/></svg>Copiar todos os links</button>
+            <button class="btn" type="button" data-action="share" data-done="Endereço do kit copiado."><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M8 10V2M5 4.5 8 1.5l3 3M3.5 7.5v6h9v-6"/></svg>Compartilhar</button>
+          </div>
+          <p class="hint rise">Os favoritos entram no navegador como uma pasta, já separada por prateleira. <a href="#importar">Como importar</a></p>
+          <p class="status mono" role="status" data-status data-failed="Não foi possível copiar. Selecione o texto e copie à mão."></p>
+        </section>
+
+        <nav class="index" aria-label="Prateleiras">
+          <a class="mono" href="#base"><b>01</b>A base</a>
+          <a class="mono" href="#colecoes"><b>02</b>Coleções de componentes</a>
+          <a class="mono" href="#movimento"><b>03</b>Movimento</a>
+          <a class="mono" href="#3d"><b>04</b>Terceira dimensão</a>
+          <a class="mono" href="#skills"><b>05</b>Skills para o agente</a>
+          <a class="mono" href="#pesquisa"><b>06</b>Pesquisa da marca</a>
+        </nav>
+
+        <section class="shelf" id="base" aria-labelledby="base-h">
+          <h2 id="base-h" data-title="A base"><small class="mono">01 · 1</small>A base</h2>
+          <ol class="tools" start="1">
+            <li class="tool">
+              <a href="https://ui.shadcn.com/" target="_blank" rel="noopener" data-name="shadcn/ui">
+                <span class="n mono" aria-hidden="true">01</span>
+                <span class="name">shadcn/ui</span>
+                <span class="arrow" aria-hidden="true">↗</span>
+                <span class="body">
+                  <span class="desc">Componentes base copiados para dentro do projeto, e o registro pelo qual as coleções abaixo se instalam.</span>
+                  <span class="meta mono"><span>ui.shadcn.com</span><span class="lic">MIT</span></span>
+                </span>
+                <span class="sr">(abre em nova aba)</span>
+              </a>
+            </li>
+          </ol>
+        </section>
+        <section class="shelf" id="colecoes" aria-labelledby="colecoes-h">
+          <h2 id="colecoes-h" data-title="Coleções de componentes"><small class="mono">02 · 5</small>Coleções de componentes</h2>
+          <ol class="tools" start="2">
+            <li class="tool">
+              <a href="https://www.reactbits.dev/get-started/introduction" target="_blank" rel="noopener" data-name="React Bits">
+                <span class="n mono" aria-hidden="true">02</span>
+                <span class="name">React Bits</span>
+                <span class="arrow" aria-hidden="true">↗</span>
+                <span class="body">
+                  <span class="desc">Mais de duzentos componentes animados de texto, fundo e interface, em JS ou TS, CSS ou Tailwind.</span>
+                  <span class="meta mono"><span>reactbits.dev</span><span class="lic">MIT + Commons Clause</span></span>
+                </span>
+                <span class="sr">(abre em nova aba)</span>
+              </a>
+            </li>
+            <li class="tool">
+              <a href="https://skiper-ui.com/components" target="_blank" rel="noopener" data-name="Skiper UI">
+                <span class="n mono" aria-hidden="true">03</span>
+                <span class="name">Skiper UI</span>
+                <span class="arrow" aria-hidden="true">↗</span>
+                <span class="body">
+                  <span class="desc">Interações de rolagem e de cursor: barras de progresso, textos que se revelam, pilhas de cartões.</span>
+                  <span class="meta mono"><span>skiper-ui.com</span><span class="lic">Gratuita com atribuição</span></span>
+                </span>
+                <span class="sr">(abre em nova aba)</span>
+              </a>
+            </li>
+            <li class="tool">
+              <a href="https://componentry.dev/docs" target="_blank" rel="noopener" data-name="Componentry">
+                <span class="n mono" aria-hidden="true">04</span>
+                <span class="name">Componentry</span>
+                <span class="arrow" aria-hidden="true">↗</span>
+                <span class="body">
+                  <span class="desc">Código editável focado em scroll, tipografia cinética e efeitos WebGL.</span>
+                  <span class="meta mono"><span>componentry.dev</span><span class="lic">MIT</span></span>
+                </span>
+                <span class="sr">(abre em nova aba)</span>
+              </a>
+            </li>
+            <li class="tool">
+              <a href="https://kokonutui.com/docs/ai/ai-token-alternatives" target="_blank" rel="noopener" data-name="KokonutUI">
+                <span class="n mono" aria-hidden="true">05</span>
+                <span class="name">KokonutUI</span>
+                <span class="arrow" aria-hidden="true">↗</span>
+                <span class="body">
+                  <span class="desc">Componentes para produtos de IA: seletor de modelo, chamadas de ferramenta, citações, alternativas de token.</span>
+                  <span class="meta mono"><span>kokonutui.com</span><span class="lic">MIT</span></span>
+                </span>
+                <span class="sr">(abre em nova aba)</span>
+              </a>
+            </li>
+            <li class="tool">
+              <a href="https://bklit.com/" target="_blank" rel="noopener" data-name="Bklit UI">
+                <span class="n mono" aria-hidden="true">06</span>
+                <span class="name">Bklit UI</span>
+                <span class="arrow" aria-hidden="true">↗</span>
+                <span class="body">
+                  <span class="desc">Gráficos em React com d3 e Motion, da área e da barra ao Sankey e ao mapa coroplético.</span>
+                  <span class="meta mono"><span>bklit.com</span><span class="lic">MIT</span></span>
+                </span>
+                <span class="sr">(abre em nova aba)</span>
+              </a>
+            </li>
+          </ol>
+        </section>
+        <section class="shelf" id="movimento" aria-labelledby="movimento-h">
+          <h2 id="movimento-h" data-title="Movimento"><small class="mono">03 · 4</small>Movimento</h2>
+          <ol class="tools" start="7">
+            <li class="tool">
+              <a href="https://gsap.com/" target="_blank" rel="noopener" data-name="GSAP">
+                <span class="n mono" aria-hidden="true">07</span>
+                <span class="name">GSAP</span>
+                <span class="arrow" aria-hidden="true">↗</span>
+                <span class="body">
+                  <span class="desc">Linhas do tempo e animação presa à rolagem com o ScrollTrigger. Gratuito por inteiro, plugins inclusos.</span>
+                  <span class="meta mono"><span>gsap.com</span><span class="lic">Gratuita, licença própria</span></span>
+                </span>
+                <span class="sr">(abre em nova aba)</span>
+              </a>
+            </li>
+            <li class="tool">
+              <a href="https://lenis.dev/" target="_blank" rel="noopener" data-name="Lenis">
+                <span class="n mono" aria-hidden="true">08</span>
+                <span class="name">Lenis</span>
+                <span class="arrow" aria-hidden="true">↗</span>
+                <span class="body">
+                  <span class="desc">Rolagem suave que mantém a do navegador: sticky e barra de rolagem continuam funcionando.</span>
+                  <span class="meta mono"><span>lenis.dev</span><span class="lic">MIT</span></span>
+                </span>
+                <span class="sr">(abre em nova aba)</span>
+              </a>
+            </li>
+            <li class="tool">
+              <a href="https://motion.dev/docs" target="_blank" rel="noopener" data-name="Motion">
+                <span class="n mono" aria-hidden="true">09</span>
+                <span class="name">Motion</span>
+                <span class="arrow" aria-hidden="true">↗</span>
+                <span class="body">
+                  <span class="desc">O antigo Framer Motion: entrada, saída, layout e gestos a partir do estado do React.</span>
+                  <span class="meta mono"><span>motion.dev</span><span class="lic">MIT</span></span>
+                </span>
+                <span class="sr">(abre em nova aba)</span>
+              </a>
+            </li>
+            <li class="tool">
+              <a href="https://animejs.com/documentation/" target="_blank" rel="noopener" data-name="Anime.js">
+                <span class="n mono" aria-hidden="true">10</span>
+                <span class="name">Anime.js</span>
+                <span class="arrow" aria-hidden="true">↗</span>
+                <span class="body">
+                  <span class="desc">Motor de animação modular em JavaScript puro, para páginas sem framework.</span>
+                  <span class="meta mono"><span>animejs.com</span><span class="lic">MIT</span></span>
+                </span>
+                <span class="sr">(abre em nova aba)</span>
+              </a>
+            </li>
+          </ol>
+        </section>
+        <section class="shelf" id="3d" aria-labelledby="3d-h">
+          <h2 id="3d-h" data-title="Terceira dimensão"><small class="mono">04 · 1</small>Terceira dimensão</h2>
+          <ol class="tools" start="11">
+            <li class="tool">
+              <a href="https://github.com/mrdoob/three.js/" target="_blank" rel="noopener" data-name="Three.js">
+                <span class="n mono" aria-hidden="true">11</span>
+                <span class="name">Three.js</span>
+                <span class="arrow" aria-hidden="true">↗</span>
+                <span class="body">
+                  <span class="desc">3D no navegador com WebGL e WebGPU: modelos glTF, cenas, luz e shaders.</span>
+                  <span class="meta mono"><span>github.com/mrdoob/three.js</span><span class="lic">MIT</span></span>
+                </span>
+                <span class="sr">(abre em nova aba)</span>
+              </a>
+            </li>
+          </ol>
+        </section>
+        <section class="shelf" id="skills" aria-labelledby="skills-h">
+          <h2 id="skills-h" data-title="Skills para o agente"><small class="mono">05 · 3</small>Skills para o agente</h2>
+          <ol class="tools" start="12">
+            <li class="tool">
+              <a href="https://impeccable.style/docs/impeccable/" target="_blank" rel="noopener" data-name="Impeccable">
+                <span class="n mono" aria-hidden="true">12</span>
+                <span class="name">Impeccable</span>
+                <span class="arrow" aria-hidden="true">↗</span>
+                <span class="body">
+                  <span class="desc">Vocabulário de design para o agente, com revisão, polimento e um detector de interface genérica.</span>
+                  <span class="meta mono"><span>impeccable.style</span><span class="lic">Apache 2.0</span></span>
+                </span>
+                <span class="sr">(abre em nova aba)</span>
+              </a>
+            </li>
+            <li class="tool">
+              <a href="https://www.tasteskill.dev/" target="_blank" rel="noopener" data-name="Taste Skill">
+                <span class="n mono" aria-hidden="true">13</span>
+                <span class="name">Taste Skill</span>
+                <span class="arrow" aria-hidden="true">↗</span>
+                <span class="body">
+                  <span class="desc">Direção de arte para o agente que cria um site do zero, com referências e conferência no navegador.</span>
+                  <span class="meta mono"><span>tasteskill.dev</span><span class="lic">MIT</span></span>
+                </span>
+                <span class="sr">(abre em nova aba)</span>
+              </a>
+            </li>
+            <li class="tool">
+              <a href="https://github.com/emilkowalski/skills" target="_blank" rel="noopener" data-name="emilkowalski/skills">
+                <span class="n mono" aria-hidden="true">14</span>
+                <span class="name">emilkowalski/skills</span>
+                <span class="arrow" aria-hidden="true">↗</span>
+                <span class="body">
+                  <span class="desc">Dezenove skills de animação de interface: criar, revisar, remover e otimizar movimento.</span>
+                  <span class="meta mono"><span>github.com/emilkowalski/skills</span><span class="lic">MIT</span></span>
+                </span>
+                <span class="sr">(abre em nova aba)</span>
+              </a>
+            </li>
+          </ol>
+        </section>
+        <section class="shelf" id="pesquisa" aria-labelledby="pesquisa-h">
+          <h2 id="pesquisa-h" data-title="Pesquisa da marca"><small class="mono">06 · 2</small>Pesquisa da marca</h2>
+          <ol class="tools" start="15">
+            <li class="tool">
+              <a href="https://github.com/mattpocock/skills/tree/main/skills/engineering/research" target="_blank" rel="noopener" data-name="research">
+                <span class="n mono" aria-hidden="true">15</span>
+                <span class="name">research</span>
+                <span class="arrow" aria-hidden="true">↗</span>
+                <span class="body">
+                  <span class="desc">Skill do Matt Pocock que investiga em fontes primárias e salva o resultado, citado, no repositório.</span>
+                  <span class="meta mono"><span>github.com/mattpocock/skills</span><span class="lic">MIT</span></span>
+                </span>
+                <span class="sr">(abre em nova aba)</span>
+              </a>
+            </li>
+            <li class="tool">
+              <a href="https://www.firecrawl.dev/" target="_blank" rel="noopener" data-name="Firecrawl">
+                <span class="n mono" aria-hidden="true">16</span>
+                <span class="name">Firecrawl</span>
+                <span class="arrow" aria-hidden="true">↗</span>
+                <span class="body">
+                  <span class="desc">Lê sites para o agente e extrai a identidade visual: paleta, fontes, logo e captura de tela.</span>
+                  <span class="meta mono"><span>firecrawl.dev</span><span class="lic">AGPL-3.0</span></span>
+                </span>
+                <span class="sr">(abre em nova aba)</span>
+              </a>
+            </li>
+          </ol>
+        </section>
+
+        <section class="panel" id="skills-install" aria-labelledby="skills-install-h">
+          <h2 id="skills-install-h">Instalar as skills</h2>
+          <div>
+            <p>Uma colagem no terminal instala as cinco skills da lista no seu agente de código. Cada linha pergunta em qual agente instalar.</p>
+            <div class="code"><pre><code data-command>npx skills@latest add pbakaus/impeccable
+npx skills@latest add Leonxlnx/taste-skill
+npx skills@latest add emilkowalski/skills
+npx skills@latest add mattpocock/skills --skill research
+npx skills@latest add firecrawl/skills</code></pre></div>
+            <button class="btn" type="button" data-action="command" data-done="Comando copiado."><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5"/><path d="M11 5V2.5H2.5V11H5"/></svg>Copiar comando</button>
+          </div>
+        </section>
+
+        <section class="panel" id="importar" aria-labelledby="importar-h">
+          <h2 id="importar-h">Importar os favoritos</h2>
+          <ol>
+            <li><strong>Chrome</strong>: menu de favoritos → Importar favoritos e configurações → Arquivo HTML de favoritos.</li>
+            <li><strong>Edge</strong>: Configurações → Importar dados do navegador → Arquivo HTML de favoritos.</li>
+            <li><strong>Firefox</strong>: Gerenciar favoritos → Importar e fazer backup → Importar favoritos de HTML.</li>
+            <li><strong>Safari</strong>: Arquivo → Importar de → Arquivo HTML de favoritos.</li>
+          </ol>
+        </section>
+
+        <section class="panel" aria-labelledby="entry-h">
+          <h2 id="entry-h">O porquê de cada uma</h2>
+          <div>
+            <p>O registro do Diário explica cada ferramenta, com exemplos tirados deste site e o que conferir antes de copiar.</p>
+            <a class="entry-link" href="/blog/caixa-de-ferramentas-front-end">Ler o registro completo <span aria-hidden="true">→</span></a>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p>Licenças conferidas nas páginas de cada projeto em 18 de novembro de 2026. Antes de levar um componente para um projeto de cliente, confira a licença dele.</p>
+        <p class="mono">Marcus Boni · marcusboni.com.br</p>
+      </footer>
+    </div>
+    <script>
+      (() => {
+        const status = document.querySelector('[data-status]')
+        // The canonical address, not location.href: a copied or shared link
+        // should not carry whatever query string brought the reader here.
+        const page = document.querySelector('link[rel=canonical]').href
+        const say = (message) => { status.textContent = ''; setTimeout(() => { status.textContent = message }, 60) }
+        const copy = async (text, done) => {
+          try { await navigator.clipboard.writeText(text); say(done) }
+          catch { say(status.dataset.failed) }
+        }
+        document.addEventListener('click', (event) => {
+          const button = event.target.closest('button[data-action]')
+          if (!button) return
+          const action = button.dataset.action
+          if (action === 'links') {
+            const lines = [...document.querySelectorAll('.shelf')].map((shelf) => {
+              const title = shelf.querySelector('h2').dataset.title
+              const tools = [...shelf.querySelectorAll('.tool a')].map((a) => '- ' + a.dataset.name + ': ' + a.href)
+              return title + '\n' + tools.join('\n')
+            })
+            copy(document.title + '\n' + page + '\n\n' + lines.join('\n\n'), button.dataset.done)
+          } else if (action === 'command') {
+            copy(document.querySelector('[data-command]').textContent, button.dataset.done)
+          } else if (action === 'share') {
+            const data = { title: document.title, text: document.querySelector('meta[name=description]').content, url: page }
+            if (navigator.share) navigator.share(data).catch(() => {})
+            else copy(page, button.dataset.done)
+          }
+        })
+      })()
+    </script>
+  </body>
+</html>

@@ -25,6 +25,8 @@ const STATIC_ROUTES: { path: string; priority: string; changefreq: string }[] = 
   { path: '/about', priority: '0.7', changefreq: 'yearly' },
   { path: '/contact', priority: '0.7', changefreq: 'yearly' },
   { path: '/privacy', priority: '0.3', changefreq: 'yearly' },
+  { path: '/kit/front-end', priority: '0.6', changefreq: 'monthly' },
+  { path: '/en/kit/front-end', priority: '0.6', changefreq: 'monthly' },
 ]
 
 export default async function handler(request: Request, context: Context) {
