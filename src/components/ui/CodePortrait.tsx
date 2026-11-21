@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createCodePortrait, PORTRAIT_DURATION } from '@/animations/codePortrait'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { useLanguage } from '@/i18n/LanguageContext'
+import { useTheme } from '@/lib/theme'
 
 interface CodePortraitProps {
   src: string
@@ -16,6 +17,8 @@ export function CodePortrait({ src, alt, caption }: CodePortraitProps) {
   const replayRef = useRef<(() => void) | null>(null)
   const [preparedSrc, setPreparedSrc] = useState<string | null>(null)
   const reduced = usePrefersReducedMotion()
+  // the glyphs are rasterised in the scheme's colours, so a new scheme redraws them
+  const theme = useTheme()
   const { t } = useLanguage()
 
   useEffect(() => {
@@ -102,7 +105,7 @@ export function CodePortrait({ src, alt, caption }: CodePortraitProps) {
       replayRef.current = null
       canvas.style.opacity = '0'
     }
-  }, [src, reduced])
+  }, [src, reduced, theme])
 
   return (
     <figure className="relative ml-auto aspect-[3/4] max-w-xs overflow-hidden bg-ink lg:-mt-10">

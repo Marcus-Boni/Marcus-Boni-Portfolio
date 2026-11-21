@@ -68,7 +68,7 @@ function Plane({ category }: { category: Category }) {
       <path d="M20 75 120 125V133L20 83Z"
         className="fill-ink stroke-line transition-colors duration-500 group-hover:stroke-ember/50" />
       <path d="M220 75 120 125V133L220 83Z"
-        className="fill-[#090807] stroke-line transition-colors duration-500 group-hover:stroke-ember/50" />
+        className="fill-[color-mix(in_srgb,var(--color-ink)_72%,black)] stroke-line transition-colors duration-500 group-hover:stroke-ember/50" />
       <path d={FACE}
         className="fill-ink-soft stroke-bone-dim/45 transition-colors duration-500 group-hover:fill-[color-mix(in_srgb,var(--color-ember)_14%,var(--color-ink-soft))] group-hover:stroke-ember" />
       <g transform="matrix(1 0.5 -1 0.5 120 25)" fill="none" stroke="currentColor"

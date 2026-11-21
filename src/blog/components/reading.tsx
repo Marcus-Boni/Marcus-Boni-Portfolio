@@ -407,7 +407,7 @@ export function MobileReadingBar({
   return (
     <div
       className={cn(
-        'fixed inset-x-3 bottom-3 z-40 border border-line bg-ink-soft shadow-[0_18px_40px_-12px_rgba(0,0,0,0.9)] transition-[translate,opacity] duration-500 ease-out-expo xl:hidden',
+        'fixed inset-x-3 bottom-3 z-40 border border-line bg-ink-soft shadow-[0_18px_40px_-12px_var(--shade)] transition-[translate,opacity] duration-500 ease-out-expo xl:hidden',
         shown ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-[140%] opacity-0',
       )}
       inert={!shown}

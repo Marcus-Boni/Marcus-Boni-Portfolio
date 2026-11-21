@@ -5,32 +5,57 @@ import * as THREE from 'three'
 import { inkFieldFragment, inkFieldVertex } from '@/animations/glsl/inkField'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { pointerState } from '@/hooks/usePointer'
-import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { scrollState } from '@/lib/scroll-state'
+import { paintColor, useTheme, type Theme } from '@/lib/theme'
 import { clamp, lerp } from '@/lib/utils'
 
-const INK = new THREE.Color('#0d0c0a')
-const BONE = new THREE.Color('#ece7df')
-const EMBER = new THREE.Color('#ff4d17')
+type Uniforms = Record<string, THREE.IUniform>
+
+/**
+ * Hands the shader the page's tokens as they paint right now. The shader
+ * writes what it is given straight to the screen, with no encoding step. Dark
+ * keeps three's sRGB decode, which lands on a deeper black and a redder ember
+ * than the page's: the look the field was tuned on. Light skips the decode, so
+ * the paper under the field is the page's paper and the hero has no edge.
+ */
+function setPalette(uniforms: Uniforms, canvas: HTMLElement, theme: Theme) {
+  const space = theme === 'light' ? THREE.LinearSRGBColorSpace : THREE.SRGBColorSpace
+  const set = (name: string, token: string) =>
+    (uniforms[name].value as THREE.Color).setStyle(paintColor(canvas, token), space)
+  set('uInk', '--color-ink')
+  set('uBone', '--color-bone')
+  set('uEmber', '--color-ember')
+  uniforms.uLight.value = theme === 'light' ? 1 : 0
+}
 
 function InkPlane() {
   const materialRef = useRef<THREE.ShaderMaterial>(null)
-  const { size, viewport } = useThree()
+  const { size, viewport, gl } = useThree()
+  const theme = useTheme()
   const smooth = useRef({ x: 0, y: 0, velocity: 0, reveal: 0 })
 
-  const uniforms = useMemo(
-    () => ({
+  // Built with the palette already in: the first frame is the bare page colour.
+  const uniforms = useMemo(() => {
+    const initial: Uniforms = {
       uTime: { value: 0 },
       uResolution: { value: new THREE.Vector2(1, 1) },
       uPointer: { value: new THREE.Vector2(0, 0) },
       uVelocity: { value: 0 },
       uReveal: { value: 0 },
-      uInk: { value: INK },
-      uBone: { value: BONE },
-      uEmber: { value: EMBER },
-    }),
-    [],
-  )
+      uLight: { value: 0 },
+      uInk: { value: new THREE.Color() },
+      uBone: { value: new THREE.Color() },
+      uEmber: { value: new THREE.Color() },
+    }
+    setPalette(initial, gl.domElement, theme)
+    return initial
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a later scheme goes through the effect
+  }, [gl])
+
+  useEffect(() => {
+    const material = materialRef.current
+    if (material) setPalette(material.uniforms, gl.domElement, theme)
+  }, [gl, theme])
 
   useFrame((_, delta) => {
     const material = materialRef.current
@@ -72,11 +97,10 @@ function InkPlane() {
 /**
  * Full-bleed WebGL ink field behind the hero. The render loop is suspended
  * (`frameloop="never"`) whenever the hero leaves the viewport, so it costs
- * nothing once scrolled past. DPR is capped lower on touch/mobile. A static
- * gradient stands in under reduced motion.
+ * nothing once scrolled past. DPR is capped lower on touch/mobile. `Hero`
+ * does not mount it under reduced motion; its own backdrop stands in.
  */
 export function InkFieldScene() {
-  const reduced = usePrefersReducedMotion()
   const isDesktop = useIsDesktop()
   const wrapRef = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(true)
@@ -92,19 +116,6 @@ export function InkFieldScene() {
     return () => observer.disconnect()
   }, [])
 
-  if (reduced) {
-    return (
-      <div
-        aria-hidden
-        className="absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(120% 90% at 70% 20%, #1c1815 0%, #0d0c0a 60%)',
-        }}
-      />
-    )
-  }
-
   return (
     <div ref={wrapRef} className="absolute inset-0">
       <Canvas
@@ -114,7 +125,9 @@ export function InkFieldScene() {
         gl={{
           antialias: false,
           powerPreference: 'high-performance',
-          alpha: false,
+          // an opaque buffer starts out black: on paper that is a flash
+          // between mounting and the first frame
+          alpha: true,
         }}
         orthographic
         camera={{ position: [0, 0, 1], zoom: 1 }}

@@ -105,7 +105,7 @@ export function Modal({
         aria-label={title}
         tabIndex={-1}
         className={cn(
-          'relative w-full border border-line bg-ink-soft shadow-[0_24px_80px_rgba(0,0,0,0.6)] motion-safe:animate-[panel-in_220ms_cubic-bezier(0.16,1,0.3,1)]',
+          'relative w-full border border-line bg-ink-soft shadow-[0_24px_80px_var(--shade)] motion-safe:animate-[panel-in_220ms_cubic-bezier(0.16,1,0.3,1)]',
           size === 'sm' && 'max-w-sm',
           size === 'md' && 'max-w-lg',
           size === 'lg' && 'max-w-3xl',

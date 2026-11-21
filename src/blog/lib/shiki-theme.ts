@@ -8,6 +8,9 @@ import type { ThemeRegistrationRaw } from 'shiki/core'
  * strings, ember-tinted amber for literals) are added so code stays scannable.
  *
  * Keep these values in sync with the `@theme` block in `src/styles/index.css`.
+ * They are the dark scheme's, and Shiki only ever sees them: `CodeBlock`
+ * trades each one for its token (`tokenVar`) as it renders, so a block follows
+ * the colour scheme through CSS and is never highlighted a second time.
  */
 
 const ink = '#0d0c0a'
@@ -20,6 +23,17 @@ const ember = '#ff4d17'
 const sand = '#c9b896'
 const amber = '#d98b5f'
 const clay = '#bfa98a'
+
+/** Keyed in lower case; Shiki may hand a colour back in upper case. */
+export const tokenVar: Record<string, string> = {
+  [bone]: 'var(--color-bone)',
+  [boneDim]: 'var(--color-bone-dim)',
+  [smoke]: 'var(--color-smoke)',
+  [ember]: 'var(--color-ember)',
+  [sand]: 'var(--code-sand)',
+  [amber]: 'var(--code-amber)',
+  [clay]: 'var(--code-clay)',
+}
 
 export const signalInkTheme: ThemeRegistrationRaw = {
   name: 'signal-ink',

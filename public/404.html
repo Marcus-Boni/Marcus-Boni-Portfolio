@@ -10,7 +10,9 @@
       content="Esta URL não existe em marcusboni.com.br. O site tem três páginas: início, blog e /developers. O sitemap lista todas."
     />
     <meta name="robots" content="noindex, follow" />
-    <meta name="theme-color" content="#0d0c0a" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f1ede5" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0d0c0a" />
     <!--
       Served by Netlify for every path not listed in `public/_redirects`, with a
       real 404 status. Deliberately standalone: no bundle, no fonts, no
@@ -26,12 +28,25 @@
     -->
     <style>
       :root {
+        color-scheme: dark;
         --ink: #0d0c0a;
         --bone: #ece7df;
         --bone-dim: #b5afa4;
         --smoke: #7a7368;
         --ember: #ff4d17;
         --line: #2a2723;
+      }
+      /* Follows the system's scheme, like the pages on public/page.css. */
+      @supports (color: light-dark(#000, #fff)) {
+        :root {
+          color-scheme: light dark;
+          --ink: light-dark(#f1ede5, #0d0c0a);
+          --bone: light-dark(#14120f, #ece7df);
+          --bone-dim: light-dark(#48433b, #b5afa4);
+          --smoke: light-dark(#6b655b, #7a7368);
+          --ember: light-dark(#c23005, #ff4d17);
+          --line: light-dark(#d6cfc2, #2a2723);
+        }
       }
       * {
         box-sizing: border-box;
@@ -49,8 +64,8 @@
         background-color: var(--ink);
         background-image: radial-gradient(
           120% 90% at 70% 20%,
-          #1c1815 0%,
-          #0d0c0a 60%
+          color-mix(in srgb, var(--ink) 93%, var(--bone)) 0%,
+          var(--ink) 60%
         );
         color: var(--bone);
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;

@@ -119,7 +119,7 @@ function ToastRow({
   return (
     <div
       className={cn(
-        'pointer-events-auto flex items-start gap-3 border bg-ink-soft/95 px-4 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.45)] backdrop-blur',
+        'pointer-events-auto flex items-start gap-3 border bg-ink-soft/95 px-4 py-3 shadow-[0_8px_30px_var(--shade)] backdrop-blur',
         'motion-safe:animate-[toast-in_220ms_cubic-bezier(0.16,1,0.3,1)]',
         toast.tone === 'success' && 'border-ember/50',
         toast.tone === 'error' && 'border-ember-deep/70',

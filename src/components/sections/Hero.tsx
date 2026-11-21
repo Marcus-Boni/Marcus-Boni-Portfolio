@@ -14,10 +14,6 @@ const InkFieldScene = lazy(() =>
   })),
 )
 
-/** Painted instantly behind the hero — the loading + reduced-motion state. */
-const HERO_BACKDROP =
-  'radial-gradient(120% 90% at 70% 20%, #1c1815 0%, #0d0c0a 60%)'
-
 /**
  * Full-viewport hero: WebGL ink field behind a massive typographic lockup.
  * The name splits into characters and pours in; metadata fades after.
@@ -74,7 +70,7 @@ export function Hero() {
     >
       {/* static backdrop, painted immediately — the WebGL canvas mounts over
           it only after the first user interaction so it never blocks load */}
-      <div aria-hidden className="absolute inset-0" style={{ background: HERO_BACKDROP }} />
+      <div aria-hidden className="hero-backdrop absolute inset-0" />
       {showCanvas && (
         <Suspense fallback={null}>
           <InkFieldScene />

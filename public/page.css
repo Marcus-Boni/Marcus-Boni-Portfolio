@@ -12,9 +12,14 @@
  * The tokens mirror the @theme block in src/styles/index.css and use the font
  * fallbacks those tokens declare, so the pages read as the same site without
  * pulling in the webfonts.
+ *
+ * Colour scheme: these pages carry no script, so they follow the system and
+ * nothing else. The switch in the app's header does not reach them. The light
+ * values are the ones under "Colour scheme" in src/styles/index.css.
  */
 
 :root {
+  color-scheme: dark;
   --ink: #0d0c0a;
   --ink-soft: #161412;
   --bone: #ece7df;
@@ -22,6 +27,20 @@
   --smoke: #7a7368;
   --ember: #ff4d17;
   --line: #2a2723;
+}
+@supports (color: light-dark(#000, #fff)) {
+  :root {
+    color-scheme: light dark;
+    --ink: light-dark(#f1ede5, #0d0c0a);
+    --ink-soft: light-dark(#e7e1d6, #161412);
+    --bone: light-dark(#14120f, #ece7df);
+    --bone-dim: light-dark(#48433b, #b5afa4);
+    --smoke: light-dark(#6b655b, #7a7368);
+    --ember: light-dark(#c23005, #ff4d17);
+    --line: light-dark(#d6cfc2, #2a2723);
+  }
+}
+:root {
   --sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --mono: 'Courier New', Courier, monospace;
   --serif: Georgia, 'Times New Roman', serif;

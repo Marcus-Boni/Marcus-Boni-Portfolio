@@ -1,3 +1,5 @@
+import { paintColor } from '@/lib/theme'
+
 /** A finite, row-staggered assembly. All timing is in visible milliseconds. */
 export const PORTRAIT_DURATION = 4800
 
@@ -77,10 +79,12 @@ export function createCodePortrait(
   const portrait = makeLayer()
   const ambient = makeLayer()
   const ember = makeLayer()
-  const styles = getComputedStyle(canvas)
-  const ink = styles.getPropertyValue('--color-ink').trim() || '#0d0c0a'
-  const bone = styles.getPropertyValue('--color-bone').trim() || '#ece7df'
-  const accent = styles.getPropertyValue('--color-ember').trim() || '#ff4d17'
+  const ink = paintColor(canvas, '--color-ink')
+  const bone = paintColor(canvas, '--color-bone')
+  const accent = paintColor(canvas, '--color-ember')
+  // "rgb(241, …": on a light page the glyphs are ink, so they go where the
+  // photo is dark. Lit glyphs on a dark page go where it is bright.
+  const onPaper = parseInt(ink.slice(4)) > 127
   portrait.context.fillStyle = bone
   ambient.context.fillStyle = bone
   ember.context.fillStyle = accent
@@ -88,8 +92,9 @@ export function createCodePortrait(
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < 76; col++) {
       const offset = (row * 76 + col) * 4
-      const luminance = (pixels[offset] * 0.2126 + pixels[offset + 1] * 0.7152 +
+      const light = (pixels[offset] * 0.2126 + pixels[offset + 1] * 0.7152 +
         pixels[offset + 2] * 0.0722) / 255
+      const luminance = onPaper ? 1 - light : light
       const char = SOURCE[(row * 83 + col) % SOURCE.length]
       const x = col * cell
       const y = row * line

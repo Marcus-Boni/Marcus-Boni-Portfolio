@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 
 import { createPlateField, hashSeed, paintPlate } from '@/blog/lib/plate'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
+import { paintColor, useTheme } from '@/lib/theme'
 import { cn } from '@/lib/utils'
 
 interface PostPlateProps {
@@ -33,6 +34,7 @@ export function PostPlate({ seed, motion = 'still', active = false, className }:
   const activeRef = useRef(active)
   const wakeRef = useRef<(() => void) | null>(null)
   const reduced = usePrefersReducedMotion()
+  const theme = useTheme()
 
   useEffect(() => {
     activeRef.current = active
@@ -45,6 +47,9 @@ export function PostPlate({ seed, motion = 'still', active = false, className }:
     if (!canvas || !ctx) return
 
     const field = createPlateField(hashSeed(seed))
+    // "rgb(r, g, b)" → the bytes the painter writes
+    const bytes = (token: string) => paintColor(canvas, token).match(/\d+/g)!.map(Number)
+    const colors = { line: bytes('--color-bone-dim'), ember: bytes('--color-ember') }
     const moves = !reduced
     let visible = false
     let frame = 0
@@ -65,7 +70,7 @@ export function PostPlate({ seed, motion = 'still', active = false, className }:
         canvas.width = width
         canvas.height = height
       }
-      paintPlate(ctx, width, height, field, time)
+      paintPlate(ctx, width, height, field, time, colors)
     }
 
     const tick = (now: number) => {
@@ -113,7 +118,7 @@ export function PostPlate({ seed, motion = 'still', active = false, className }:
       document.removeEventListener('visibilitychange', wake)
       wakeRef.current = null
     }
-  }, [seed, motion, reduced])
+  }, [seed, motion, reduced, theme])
 
   return (
     <span aria-hidden className={cn('relative block overflow-hidden bg-ink-soft', className)}>

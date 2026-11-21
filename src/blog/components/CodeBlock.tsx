@@ -3,6 +3,7 @@ import type { ThemedToken } from 'shiki/core'
 
 import { StageContext, useBodyLabels } from '@/blog/lib/body-context'
 import { parseFenceMeta } from '@/blog/lib/code-meta'
+import { tokenVar } from '@/blog/lib/shiki-theme'
 import { cn } from '@/lib/utils'
 
 interface CodeBlockProps {
@@ -17,7 +18,7 @@ interface CodeBlockProps {
 function tokenStyle(token: ThemedToken): React.CSSProperties {
   const style = token.fontStyle ?? 0
   return {
-    color: token.color,
+    color: token.color && (tokenVar[token.color.toLowerCase()] ?? token.color),
     fontStyle: style & 1 ? 'italic' : undefined,
     fontWeight: style & 2 ? 600 : undefined,
     textDecoration: style & 4 ? 'underline' : undefined,

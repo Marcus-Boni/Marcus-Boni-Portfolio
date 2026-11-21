@@ -101,7 +101,8 @@ function commonHead(title: string, description: string, url: string, image: stri
     <meta name="robots" content="${robots}">
     <link rel="canonical" href="${escapeHtml(url)}">
     <link rel="alternate" type="text/markdown" href="${escapeHtml(url)}">
-    <meta name="theme-color" content="#0d0c0a">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f1ede5">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0d0c0a">
     <meta property="og:type" content="${type}">
     <meta property="og:url" content="${escapeHtml(url)}">
     <meta property="og:title" content="${escapeHtml(title)}">

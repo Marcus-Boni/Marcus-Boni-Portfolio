@@ -265,7 +265,7 @@ export function AdminLayout() {
             role="dialog"
             aria-modal="true"
             aria-label="Menu do painel"
-            className="absolute inset-y-0 right-0 flex w-[min(20rem,85vw)] flex-col justify-between border-l border-line bg-ink-soft py-6 shadow-[0_0_60px_rgba(0,0,0,0.6)] motion-safe:animate-[panel-in_220ms_cubic-bezier(0.16,1,0.3,1)]"
+            className="absolute inset-y-0 right-0 flex w-[min(20rem,85vw)] flex-col justify-between border-l border-line bg-ink-soft py-6 shadow-[0_0_60px_var(--shade)] motion-safe:animate-[panel-in_220ms_cubic-bezier(0.16,1,0.3,1)]"
           >
             <div className="min-h-0 flex-1 overflow-y-auto">
               <div className="flex items-center justify-between px-6">

@@ -279,7 +279,7 @@ export function CommandPalette({
         aria-modal="true"
         aria-label="Paleta de comandos"
         onKeyDown={onKeyDown}
-        className="relative w-full max-w-xl border border-line bg-ink-soft shadow-[0_24px_80px_rgba(0,0,0,0.6)] motion-safe:animate-[panel-in_220ms_cubic-bezier(0.16,1,0.3,1)]"
+        className="relative w-full max-w-xl border border-line bg-ink-soft shadow-[0_24px_80px_var(--shade)] motion-safe:animate-[panel-in_220ms_cubic-bezier(0.16,1,0.3,1)]"
       >
         <div className="border-b border-line p-3">
           <TextInput

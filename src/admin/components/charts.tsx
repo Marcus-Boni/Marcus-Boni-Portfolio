@@ -34,9 +34,10 @@ const SURFACE = 'var(--color-ink)'
  * Sequential ember ramp, computed in OKLCH and validated: monotone lightness,
  * adjacent ΔL ≥ 0.06, light end 2.10:1 against the card surface. Four steps is
  * what the available lightness range allows with legal gaps — and four classes
- * read more cleanly than six anyway.
+ * read more cleanly than six anyway. The steps live in index.css ("Colour
+ * scheme"), where the light scheme runs the same four the other way.
  */
-const HEAT_RAMP = ['#743b29', '#984429', '#c04b21', '#e95111'] as const
+const HEAT_RAMP = ['var(--heat-1)', 'var(--heat-2)', 'var(--heat-3)', 'var(--heat-4)'] as const
 
 function formatCompact(value: number): string {
   if (Math.abs(value) >= 10000) return `${Math.round(value / 1000)}K`
@@ -64,7 +65,7 @@ function Tooltip({ state, hostWidth }: { state: TooltipState; hostWidth: number 
   return (
     <div
       role="tooltip"
-      className="pointer-events-none absolute z-20 min-w-36 border border-line bg-ink/95 px-3 py-2 shadow-[0_8px_28px_-12px_rgba(0,0,0,0.9)] backdrop-blur"
+      className="pointer-events-none absolute z-20 min-w-36 border border-line bg-ink/95 px-3 py-2 shadow-[0_8px_28px_-12px_var(--shade)] backdrop-blur"
       style={{
         left: flip ? undefined : state.x + 14,
         right: flip ? hostWidth - state.x + 14 : undefined,
