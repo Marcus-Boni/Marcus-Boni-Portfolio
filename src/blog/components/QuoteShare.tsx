@@ -11,11 +11,13 @@ const MIN_QUOTE = 12
 
 /**
  * How a passage reached through a quote link is painted: ember at 32% under
- * bone text. It lives here, not in index.css, because the CSS minifier does
- * not know `::highlight()` yet and warns on every build; and it spells the
- * colours out because a highlight cannot be relied on to resolve `var()`.
+ * the type colour. It lives here, not in index.css, because the CSS minifier
+ * does not know `::highlight()` yet and warns on every build; and it spells
+ * the colours out because a highlight cannot be relied on to resolve `var()`.
+ * Where it does not resolve `light-dark()` either, the text keeps its own
+ * colour, which reads on that tint in both schemes.
  */
-const QUOTE_MARK = '::highlight(quote){background-color:rgb(255 77 23/.32);color:#ece7df}'
+const QUOTE_MARK = '::highlight(quote){background-color:rgb(255 77 23/.32);color:light-dark(#14120f,#ece7df)}'
 
 interface Selected {
   text: string
@@ -204,7 +206,7 @@ export function QuoteShare({
       onPointerDown={(event) => event.preventDefault()}
       style={{ top: selected.top, left: `clamp(9.5rem, ${selected.left}px, 100% - 9.5rem)` }}
       className={cn(
-        'absolute z-30 flex w-max max-w-[calc(100vw-1.5rem)] -translate-x-1/2 flex-wrap justify-center divide-x divide-line border border-line bg-ink-soft shadow-[0_18px_40px_-12px_rgba(0,0,0,0.9)] select-none',
+        'absolute z-30 flex w-max max-w-[calc(100vw-1.5rem)] -translate-x-1/2 flex-wrap justify-center divide-x divide-line border border-line bg-ink-soft shadow-[0_18px_40px_-12px_var(--shade)] select-none',
         'transition-[opacity,scale] duration-300 ease-out-expo starting:scale-95 starting:opacity-0',
         selected.below ? 'origin-top' : 'origin-bottom -translate-y-full',
       )}

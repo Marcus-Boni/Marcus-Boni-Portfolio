@@ -24,6 +24,8 @@ export interface Translation {
     openMenu: string
     closeMenu: string
     backHome: string
+    themeToLight: string
+    themeToDark: string
   }
   hero: {
     portfolio: string
@@ -190,6 +192,8 @@ export const translations: Record<Locale, Translation> = {
       openMenu: 'Abrir menu',
       closeMenu: 'Fechar menu',
       backHome: 'Voltar ao início',
+      themeToLight: 'Mudar para o tema claro',
+      themeToDark: 'Mudar para o tema escuro',
     },
     hero: {
       portfolio: 'Portfólio',
@@ -397,6 +401,8 @@ export const translations: Record<Locale, Translation> = {
       openMenu: 'Open menu',
       closeMenu: 'Close menu',
       backHome: 'Back to top',
+      themeToLight: 'Switch to the light theme',
+      themeToDark: 'Switch to the dark theme',
     },
     hero: {
       portfolio: 'Portfolio',

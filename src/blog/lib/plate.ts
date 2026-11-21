@@ -94,9 +94,14 @@ export function sampleField(field: PlateField, x: number, y: number, time = 0): 
   return value
 }
 
-// Signal & Ink, as bytes: bone-dim for the terrain, ember for the one accent.
-const LINE = [181, 175, 164] as const
-const EMBER = [255, 77, 23] as const
+/** Signal & Ink, as bytes: bone-dim for the terrain, ember for the one accent. */
+export interface PlateColors {
+  line: readonly number[]
+  ember: readonly number[]
+}
+
+/** The dark scheme's pair; `PostPlate` passes the scheme that is showing. */
+const DARK: PlateColors = { line: [181, 175, 164], ember: [255, 77, 23] }
 
 /**
  * Paints the contour map into `ctx`, covering `width × height` device pixels.
@@ -108,6 +113,7 @@ export function paintPlate(
   height: number,
   field: PlateField,
   time = 0,
+  colors: PlateColors = DARK,
 ): void {
   if (width < 2 || height < 2) return
 
@@ -159,7 +165,7 @@ export function paintPlate(
 
       const coverage = 1.15 - distance > 1 ? 1 : 1.15 - distance
       const isAccent = level === field.accent
-      const color = isAccent ? EMBER : LINE
+      const color = isAccent ? colors.ember : colors.line
       const strength = isAccent ? 0.95 : level % 4 === 0 ? 0.62 : 0.3
       const offset = (py * width + px) * 4
       data[offset] = color[0]

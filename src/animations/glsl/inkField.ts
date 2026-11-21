@@ -1,7 +1,11 @@
 /**
  * "Ink Field" — the hero shader. A slow field of layered simplex-fbm ink
- * currents over the page's near-black, with ember-colored signal veins that
- * intensify with pointer proximity and scroll velocity.
+ * currents over the page colour, with ember signal veins that intensify with
+ * pointer proximity and scroll velocity.
+ *
+ * It is drawn in the page's own tokens (`uInk` the page, `uBone` the type) and
+ * every layer is a `mix` toward one of them, so the same field reads as light
+ * on ink or as ink on paper. `uLight` only sets how much of each it takes.
  */
 
 export const inkFieldVertex = /* glsl */ `
@@ -21,6 +25,7 @@ export const inkFieldFragment = /* glsl */ `
   uniform vec2 uPointer;     // NDC, smoothed on the JS side
   uniform float uVelocity;   // normalized |scroll velocity| 0..1
   uniform float uReveal;     // 0..1 intro reveal
+  uniform float uLight;      // 1.0 when the page is paper
   uniform vec3 uInk;
   uniform vec3 uBone;
   uniform vec3 uEmber;
@@ -91,22 +96,26 @@ export const inkFieldFragment = /* glsl */ `
 
     // base ink wash — barely-there tonal movement
     float wash = smoothstep(-0.7, 0.9, field);
-    vec3 color = mix(uInk, uInk * 1.7 + uBone * 0.03, wash * 0.4);
+    vec3 tone = mix(uInk * 1.7 + uBone * 0.03, mix(uInk, uBone, 0.2), uLight);
+    vec3 color = mix(uInk, tone, wash * 0.4);
 
-    // ember signal veins — sparse ridges that ignite near the pointer
+    // ember signal veins — sparse ridges that ignite near the pointer. Past
+    // 1.0 the mix overshoots into a hotter ember, which only a dark page can
+    // take: on paper it stops at the ink's own colour.
     float vein = 1.0 - abs(field * 2.0 - 0.2);
     vein = smoothstep(0.93 - uVelocity * 0.1 - pull * 0.14, 1.0, vein);
-    color += uEmber * vein * (0.16 + pull * 0.9 + uVelocity * 0.45);
+    float heat = vein * (0.16 + pull * 0.9 + uVelocity * 0.45);
+    color = mix(color, uEmber, mix(heat, min(heat * 1.8, 1.0), uLight));
 
-    // faint bone dust in the highlights
+    // faint dust of the type colour in the highlights
     float dust = smoothstep(0.62, 1.0, r.x) * 0.03;
-    color += uBone * dust;
+    color = mix(color, uBone, dust);
 
     // vignette to seat the canvas into the page
     float vig = smoothstep(1.25, 0.35, length(p));
-    color *= mix(0.75, 1.0, vig);
+    color = mix(uInk, color, mix(0.75, 1.0, vig));
 
-    // intro reveal — ink floods in from black
+    // intro reveal — the field floods in from the bare page
     color = mix(uInk, color, uReveal);
 
     gl_FragColor = vec4(color, 1.0);

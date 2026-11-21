@@ -450,6 +450,17 @@ const STYLES = `
         --ease: cubic-bezier(0.16, 1, 0.3, 1);
         color-scheme: dark;
       }
+      /* Follows the system's scheme; the light values are the site's
+         (src/styles/index.css, "Colour scheme"). */
+      @supports (color: light-dark(#000, #fff)) {
+        :root {
+          color-scheme: light dark;
+          --ink: light-dark(#f1ede5, #0d0c0a); --ink-soft: light-dark(#e7e1d6, #161412);
+          --bone: light-dark(#14120f, #ece7df); --bone-dim: light-dark(#48433b, #b5afa4);
+          --smoke: light-dark(#6b655b, #827b70); --ember: light-dark(#c23005, #ff4d17);
+          --line: light-dark(#d6cfc2, #2a2723);
+        }
+      }
       * { box-sizing: border-box; }
       html { scroll-behavior: smooth; }
       body { margin: 0; background: var(--ink); color: var(--bone); font-family: var(--sans); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
@@ -658,7 +669,9 @@ export function kitPage(locale: KitLocale): string {
     <link rel="alternate" hreflang="en" href="${SITE_URL}${KIT_PATH.en}" />
     <link rel="alternate" hreflang="x-default" href="${SITE_URL}${KIT_PATH.pt}" />
     <link rel="alternate" type="text/markdown" href="${url}" />
-    <meta name="theme-color" content="#0d0c0a" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f1ede5" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0d0c0a" />
 
     <meta property="og:type" content="website" />
     <meta property="og:url" content="${url}" />

@@ -8,7 +8,10 @@
 @variant lg-short (@media (min-width: 1024px) and (max-height: 820px));
 
 @theme {
-  /* ─── Signal & Ink palette ─────────────────────────────── */
+  /* ─── Signal & Ink palette ───────────────────────────────
+     A token names a role, not a hue: `ink` is the page and `bone` the type
+     on it, in both schemes. These are the dark values; "Colour scheme" below
+     pairs each with its light one. */
   --color-ink: #0d0c0a;
   --color-ink-soft: #161412;
   --color-bone: #ece7df;
@@ -76,6 +79,106 @@
     100% {
       transform: translateY(260%);
     }
+  }
+}
+
+/* ─── Colour scheme ─────────────────────────────────────────
+   Dark is the base, and all a browser without `light-dark()` gets. Where the
+   function exists every token carries both values and `color-scheme` picks
+   one: the system's, unless the reader pinned a scheme. `src/lib/theme.ts`
+   keeps that choice in <meta name="color-scheme"> (an inline script in
+   index.html restores it before first paint) and the two :has() rules carry
+   it into the cascade. Nothing here waits for JavaScript.
+
+   The light values are repeated in public/page.css, public/404.html and
+   netlify/lib/kit.ts, and tests/theme.test.ts holds every pair to AA. */
+
+:root {
+  color-scheme: dark;
+  /* The three hues the code theme adds to the palette (blog/lib/shiki-theme). */
+  --code-sand: #c9b896;
+  --code-amber: #d98b5f;
+  --code-clay: #bfa98a;
+  /* What the floating chrome (headers, toolbars, dialogs) casts. */
+  --shade: rgb(0 0 0 / 0.85);
+  /* How far text steps back when it is not the one being read. */
+  --dim: 0.67;
+  /* The admin heatmap's ramp, least to most (admin/components/charts). */
+  --heat-1: #743b29;
+  --heat-2: #984429;
+  --heat-3: #c04b21;
+  --heat-4: #e95111;
+}
+
+@supports (color: light-dark(#000, #fff)) {
+  :root {
+    color-scheme: light dark;
+    --color-ink: light-dark(#f1ede5, #0d0c0a);
+    --color-ink-soft: light-dark(#e7e1d6, #161412);
+    --color-bone: light-dark(#14120f, #ece7df);
+    --color-bone-dim: light-dark(#48433b, #b5afa4);
+    --color-smoke: light-dark(#6b655b, #7a7368);
+    /* On paper the signal is printed, not lit: ember deepens to hold 4.5:1. */
+    --color-ember: light-dark(#c23005, #ff4d17);
+    --color-ember-deep: light-dark(#992504, #c23005);
+    --color-line: light-dark(#d6cfc2, #2a2723);
+    --code-sand: light-dark(#77591b, #c9b896);
+    --code-amber: light-dark(#a8501c, #d98b5f);
+    --code-clay: light-dark(#6d5a41, #bfa98a);
+    --shade: light-dark(rgb(20 18 15 / 0.16), rgb(0 0 0 / 0.85));
+    /* Least is whatever sits closest to the surface, so on paper it runs the
+       other way. */
+    --heat-1: light-dark(#e95111, #743b29);
+    --heat-2: light-dark(#c04b21, #984429);
+    --heat-3: light-dark(#984429, #c04b21);
+    --heat-4: light-dark(#743b29, #e95111);
+  }
+
+  :root:has(> head > meta[name='color-scheme'][content='dark']) {
+    color-scheme: dark;
+  }
+
+  :root:has(> head > meta[name='color-scheme'][content='light']) {
+    color-scheme: light;
+    --dim: 0.8;
+  }
+
+  /* `--dim` is not a colour, so `light-dark()` cannot carry it and it branches
+     the long way: once for a pinned light scheme (above), once for the
+     system's. Dimmed body text has to stay above 4.5:1, and on paper that
+     leaves less room to step back. */
+  @media (prefers-color-scheme: light) {
+    :root:not(:has(> head > meta[name='color-scheme'][content='dark'])) {
+      --dim: 0.8;
+    }
+  }
+}
+
+/* Changing scheme: the new one floods out from the control that asked for it
+   (`toggleTheme` sets the origin and the reach). While it does, transitions
+   are off, or every element that eases its colour would trail behind. */
+html.theme-switch *,
+html.theme-switch *::before,
+html.theme-switch *::after {
+  transition: none !important;
+}
+
+html.theme-switch::view-transition-old(root),
+html.theme-switch::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html.theme-switch::view-transition-new(root) {
+  animation: theme-flood 0.8s var(--ease-in-out-quart);
+}
+
+@keyframes theme-flood {
+  from {
+    clip-path: circle(0 at var(--flood-x) var(--flood-y));
+  }
+  to {
+    clip-path: circle(var(--flood-r) at var(--flood-x) var(--flood-y));
   }
 }
 
@@ -159,32 +262,24 @@ textarea {
   font-variation-settings: 'wdth' 75;
 }
 
-/* Grain overlay — single fixed layer, GPU-cheap */
+/* Paper tooth: one fixed layer of noise, and it holds still. It lies over the
+   journal's text too, where anything that moves on its own costs the reader. */
 @utility grain {
   position: fixed;
-  inset: -50%;
-  width: 200%;
-  height: 200%;
+  inset: 0;
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   opacity: 0.05;
-  animation: grain-shift 0.9s steps(4) infinite;
 }
 
-@keyframes grain-shift {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  25% {
-    transform: translate(-2%, 1.5%);
-  }
-  50% {
-    transform: translate(1.5%, -2%);
-  }
-  75% {
-    transform: translate(-1%, -1%);
-  }
+/* The hero's ground, before and without the WebGL field: a faint wash from
+   the top right. Mixed from the tokens, so it follows the colour scheme. */
+@utility hero-backdrop {
+  background: radial-gradient(
+    120% 90% at 70% 20%,
+    color-mix(in srgb, var(--color-ink) 93%, var(--color-bone)) 0%,
+    var(--color-ink) 60%
+  );
 }
 
 .animate-ledger-row {
@@ -198,10 +293,10 @@ textarea {
 
 /* Experience ledger — scroll spotlight. The class is added by the GSAP
    scope, so no-JS / reduced-motion readers keep full-contrast entries. */
-/* Entries away from the reading line step back, but stay readable: at 0.66
-   their body text still clears 4.5:1 against the page. */
+/* Entries away from the reading line step back, but stay readable: at
+   `--dim` their body text still clears 4.5:1 against the page. */
 .exp-focus [data-entry] {
-  opacity: 0.66;
+  opacity: var(--dim);
   transition: opacity 0.55s var(--ease-out-expo);
 }
 
@@ -770,7 +865,7 @@ button.note-ref[aria-expanded='true'] {
   margin: 0;
   border-top: 1px solid var(--color-line);
   padding-block: 1.6rem;
-  opacity: 0.66;
+  opacity: var(--dim);
   transition: opacity 0.5s var(--ease-out-expo);
 }
 

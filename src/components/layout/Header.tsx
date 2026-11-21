@@ -10,6 +10,7 @@ import { useScrollHeader } from '@/hooks/useScrollHeader'
 import { useLanguage } from '@/i18n/LanguageContext'
 import type { Locale } from '@/i18n/translations'
 import { HoverItalic } from '@/components/ui/HoverItalic'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { cn } from '@/lib/utils'
 
 function LiveClock() {
@@ -54,7 +55,7 @@ function LanguageToggle() {
             aria-pressed={locale === option}
             className={cn(
               'uppercase transition-colors duration-300',
-              locale === option ? 'text-ember' : 'text-bone/50 hover:text-bone',
+              locale === option ? 'text-ember' : 'text-smoke hover:text-bone',
             )}
           >
             {option}
@@ -108,7 +109,7 @@ export function Header() {
           aria-hidden
           className={cn(
             'absolute inset-0 -z-10 border-b backdrop-blur-xl transition-opacity duration-500',
-            'border-line/60 bg-ink/55 shadow-[0_12px_44px_-22px_rgba(0,0,0,0.85)]',
+            'border-line/60 bg-ink/55 shadow-[0_12px_44px_-22px_var(--shade)]',
             scrolled && !open ? 'opacity-100' : 'opacity-0',
           )}
         />
@@ -134,6 +135,7 @@ export function Header() {
               {t.blog.nav}
             </Link>
             <LanguageToggle />
+            <ThemeToggle />
             <button
               ref={menuButtonRef}
               onClick={() => setOpen((value) => !value)}

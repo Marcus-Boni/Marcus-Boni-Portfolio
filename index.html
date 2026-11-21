@@ -1,9 +1,22 @@
 <!doctype html>
-<html lang="pt-BR" class="bg-[#0d0c0a]">
+<html lang="pt-BR" class="bg-ink">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Follows the system's colour scheme unless the reader pinned one
+      (src/lib/theme.ts). The script runs before first paint, so a pinned
+      scheme never flashes the other one; it stays outside the SEO block
+      because it is the same on every route.
+    -->
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      try {
+        document.querySelector('meta[name="color-scheme"]').content =
+          localStorage.getItem('color-scheme') ?? 'light dark'
+      } catch {}
+    </script>
     <link
       rel="alternate"
       type="application/rss+xml"
@@ -30,7 +43,8 @@
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <link rel="canonical" href="https://marcusboni.com.br/" />
     <link rel="alternate" type="text/markdown" href="https://marcusboni.com.br/" />
-    <meta name="theme-color" content="#0d0c0a" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f1ede5" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0d0c0a" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -137,17 +151,7 @@
         class="relative flex h-svh flex-col justify-end overflow-hidden"
         aria-label="Apresentação"
       >
-        <div
-          aria-hidden="true"
-          class="absolute inset-0"
-          style="
-            background: radial-gradient(
-              120% 90% at 70% 20%,
-              #1c1815 0%,
-              #0d0c0a 60%
-            );
-          "
-        ></div>
+        <div aria-hidden="true" class="hero-backdrop absolute inset-0"></div>
         <div class="relative z-10 px-5 pb-10 md:px-8 md:pb-14 lg:pl-24">
           <p
             class="mb-4 max-w-md font-mono text-[11px] leading-relaxed tracking-[0.18em] text-bone-dim uppercase md:mb-6"

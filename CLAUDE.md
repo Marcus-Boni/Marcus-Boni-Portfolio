@@ -27,7 +27,8 @@ pnpm test     # vitest run
 - **Primitivas de motion que já existem** — use antes de criar outra:
   `useGsapScope`, `useScrollReveal` (`lines`, `chars`, `ink`), `useMagnetic`,
   `useScramble`, `useScrollHeader`, `HoverItalic`, `Marquee`, `SectionHeading`,
-  `PostPlate`. O ease padrão do GSAP é `EASE_SIGNAL` (`src/animations/gsap.ts`).
+  `PostPlate`, `ThemeToggle`. O ease padrão do GSAP é `EASE_SIGNAL`
+  (`src/animations/gsap.ts`).
 - Toda animação precisa de caminho para `prefers-reduced-motion` e nenhum loop
   roda fora da tela.
 
@@ -76,6 +77,19 @@ pnpm test     # vitest run
    `index.html`, `public/llms-full.txt`, `netlify/lib/agent-docs.ts` e
    `public/api/v1/*.json` (este último se regenera com
    `pnpm exec vitest run tests/api-payloads.test.ts -u`).
+
+8. **Tema claro e escuro.** Cada token é um par `light-dark()` em "Colour
+   scheme" de `src/styles/index.css`; `ink` é sempre a página e `bone` o texto,
+   nos dois temas. Não escreva hex em componente. O que pinta fora do CSS
+   (canvas, WebGL) não pode ler o token cru, que em script ainda é o par
+   inteiro: use `paintColor(el, '--color-…')` e redesenhe com `useTheme()`
+   (`src/lib/theme.ts`). Valor que não é cor (`--dim`) não cabe em
+   `light-dark()` e se ramifica por `:has(meta)` mais `@media`. Os valores
+   claros têm cópias em `public/page.css`, `public/404.html` e
+   `netlify/lib/kit.ts` (este regenera as páginas com
+   `pnpm exec vitest run tests/kit.test.ts -u`); `tests/theme.test.ts` confere
+   as cópias e o contraste AA de cada par. As páginas estáticas não têm script
+   (teste em `tests/trust-pages.test.ts`), então seguem só o sistema.
 
 ## Diário em desenvolvimento
 
