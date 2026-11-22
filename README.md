@@ -2,6 +2,8 @@
 
 **Portfólio de engenharia de software · Signal & Ink**
 
+[![Status do deploy de produção no Netlify](https://api.netlify.com/api/v1/badges/748366c2-9f80-4f75-8656-f33bd0131b0a/deploy-status)](https://app.netlify.com/projects/marcusboni/deploys)
+
 Uma seleção do que construo, dos problemas que resolvo e do que aprendo no caminho. O site reúne projetos, experiência profissional e um diário técnico em português e inglês.
 
 **[Explorar o portfólio](https://marcusboni.com.br/)** · [Projetos](https://marcusboni.com.br/#work) · [Diário técnico](https://marcusboni.com.br/blog) · [Kit front-end](https://marcusboni.com.br/kit/front-end) · [Contato](https://marcusboni.com.br/#contact)
@@ -10,7 +12,7 @@ Uma seleção do que construo, dos problemas que resolvo e do que aprendo no cam
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/portfolio-dark.webp">
     <source media="(prefers-color-scheme: light)" srcset="./docs/readme/portfolio-light.webp">
-    <img src="./docs/readme/portfolio-dark.webp" width="1258" height="620" alt="Página inicial do portfólio. O nome Marcus Boni aparece em tipografia editorial sobre um campo de tinta em movimento.">
+    <img src="./docs/readme/portfolio-dark.webp" alt="Página inicial do portfólio. O nome Marcus Boni aparece em tipografia editorial sobre um campo de tinta.">
   </picture>
 </a>
 
@@ -20,9 +22,9 @@ Signal & Ink combina tipografia editorial com gráficos desenhados em código. N
 
 Na seção [Sobre](https://marcusboni.com.br/#about), linhas de código formam o retrato e se dissolvem na fotografia. A animação pode ser repetida, acompanha o tema claro ou escuro e respeita a preferência por movimento reduzido.
 
-<p>
-  <img src="./docs/readme/retrato-codigo.webp" width="646" height="424" alt="Duas capturas da animação do retrato de Marcus Boni. À esquerda, o rosto desenhado por caracteres no tema claro. À direita, a fotografia final em preto e branco.">
-</p>
+![O mesmo retrato em dois estados: caracteres no tema claro à esquerda e fotografia em preto e branco à direita.](./docs/readme/retrato-codigo.webp)
+
+*Quadro em código → fotografia revelada.*
 
 ## Por trás do site
 
