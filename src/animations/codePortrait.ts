@@ -1,4 +1,4 @@
-import { paintColor } from '@/lib/theme'
+import { paintColor, type Theme } from '@/lib/theme'
 
 /** A finite, row-staggered assembly. All timing is in visible milliseconds. */
 export const PORTRAIT_DURATION = 4800
@@ -31,10 +31,18 @@ export function portraitCrop(iw: number, ih: number, width: number, height: numb
     width: iw * scale, height: ih * scale }
 }
 
+export function portraitGlyphOpacity(light: number, theme: Theme) {
+  // On paper, reserve strong marks for the deepest shadows so the hair and
+  // glasses stand apart from the midtones. In the dark, glyphs carry light.
+  const tone = theme === 'light' ? (0.65 - light) / 0.65 : (light - 0.075) / 0.72
+  return Math.min(1, Math.max(0, tone)) ** (theme === 'light' ? 2.1 : 0.8)
+}
+
 /** Rasterize characters once; animation only composites cached row strips. */
 export function createCodePortrait(
   image: HTMLImageElement,
   canvas: HTMLCanvasElement,
+  theme: Theme,
 ) {
   const width = canvas.clientWidth
   const height = canvas.clientHeight
@@ -82,9 +90,6 @@ export function createCodePortrait(
   const ink = paintColor(canvas, '--color-ink')
   const bone = paintColor(canvas, '--color-bone')
   const accent = paintColor(canvas, '--color-ember')
-  // "rgb(241, …": on a light page the glyphs are ink, so they go where the
-  // photo is dark. Lit glyphs on a dark page go where it is bright.
-  const onPaper = parseInt(ink.slice(4)) > 127
   portrait.context.fillStyle = bone
   ambient.context.fillStyle = bone
   ember.context.fillStyle = accent
@@ -94,11 +99,10 @@ export function createCodePortrait(
       const offset = (row * 76 + col) * 4
       const light = (pixels[offset] * 0.2126 + pixels[offset + 1] * 0.7152 +
         pixels[offset + 2] * 0.0722) / 255
-      const luminance = onPaper ? 1 - light : light
       const char = SOURCE[(row * 83 + col) % SOURCE.length]
       const x = col * cell
       const y = row * line
-      portrait.context.globalAlpha = Math.max(0, (luminance - 0.075) / 0.72) ** 0.8
+      portrait.context.globalAlpha = portraitGlyphOpacity(light, theme)
       portrait.context.fillText(char, x, y)
       ember.context.globalAlpha = portrait.context.globalAlpha
       ember.context.fillText(char, x, y)
@@ -121,7 +125,7 @@ export function createCodePortrait(
       ctx.globalAlpha = assembled
       ctx.drawImage(portrait.layer, 0, y * dpr, canvas.width, stripHeight * dpr,
         drift, y, width, stripHeight)
-      // An ember front travels through the code, then leaves bone-white glyphs.
+      // The ember front settles into the scheme's foreground colour.
       const glow = Math.sin(assembled * Math.PI) ** 3
       if (glow > 0.01) {
         ctx.globalAlpha = glow * 0.85
