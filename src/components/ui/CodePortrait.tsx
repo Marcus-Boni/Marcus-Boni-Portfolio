@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { createCodePortrait, PORTRAIT_DURATION } from '@/animations/codePortrait'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { useLanguage } from '@/i18n/LanguageContext'
-import { useTheme } from '@/lib/theme'
+import { currentTheme, useTheme } from '@/lib/theme'
 
 interface CodePortraitProps {
   src: string
@@ -15,11 +15,15 @@ export function CodePortrait({ src, alt, caption }: CodePortraitProps) {
   const imageRef = useRef<HTMLImageElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const replayRef = useRef<(() => void) | null>(null)
+  const repaintRef = useRef<(() => void) | null>(null)
   const [preparedSrc, setPreparedSrc] = useState<string | null>(null)
   const reduced = usePrefersReducedMotion()
-  // the glyphs are rasterised in the scheme's colours, so a new scheme redraws them
   const theme = useTheme()
   const { t } = useLanguage()
+
+  useLayoutEffect(() => {
+    repaintRef.current?.()
+  }, [theme])
 
   useEffect(() => {
     const image = imageRef.current
@@ -30,6 +34,7 @@ export function CodePortrait({ src, alt, caption }: CodePortraitProps) {
     let elapsed = 0
     let previous = 0
     let frame = 0
+    let needsPaint = true
     let render: ReturnType<typeof createCodePortrait> = null
     // Separate CORS sampling from the displayed image: an unsupported remote
     // host must never turn a working portrait into a broken image.
@@ -56,13 +61,14 @@ export function CodePortrait({ src, alt, caption }: CodePortraitProps) {
     }
     const prepare = () => {
       if (disposed || !visible || !sample.complete || !sample.naturalWidth) return
-      render = createCodePortrait(sample, canvas)
+      render = createCodePortrait(sample, canvas, currentTheme())
       if (!render) {
         stop()
         canvas.style.opacity = '0'
         setPreparedSrc(null)
         return
       }
+      needsPaint = false
       render(elapsed)
       setPreparedSrc(src)
       resume()
@@ -70,18 +76,24 @@ export function CodePortrait({ src, alt, caption }: CodePortraitProps) {
     replayRef.current = () => {
       stop()
       elapsed = 0
-      render?.(0)
+      if (needsPaint) prepare()
+      else render?.(0)
       resume()
     }
+    const repaint = () => {
+      needsPaint = true
+      if (render && elapsed < PORTRAIT_DURATION) prepare()
+    }
+    repaintRef.current = repaint
     const observer = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting
       if (visible) {
-        if (render) resume()
-        else prepare()
+        if (needsPaint && elapsed < PORTRAIT_DURATION) prepare()
+        else resume()
       } else stop()
     }, { threshold: 0.15 })
     observer.observe(canvas)
-    const resize = new ResizeObserver(() => { if (render) prepare() })
+    const resize = new ResizeObserver(repaint)
     resize.observe(canvas)
     const onVisibility = () => { if (document.hidden) stop(); else resume() }
     const onLoad = () => {
@@ -103,9 +115,10 @@ export function CodePortrait({ src, alt, caption }: CodePortraitProps) {
       sample.onerror = null
       document.removeEventListener('visibilitychange', onVisibility)
       replayRef.current = null
+      repaintRef.current = null
       canvas.style.opacity = '0'
     }
-  }, [src, reduced, theme])
+  }, [src, reduced])
 
   return (
     <figure className="relative ml-auto aspect-[3/4] max-w-xs overflow-hidden bg-ink lg:-mt-10">
@@ -126,14 +139,14 @@ export function CodePortrait({ src, alt, caption }: CodePortraitProps) {
         <canvas ref={canvasRef} aria-hidden="true"
           className="pointer-events-none absolute inset-0 h-full w-full opacity-0" />
       </div>
-      <figcaption className="pointer-events-none absolute bottom-3 left-3 bg-ink/80 px-3 py-1 font-mono text-[10px] tracking-[0.25em] text-ember uppercase">
+      <figcaption className="pointer-events-none absolute bottom-3 left-3 bg-ink px-3 py-1 font-mono text-[10px] tracking-[0.25em] text-ember uppercase">
         {caption}
       </figcaption>
       {preparedSrc === src && !reduced && (
         <button type="button" onClick={() => replayRef.current?.()}
           aria-label={t.about.replayPortrait}
           title={t.about.replayPortrait}
-          className="absolute top-3 right-3 flex min-h-11 min-w-11 items-center justify-center border border-bone/20 bg-ink/75 text-bone transition-colors hover:border-ember hover:text-ember focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember">
+          className="absolute top-3 right-3 flex min-h-11 min-w-11 items-center justify-center border border-smoke bg-ink text-bone transition-colors hover:border-ember hover:text-ember focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember">
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6" />
           </svg>

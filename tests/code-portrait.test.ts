@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createCodePortrait, portraitCrop, portraitTiming, PORTRAIT_DURATION } from '../src/animations/codePortrait'
+import { createCodePortrait, portraitCrop, portraitGlyphOpacity, portraitTiming, PORTRAIT_DURATION } from '../src/animations/codePortrait'
 
 describe('code portrait choreography', () => {
   it('assembles from top to bottom without starting the photo dissolve early', () => {
@@ -40,7 +40,7 @@ describe('pixel sampling fallback', () => {
     const canvas = { clientWidth: 320, clientHeight: 480,
       getContext: () => ({ setTransform() {} }),
     } as unknown as HTMLCanvasElement
-    return createCodePortrait(image, canvas)
+    return createCodePortrait(image, canvas, 'dark')
   }
 
   it('leaves the original photo available if a CMS host blocks sampling', () => {
@@ -49,5 +49,19 @@ describe('pixel sampling fallback', () => {
 
   it('does not hide unexpected renderer failures as CORS problems', () => {
     expect(() => sampleWith(new Error('Unexpected failure'))).toThrow('Unexpected failure')
+  })
+})
+
+describe('portrait tones', () => {
+  it('leaves space between shadows and midtones on paper', () => {
+    expect(portraitGlyphOpacity(0.05, 'light')).toBeGreaterThan(0.8)
+    expect(portraitGlyphOpacity(0.35, 'light')).toBeLessThan(0.25)
+    expect(portraitGlyphOpacity(0.7, 'light')).toBe(0)
+  })
+
+  it('bounds bright glyphs to valid canvas alpha values in dark mode', () => {
+    expect(portraitGlyphOpacity(0, 'dark')).toBe(0)
+    expect(portraitGlyphOpacity(0.35, 'dark')).toBeGreaterThan(0)
+    expect(portraitGlyphOpacity(1, 'dark')).toBe(1)
   })
 })
