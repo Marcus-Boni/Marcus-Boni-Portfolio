@@ -660,15 +660,15 @@ function PostFooter({
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth={1.5}
+          strokeWidth={1.25}
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="h-6 w-6 shrink-0 text-smoke transition-[color,transform] duration-500 ease-out-expo group-hover:-translate-x-1.5 group-hover:text-ember md:h-7 md:w-7"
+          className="h-6 w-6 shrink-0 text-smoke transition-[color,translate] duration-500 ease-out-expo group-hover:-translate-x-2 group-hover:text-ember md:h-7 md:w-7"
         >
-          <path d="M19 12H5" />
-          <path d="M11 6l-6 6 6 6" />
+          <path d="M20 12H4" />
+          <path d="M10 6l-6 6 6 6" />
         </svg>
-        <span className="font-display text-3xl text-bone transition-colors duration-500 group-hover:text-ember md:text-4xl">
+        <span className="font-display text-3xl text-bone transition-colors duration-500 ease-out-expo group-hover:text-ember md:text-4xl">
           {backLabel}
         </span>
       </Link>
