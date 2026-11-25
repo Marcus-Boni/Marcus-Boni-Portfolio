@@ -1,5 +1,5 @@
 {
-  "count": 24,
+  "count": 31,
   "items": [
     {
       "name": "React",
@@ -30,6 +30,10 @@
       "category": "frontend"
     },
     {
+      "name": "WebGL",
+      "category": "frontend"
+    },
+    {
       "name": "C#",
       "category": "backend"
     },
@@ -43,6 +47,18 @@
     },
     {
       "name": "Node.js",
+      "category": "backend"
+    },
+    {
+      "name": "Rust",
+      "category": "backend"
+    },
+    {
+      "name": "Tauri",
+      "category": "backend"
+    },
+    {
+      "name": "MCP",
       "category": "backend"
     },
     {
@@ -74,6 +90,14 @@
       "category": "data"
     },
     {
+      "name": "Drizzle",
+      "category": "data"
+    },
+    {
+      "name": "pgvector",
+      "category": "data"
+    },
+    {
       "name": "Docker",
       "category": "ops"
     },
@@ -95,6 +119,10 @@
     },
     {
       "name": "Netlify",
+      "category": "ops"
+    },
+    {
+      "name": "GitHub Actions",
       "category": "ops"
     }
   ]

@@ -540,7 +540,7 @@
           },
           "role": {
             "type": "string",
-            "example": "Software Engineer"
+            "example": "Forward Deployed Engineer"
           },
           "employer": {
             "type": "object",

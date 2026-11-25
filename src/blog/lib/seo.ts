@@ -156,10 +156,10 @@ export function usePostHead(post: PostMeta | null, status: 'loading' | 'ready' |
 
 /** Restores the portfolio metadata after client-side navigation. */
 export function restoreSiteHead(locale: Locale = 'pt') {
-  const title = locale === 'pt' ? 'Marcus Boni — Engenheiro de Software' : 'Marcus Boni — Software Engineer'
+  const title = 'Marcus Boni — Forward Deployed Engineer'
   const description = locale === 'pt'
-    ? 'Marcus Boni, engenheiro de software no Espírito Santo. Projetos com React, TypeScript e Node.js, integrações e artigos sobre desenvolvimento web.'
-    : 'Marcus Boni — Brazilian software engineer crafting robust, modern web applications. React, TypeScript, Next.js, and backend solutions.'
+    ? 'Marcus Boni, Forward Deployed Engineer no Espírito Santo. Software full-stack, sistemas nativos em Rust, IA aplicada (MCP e RAG) e artigos de engenharia.'
+    : 'Marcus Boni — Forward Deployed Engineer in Brazil building full-stack software, native Rust tools, applied AI (MCP and RAG) and client deployments.'
   applyHead({
     title, description,
     path: '/', locale,

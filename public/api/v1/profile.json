@@ -1,10 +1,10 @@
 {
   "name": "Marcus Boni",
   "fullName": "Marcus Evandro Galvão Boni",
-  "role": "Software Engineer",
+  "role": "Forward Deployed Engineer",
   "employer": {
     "company": "Optsolv",
-    "role": "Software Developer",
+    "role": "Forward Deployed Engineer",
     "since": "2024-06",
     "current": true
   },
@@ -14,10 +14,10 @@
   },
   "email": "mgalvaoboni@gmail.com",
   "bio": {
-    "pt": "Desenvolvedor web brasileiro apaixonado por construir aplicações robustas e modernas.",
-    "en": "Brazilian web developer focused on building robust, modern applications."
+    "pt": "Forward Deployed Engineer brasileiro construindo software full-stack, sistemas locais e IA aplicada — do discovery com o cliente ao deploy em produção.",
+    "en": "Brazilian Forward Deployed Engineer building full-stack software, native tools and applied AI — from client discovery to production deployment."
   },
-  "repositoryCount": 67,
+  "repositoryCount": 75,
   "languages": [
     "pt-BR",
     "en"

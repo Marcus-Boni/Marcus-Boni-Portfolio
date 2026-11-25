@@ -1,6 +1,6 @@
 # Marcus Boni
 
-**Portfólio de engenharia de software · Signal & Ink**
+**Portfólio de Forward Deployed Engineering · Signal & Ink**
 
 [![Status do deploy de produção no Netlify](https://api.netlify.com/api/v1/badges/748366c2-9f80-4f75-8656-f33bd0131b0a/deploy-status)](https://app.netlify.com/projects/marcusboni/deploys)
 
@@ -18,7 +18,7 @@ Uma seleção do que construo, dos problemas que resolvo e do que aprendo no cam
 
 ## A experiência
 
-Signal & Ink combina tipografia editorial com gráficos desenhados em código. Na abertura, um campo de tinta reage ao movimento. A galeria reúne projetos como **OptTime**, **Estimativa de Horas** e **Opt Gestão**, ao lado de casos que documentam meu trabalho em aplicações web, integrações e ferramentas internas.
+Signal & Ink combina tipografia editorial com gráficos desenhados em código. Na abertura, um campo de tinta reage ao movimento. A galeria reúne projetos como **ISPer**, **OptTime**, **Meeting Copilot** e **Auto Daily**, ao lado de entregas ponta a ponta junto a clientes em aplicações web, sistemas locais e IA aplicada.
 
 Na seção [Sobre](https://marcusboni.com.br/#about), linhas de código formam o retrato e se dissolvem na fotografia. A animação pode ser repetida, acompanha o tema claro ou escuro e respeita a preferência por movimento reduzido.
 

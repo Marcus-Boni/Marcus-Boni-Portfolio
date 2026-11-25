@@ -19,9 +19,11 @@ import { trackEvent } from '@/lib/analytics'
 import { onFirstInteraction } from '@/lib/defer'
 
 const techMarquee = [
-  'React',
   'TypeScript',
+  'React',
   'Next.js',
+  'Rust',
+  'MCP',
   'Node.js',
   'Python',
   'C#',

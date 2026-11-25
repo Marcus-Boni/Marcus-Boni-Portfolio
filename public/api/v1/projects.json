@@ -3,77 +3,86 @@
   "items": [
     {
       "id": "01",
+      "title": "ISPer",
+      "year": "2026",
+      "description": {
+        "pt": "Ditado por voz offline no Windows e transcrição de reuniões do Teams em um workspace Rust de 12 crates com Tauri 2 e whisper.cpp (CPU/CUDA), ao longo de 25 releases.",
+        "en": "Offline Windows voice dictation and Teams meeting transcription built on a 12-crate Rust workspace with Tauri 2 and whisper.cpp (CPU/CUDA), across 25 releases."
+      },
+      "stack": [
+        "Rust",
+        "Tauri 2",
+        "whisper.cpp",
+        "CUDA",
+        "MCP"
+      ],
+      "repositoryUrl": "https://github.com/Marcus-Boni/ISPer"
+    },
+    {
+      "id": "02",
       "title": "OptTime",
       "year": "2026",
       "description": {
-        "pt": "Produto nascido em um hackathon explorando fluxos de desenvolvimento orquestrados por agentes de IA — construído sob pressão, entregue em dias.",
-        "en": "Hackathon-born product exploring software development workflows orchestrated by AI agents — built under pressure, shipped in days."
+        "pt": "Plataforma full-stack de apontamento de horas integrada bidirecionalmente ao Azure DevOps, com extensão nativa e servidor MCP (16 ferramentas) para agentes de IA.",
+        "en": "Full-stack time-tracking platform synced bi-directionally with Azure DevOps, featuring a native extension and a 16-tool MCP server for AI agents."
       },
       "stack": [
         "TypeScript",
-        "React",
-        "AI Agents"
+        "Next.js",
+        "PostgreSQL",
+        "Drizzle",
+        "MCP"
       ],
       "repositoryUrl": "https://github.com/Marcus-Boni/OptTime"
     },
     {
-      "id": "02",
-      "title": "Estimativa de Horas",
-      "year": "2026",
-      "description": {
-        "pt": "Ferramenta web que substituiu planilhas frágeis de Excel na estimativa de horas, puxando work items direto do Azure DevOps.",
-        "en": "A web tool that replaced fragile Excel spreadsheets for task-hour estimation, pulling work items straight from Azure DevOps."
-      },
-      "stack": [
-        "TypeScript",
-        "Azure DevOps",
-        "React"
-      ],
-      "repositoryUrl": "https://github.com/Marcus-Boni/Ferramenta-Estimativa-Horas"
-    },
-    {
       "id": "03",
-      "title": "Vault Chatbot",
+      "title": "Meeting Copilot",
       "year": "2026",
       "description": {
-        "pt": "Chatbot ancorado em vaults do Obsidian, respondendo perguntas sobre transcrições de reuniões em vez de deixá-las apodrecer em pastas.",
-        "en": "A chatbot grounded in Obsidian vaults, answering questions over company meeting transcriptions instead of letting them rot in folders."
+        "pt": "Arquitetura RAG orientada por configuração para consultar transcrições do Teams sobre pgvector, com citações obrigatórias das fontes, isolamento por workspace e avaliação de busca.",
+        "en": "Config-driven RAG architecture for searching Teams meeting transcripts over pgvector, with mandatory source citations, workspace isolation and a retrieval evaluation harness."
       },
       "stack": [
         "TypeScript",
-        "LLM",
+        "Next.js",
+        "CopilotKit",
+        "pgvector",
         "RAG"
       ],
       "repositoryUrl": "https://github.com/Marcus-Boni/chatbot-template"
     },
     {
       "id": "04",
-      "title": "Jarvis",
+      "title": "Auto Daily",
       "year": "2026",
       "description": {
-        "pt": "Sistema de assistente pessoal automatizando os rituais diários de um desenvolvedor — uma rotina de cada vez.",
-        "en": "A personal assistant system automating the daily rituals of a working software developer — one routine at a time."
-      },
-      "stack": [
-        "Python",
-        "Automation"
-      ],
-      "repositoryUrl": "https://github.com/Marcus-Boni/Jarvis"
-    },
-    {
-      "id": "05",
-      "title": "Opt Gestão",
-      "year": "2026",
-      "description": {
-        "pt": "Aplicação de gestão de projetos construída para uso real em empresa — planejar, acompanhar e entregar sem cerimônia.",
-        "en": "Project administration application built for real company use — planning, tracking and shipping without ceremony."
+        "pt": "Aplicação web que sintetiza rascunhos de daily com IA a partir de commits no Azure DevOps e apontamentos de horas do OptTime.",
+        "en": "Web app that synthesizes AI-assisted daily standup drafts from Azure DevOps commits and OptTime hour logs."
       },
       "stack": [
         "TypeScript",
-        "React",
-        "PostgreSQL"
+        "Next.js",
+        "Azure DevOps",
+        "AI"
       ],
-      "repositoryUrl": "https://github.com/Marcus-Boni/Opt-Gestao-Projetos"
+      "repositoryUrl": "https://github.com/Marcus-Boni/Auto-Daily-App"
+    },
+    {
+      "id": "05",
+      "title": "Estimativa de Horas",
+      "year": "2026",
+      "description": {
+        "pt": "Ferramenta web que substituiu planilhas frágeis de Excel na estimativa de horas, puxando work items direto do Azure DevOps com dashboards e exportação.",
+        "en": "A web tool that replaced fragile Excel spreadsheets for task-hour estimation, pulling work items straight from Azure DevOps with dashboards and export."
+      },
+      "stack": [
+        "TypeScript",
+        "Next.js",
+        "Azure DevOps",
+        "Firebase"
+      ],
+      "repositoryUrl": "https://github.com/Marcus-Boni/Ferramenta-Estimativa-Horas"
     }
   ]
 }

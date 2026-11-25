@@ -4,15 +4,15 @@ import { paintColor, type Theme } from '@/lib/theme'
 export const PORTRAIT_DURATION = 4800
 
 const SOURCE = [
-  'const engineer = { name: "Marcus Boni", craft: "web" };',
+  'const engineer = { name: "Marcus Boni", role: "Forward Deployed Engineer" };',
   'import { curiosity, precision } from "./human";',
   'export function build(idea: Idea): Product {',
   '  const solution = simplify(understand(idea));',
   '  return create({ ...solution, care: true });',
   '} // learning by building. always.',
-  'type Craft = "React" | "TypeScript" | "Node.js";',
+  'type Craft = "TypeScript" | "Rust" | "Applied AI";',
   'const signal = details.map(detail => refine(detail));',
-  'await ship({ accessible: true, resilient: true });',
+  'await deploy({ accessible: true, resilient: true });',
 ].join(' ')
 
 export function portraitTiming(elapsed: number, row: number, rows: number) {

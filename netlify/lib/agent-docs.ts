@@ -61,42 +61,47 @@ function footer(): string {
  * answer. `tests/agent-docs.test.ts` checks the facts against `profile.ts`.
  */
 export function homeMarkdown(): string {
-  return `# Marcus Boni — Software Engineer
+  return `# Marcus Boni — Forward Deployed Engineer
 
-> Brazilian software engineer building robust, modern web applications.
-> React, TypeScript, Next.js, and backend work in Node.js and C#.
-> Based in Espírito Santo, Brazil. Software Developer at Optsolv since June 2024.
+> Brazilian Forward Deployed Engineer building full-stack software, native
+> desktop systems (Rust/Tauri) and applied AI workflows (MCP servers, pgvector
+> RAG). Works directly with clients from discovery to production deployment.
+> Based in Espírito Santo, Brazil. Forward Deployed Engineer at Optsolv since
+> June 2024.
 
 - **Name:** Marcus Boni (Marcus Evandro Galvão Boni)
-- **Role:** Software Engineer — Software Developer at Optsolv (Jun 2024 — present)
+- **Role:** Forward Deployed Engineer — Optsolv (Jun 2024 — present)
 - **Location:** Espírito Santo, Brazil
 - **Email:** mgalvaoboni@gmail.com
-- **GitHub:** https://github.com/Marcus-Boni (67 public repositories)
+- **GitHub:** https://github.com/Marcus-Boni (75 public repositories)
 - **LinkedIn:** https://www.linkedin.com/in/marcus-boni-729a52243
 - **Résumé:** [Portuguese](${SITE_URL}/marcus-boni-cv-pt.pdf) · [English](${SITE_URL}/marcus-boni-resume-en.pdf)
 - **Languages:** Portuguese (native), English (professional)
 
 ## About
 
-A Brazilian web developer who cares about building robust, modern
-applications. Clean code, honest interfaces, and engineering measured by what
-it simplifies for the people who use it. The public GitHub account carries 67
-repositories — studies, tools and products, kept in the open.
+A Brazilian Forward Deployed Engineer focused on turning real operational
+problems into resilient software — from direct client discovery and
+architecture to deployment inside real-world environments. Uses AI deliberately
+as an engineering multiplier grounded in fundamentals, code review and industry
+best practices. The public GitHub account carries 75 repositories of native
+tools, MCP servers, RAG pipelines and shipped products.
 
 ## Selected projects
 
 | Project | Year | Stack | What it is |
 | --- | --- | --- | --- |
-| [OptTime](https://github.com/Marcus-Boni/OptTime) | 2026 | TypeScript, React, AI Agents | Hackathon-born product exploring software development workflows orchestrated by AI agents — built under pressure, shipped in days. |
-| [Estimativa de Horas](https://github.com/Marcus-Boni/Ferramenta-Estimativa-Horas) | 2026 | TypeScript, Azure DevOps, React | A web tool that replaced fragile Excel spreadsheets for task-hour estimation, pulling work items straight from Azure DevOps. |
-| [Vault Chatbot](https://github.com/Marcus-Boni/chatbot-template) | 2026 | TypeScript, LLM, RAG | A chatbot grounded in Obsidian vaults, answering questions over company meeting transcriptions instead of letting them rot in folders. |
-| [Jarvis](https://github.com/Marcus-Boni/Jarvis) | 2026 | Python, Automation | A personal assistant system automating the daily rituals of a working software developer — one routine at a time. |
-| [Opt Gestão](https://github.com/Marcus-Boni/Opt-Gestao-Projetos) | 2026 | TypeScript, React, PostgreSQL | Project administration application built for real company use — planning, tracking and shipping without ceremony. |
+| [ISPer](https://github.com/Marcus-Boni/ISPer) | 2026 | Rust, Tauri 2, whisper.cpp, CUDA, MCP | Offline Windows voice dictation and Teams meeting transcription built on a 12-crate Rust workspace with Tauri 2 and whisper.cpp (CPU/CUDA), across 25 releases. |
+| [OptTime](https://github.com/Marcus-Boni/OptTime) | 2026 | TypeScript, Next.js, PostgreSQL, Drizzle, MCP | Full-stack time-tracking platform synced bi-directionally with Azure DevOps, featuring a native extension and a 16-tool MCP server for AI agents. |
+| [Meeting Copilot](https://github.com/Marcus-Boni/chatbot-template) | 2026 | TypeScript, Next.js, CopilotKit, pgvector, RAG | Config-driven RAG architecture for searching Teams meeting transcripts over pgvector, with mandatory source citations, workspace isolation and a retrieval evaluation harness. |
+| [Auto Daily](https://github.com/Marcus-Boni/Auto-Daily-App) | 2026 | TypeScript, Next.js, Azure DevOps, AI | Web app that synthesizes AI-assisted daily standup drafts from Azure DevOps commits and OptTime hour logs. |
+| [Estimativa de Horas](https://github.com/Marcus-Boni/Ferramenta-Estimativa-Horas) | 2026 | TypeScript, Next.js, Azure DevOps, Firebase | A web tool that replaced fragile Excel spreadsheets for task-hour estimation, pulling work items straight from Azure DevOps with dashboards and export. |
 
 ## Professional experience
 
-**Software Developer — Optsolv** (June 2024 — present). Client work delivered
-end to end, across seven sectors:
+**Forward Deployed Engineer — Optsolv** (June 2024 — present). Client work
+delivered end to end — from stakeholder alignment to production deployment —
+across seven sectors:
 
 - **Unimed Sul Capixaba** — Healthcare. Medical-guide management platform:
   AD-authenticated service integration, CORS tuning on IIS, and full
@@ -122,23 +127,24 @@ end to end, across seven sectors:
 
 ## Technical stack
 
-- **Interface:** React, Next.js, TypeScript, Tailwind CSS, React Native, Astro, Flutter
-- **Services:** C#, Java, Python, Node.js
-- **Data:** PostgreSQL, SQL Server, Supabase, Firebase, SQLite, Neon, Turso
-- **Infrastructure:** Docker, Azure, Azure DevOps, Portainer, IIS, Netlify
+- **Interface:** React, Next.js, TypeScript, Tailwind CSS, React Native, Astro, Flutter, WebGL
+- **Services:** C#, Java, Python, Node.js, Rust, Tauri, MCP
+- **Data:** PostgreSQL, SQL Server, Supabase, Firebase, SQLite, Neon, Turso, Drizzle, pgvector
+- **Infrastructure:** Docker, Azure, Azure DevOps, Portainer, IIS, Netlify, GitHub Actions
 
 ## Writing
 
-Technical notes, market studies and project write-ups live at
+Technical notes, architecture write-ups and applied AI articles live at
 [${SITE_URL}/blog](${SITE_URL}/blog), with a feed at
 [${SITE_URL}/rss.xml](${SITE_URL}/rss.xml).
 
 ## Contact
 
-Email **mgalvaoboni@gmail.com** for freelance or full-time work, technical
-consulting, or a second opinion on a front-end or integration problem.
-GitHub and LinkedIn are the other two public channels. There is no phone
-number, calendar link or chat widget on this site — email is the front door.
+Email **mgalvaoboni@gmail.com** for Forward Deployed Engineer roles, freelance
+or full-time work, technical consulting, or a second opinion on architecture,
+applied AI or integrations. GitHub and LinkedIn are the other two public
+channels. There is no phone number, calendar link or chat widget on this site —
+email is the front door.
 
 ${footer()}`
 }
@@ -342,17 +348,21 @@ ${footer()}`
 export function aboutMarkdown(): string {
   return `# Sobre — Marcus Boni
 
-> Engenheiro de software brasileiro, no Espírito Santo. Desenvolvedor de
-> Software na Optsolv desde junho de 2024, construindo aplicações web
-> corporativas de ponta a ponta.
+> Forward Deployed Engineer brasileiro, no Espírito Santo. Atua na Optsolv desde
+> junho de 2024, trabalhando diretamente com clientes do discovery técnico ao
+> deploy em produção — software full-stack, ferramentas nativas e IA aplicada.
 
 ## O que eu faço
 
-Trabalho no ciclo inteiro: levantar o problema com quem vai usar, desenhar a
-tela, escrever o serviço, integrar com o sistema legado que ninguém quer tocar,
-e acompanhar em produção. Na prática: React e TypeScript na frente, Node.js e
-C# atrás, PostgreSQL e SQL Server nos dados, e o que o cliente já usa no meio —
-de ERP Sankhya a Azure DevOps.
+Atuo no ciclo inteiro junto ao cliente: entender o problema direto com quem vai
+usar, traduzir requisitos de negócio em decisões técnicas claras, construir a
+interface e o serviço, integrar com o sistema legado que ninguém quer tocar, e
+acompanhar o deploy no ambiente real até a adoção se sustentar em produção.
+
+Na prática: TypeScript, React e Next.js na frente; Rust/Tauri, Node.js, Python e
+C# atrás; PostgreSQL, Drizzle e pgvector nos dados; servidores MCP e pipelines
+RAG em IA aplicada — sempre usando IA como multiplicador de engenharia ancorado
+em fundamentos e boas práticas de mercado.
 
 A parte que costuma decidir o projeto raramente é a tecnologia. É entender por
 que a planilha que a ferramenta vai substituir existe há seis anos.
@@ -378,18 +388,19 @@ Escopo e stack de cada um em \`GET ${SITE_URL}/api/v1/experience\`.
 
 ## Fora do trabalho
 
-67 repositórios públicos em https://github.com/Marcus-Boni. Alguns viraram
-projetos selecionados: ferramenta de estimativa de horas que aposentou
-planilhas, chatbot ancorado em vaults do Obsidian, produto de hackathon
-explorando fluxos orquestrados por agentes de IA. Escrevo no blog quando um
-problema rende nota. Este site é código aberto, incluindo o painel
-administrativo e a API.
+75 repositórios públicos em https://github.com/Marcus-Boni. Entre os projetos
+em destaque: ISPer (motor local de voz em Rust com 12 crates, Tauri 2 e
+whisper.cpp CPU/CUDA), OptTime (apontamento integrado ao Azure DevOps com
+servidor MCP de 16 ferramentas), Meeting Copilot (RAG com pgvector e avaliação
+de busca) e Auto Daily. Escrevo com frequência no blog sobre engenharia de
+software, arquitetura e IA aplicada. Este site é código aberto, incluindo o
+painel administrativo e a API.
 
 ## Trabalhar comigo
 
-Aberto a trabalho freelance ou efetivo, consultoria técnica e segunda opinião
-em problema de front-end ou integração. E-mail: mgalvaoboni@gmail.com.
-Detalhes em [${SITE_URL}/contact](${SITE_URL}/contact).
+Aberto a posições como Forward Deployed Engineer, trabalho freelance ou efetivo,
+consultoria técnica e segunda opinião em arquitetura, IA aplicada ou integração.
+E-mail: mgalvaoboni@gmail.com. Detalhes em [${SITE_URL}/contact](${SITE_URL}/contact).
 
 ${footer()}`
 }

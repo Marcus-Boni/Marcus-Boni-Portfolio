@@ -83,7 +83,7 @@ const schemas: Record<string, Json> = {
     properties: {
       name: { type: 'string', description: 'The name used publicly.' },
       fullName: { type: 'string', description: 'Full legal name.' },
-      role: { type: 'string', example: 'Software Engineer' },
+      role: { type: 'string', example: 'Forward Deployed Engineer' },
       employer: {
         type: 'object',
         required: ['company', 'role', 'since', 'current'],
