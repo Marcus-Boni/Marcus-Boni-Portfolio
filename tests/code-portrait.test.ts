@@ -103,6 +103,10 @@ describe('ASCII portrait tones & backdrop detection', () => {
       expect(portraitGlyphOpacity(0.4, theme, 'dark')).toBeGreaterThan(0.35)
       expect(portraitGlyphOpacity(1, theme, 'dark')).toBe(1)
     }
+    // Ink on paper lacks optical halation, so light mode lifts midtones above dark mode.
+    expect(portraitGlyphOpacity(0.35, 'light', 'dark')).toBeGreaterThan(
+      portraitGlyphOpacity(0.35, 'dark', 'dark'),
+    )
   })
 
   it('still handles light-backdrop CMS photos gracefully on paper', () => {

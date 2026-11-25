@@ -79,9 +79,12 @@ export function portraitGlyphOpacity(
     return clamp((0.65 - light) / 0.65) ** 2.1
   }
   // For dark-backdrop sculptures (or dark mode), chrome highlights carry the
-  // glyphs while the near-black backdrop drops cleanly to zero.
-  const tone = clamp((light - 0.045) / 0.78)
-  return tone ** (theme === 'light' ? 0.92 : 0.76)
+  // glyphs while the near-black backdrop drops cleanly to zero. On paper,
+  // dark ink lacks optical halation, so lift midtones to keep sculptural
+  // volume crisp and legible against the archival plate.
+  const divisor = theme === 'light' ? 0.72 : 0.78
+  const tone = clamp((light - 0.045) / divisor)
+  return tone ** (theme === 'light' ? 0.62 : 0.76)
 }
 
 /** Selects the ASCII density glyph matching normalized tone (0..1). */
@@ -140,30 +143,37 @@ export function createCodePortrait(
 
   const backdrop = detectBackdrop(pixels, cols, rows)
 
+  const fontSize = cell * (theme === 'light' ? 1.72 : 1.66)
   const makeLayer = () => {
     const layer = document.createElement('canvas')
     layer.width = canvas.width
     layer.height = canvas.height
     const context = layer.getContext('2d')!
     context.scale(dpr, dpr)
-    context.font = `${cell * 1.66}px "Fragment Mono", monospace`
+    context.font = `${fontSize}px "Fragment Mono", monospace`
     context.textBaseline = 'top'
     return { layer, context }
   }
 
   const portrait = makeLayer()
   const specular = makeLayer()
+  const catchlight = theme === 'light' ? makeLayer() : null
   const ambient = makeLayer()
   const ember = makeLayer()
   const shimmer = makeLayer()
 
   const ink = paintColor(canvas, '--color-ink')
+  const ground = theme === 'light' ? paintColor(canvas, '--color-ink-soft') : ink
   const bone = paintColor(canvas, '--color-bone')
+  const smoke = paintColor(canvas, '--color-smoke')
   const accent = paintColor(canvas, '--color-ember')
 
   portrait.context.fillStyle = bone
-  specular.context.fillStyle = bone
-  ambient.context.fillStyle = bone
+  // On paper, metallic reflections read as a burnished ember-signal sheen with
+  // a crisp paper catchlight crest rather than a dark smudge over dark ink.
+  specular.context.fillStyle = theme === 'light' ? accent : bone
+  if (catchlight) catchlight.context.fillStyle = ink
+  ambient.context.fillStyle = theme === 'light' ? smoke : bone
   ember.context.fillStyle = accent
 
   for (let row = 0; row < rows; row++) {
@@ -180,7 +190,7 @@ export function createCodePortrait(
 
       // Subtle background code grid texture behind the sculpture.
       const bgChar = AMBIENT_CODE[(row * 79 + col) % AMBIENT_CODE.length]
-      ambient.context.globalAlpha = theme === 'light' ? 0.032 : 0.04
+      ambient.context.globalAlpha = theme === 'light' ? 0.11 : 0.04
       ambient.context.fillText(bgChar, x, y)
 
       if (opacity <= 0.015) continue
@@ -197,27 +207,39 @@ export function createCodePortrait(
       // Specular highlight pass emphasizes metallic ridges and brightest glyphs.
       specular.context.globalAlpha = Math.min(1, opacity * 1.25)
       specular.context.fillText(char, x, y)
+
+      // In light mode, reserve a crisp paper catchlight for the brightest ridges.
+      if (catchlight && opacity > 0.52) {
+        catchlight.context.globalAlpha = Math.min(1, (opacity - 0.52) / 0.48)
+        catchlight.context.fillText(char, x, y)
+      }
     }
   }
 
   // Reusable diagonal reflection mask on `shimmer` composited over `specular`.
-  const drawSweep = (progress: number) => {
+  const compositeBand = (
+    source: HTMLCanvasElement,
+    progress: number,
+    bandRatio: number,
+    alpha: number,
+    blend?: GlobalCompositeOperation,
+  ) => {
     const sCtx = shimmer.context
     sCtx.globalCompositeOperation = 'source-over'
     sCtx.globalAlpha = 1
     sCtx.clearRect(0, 0, width, height)
 
-    const band = height * 0.42
+    const band = height * bandRatio
     const travel = height + width * 0.36 + band * 2
     const offset = -band - width * 0.18 + progress * travel
 
     sCtx.save()
     sCtx.transform(1, -0.14, 0, 1, 0, width * 0.07)
-    // Alpha-only sweep mask: `source-in` carries 100% of its hue from `specular` (bone token).
+    // Alpha-only sweep mask: `source-in` carries 100% of its hue from `source`.
     const grad = sCtx.createLinearGradient(0, offset, 0, offset + band)
     grad.addColorStop(0, 'rgb(0 0 0 / 0)')
     grad.addColorStop(0.32, 'rgb(0 0 0 / 0.30)')
-    grad.addColorStop(0.5, 'rgb(0 0 0 / 0.92)')
+    grad.addColorStop(0.5, 'rgb(0 0 0 / 0.94)')
     grad.addColorStop(0.72, 'rgb(0 0 0 / 0.26)')
     grad.addColorStop(1, 'rgb(0 0 0 / 0)')
     sCtx.fillStyle = grad
@@ -226,13 +248,25 @@ export function createCodePortrait(
 
     // Mask the gradient strictly to the rasterized specular ASCII glyphs.
     sCtx.globalCompositeOperation = 'source-in'
-    sCtx.drawImage(specular.layer, 0, 0, width, height)
+    sCtx.drawImage(source, 0, 0, width, height)
 
     ctx.save()
-    if (theme === 'dark') ctx.globalCompositeOperation = 'lighter'
-    ctx.globalAlpha = theme === 'dark' ? 0.65 : 0.35
+    if (blend) ctx.globalCompositeOperation = blend
+    ctx.globalAlpha = alpha
     ctx.drawImage(shimmer.layer, 0, 0, width, height)
     ctx.restore()
+  }
+
+  const drawSweep = (progress: number) => {
+    if (theme === 'dark') {
+      compositeBand(specular.layer, progress, 0.42, 0.65, 'lighter')
+      return
+    }
+    // Light mode: burnished ember sheen across metallic ridges + tight paper catchlight crest.
+    compositeBand(specular.layer, progress, 0.44, 0.82)
+    if (catchlight) {
+      compositeBand(catchlight.layer, progress, 0.18, 0.5)
+    }
   }
 
   return (elapsed: number, options?: PortraitRenderOptions) => {
@@ -240,7 +274,7 @@ export function createCodePortrait(
     const effective = reduced ? PORTRAIT_ASSEMBLE_MS : elapsed
 
     ctx.globalAlpha = 1
-    ctx.fillStyle = ink
+    ctx.fillStyle = ground
     ctx.fillRect(0, 0, width, height)
     ctx.drawImage(ambient.layer, 0, 0, width, height)
 
@@ -274,7 +308,7 @@ export function createCodePortrait(
         // The Signal & Ink ember leading wave settles cleanly into monochrome.
         const glow = Math.sin(assembled * Math.PI) ** 3
         if (glow > 0.01) {
-          ctx.globalAlpha = glow * 0.85
+          ctx.globalAlpha = glow * (theme === 'light' ? 0.95 : 0.85)
           ctx.drawImage(
             ember.layer,
             0,
