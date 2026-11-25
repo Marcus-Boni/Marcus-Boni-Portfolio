@@ -35,9 +35,9 @@ describe('front-end kit — generated files', () => {
 describe('front-end kit — content', () => {
   const tools = kitTools()
 
-  it('lists the sixteen tools of the journal entry once each, over https', () => {
-    expect(tools).toHaveLength(16)
-    expect(new Set(tools.map((tool) => tool.url)).size).toBe(16)
+  it('lists the seventeen tools of the journal entry once each, over https', () => {
+    expect(tools).toHaveLength(17)
+    expect(new Set(tools.map((tool) => tool.url)).size).toBe(17)
     for (const tool of tools) expect(new URL(tool.url).protocol).toBe('https:')
   })
 
@@ -93,7 +93,7 @@ describe('front-end kit — content', () => {
 
   it('installs each skill on the list, one per line', () => {
     const lines = KIT_SKILLS_COMMAND.split('\n')
-    expect(lines).toHaveLength(5)
+    expect(lines).toHaveLength(6)
     for (const line of lines) expect(line).toMatch(/^npx skills@latest add \S+/)
   })
 })

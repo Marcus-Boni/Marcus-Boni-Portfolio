@@ -298,24 +298,25 @@ export const fixturePosts: Post[] = [
   entry({
     slug: 'caixa-de-ferramentas-front-end',
     publishedAt: '2026-11-18T12:00:00.000Z',
+    updatedAt: '2026-11-25T12:00:00.000Z',
     pt: {
       title: 'Minha caixa de ferramentas de front-end',
       subtitle:
-        'Dezesseis endereços que eu abro antes de desenhar uma interface, da pesquisa da marca do cliente ao 3D.',
+        'Dezessete endereços que eu abro antes de desenhar uma interface, da pesquisa da marca do cliente ao 3D.',
       excerpt:
-        'Onde eu busco componentes, movimento e critério de design para construir interfaces: dezesseis ferramentas com versão gratuita e o que conferir antes de copiar.',
+        'Onde eu busco componentes, movimento e critério de design para construir interfaces: dezessete ferramentas com versão gratuita e o que conferir antes de copiar.',
       tags: ['Front-end', 'Design', 'Animação', '3D', 'IA'],
-      readingMinutes: 11,
+      readingMinutes: 12,
       body: toolboxBody,
     },
     en: {
       title: 'My front-end toolbox',
       subtitle:
-        "Sixteen addresses I open before designing an interface, from researching a client's brand to 3D.",
+        "Seventeen addresses I open before designing an interface, from researching a client's brand to 3D.",
       excerpt:
-        'Where I get components, motion and design judgment to build interfaces: sixteen tools that are free to use, and what to check before copying.',
+        'Where I get components, motion and design judgment to build interfaces: seventeen tools that are free to use, and what to check before copying.',
       tags: ['Front-end', 'Design', 'Animation', '3D', 'AI'],
-      readingMinutes: 11,
+      readingMinutes: 12,
       body: toolboxBodyEn,
     },
   }),

@@ -2,7 +2,7 @@ Eu vivia salvando estes links em lugares diferentes. Este registro existe para
 eu parar: é a lista do que eu abro quando quero construir um front-end bonito,
 moderno e com cara de produto, e é para cá que eu mesmo vou voltar.
 
-São dezesseis endereços em seis prateleiras: a base em que quase tudo se
+São dezessete endereços em seis prateleiras: a base em que quase tudo se
 instala, as coleções de componentes, as bibliotecas de movimento, o 3D, as
 skills que dão critério de design ao agente de código e a pesquisa da marca do
 cliente. Todos têm versão gratuita. Onde existe plano pago ou condição de
@@ -19,7 +19,7 @@ licença, a observação está em nota.
 :::
 
 :::callout{type=tip title="O kit em um link só"}
-Os dezesseis endereços também estão em uma página própria, para abrir, compartilhar e baixar: favoritos que entram no navegador como uma pasta, a lista em Markdown e o comando que instala as skills. [marcusboni.com.br/kit/front-end](/kit/front-end)
+Os dezessete endereços também estão em uma página própria, para abrir, compartilhar e baixar: favoritos que entram no navegador como uma pasta, a lista em Markdown e o comando que instala as skills. [marcusboni.com.br/kit/front-end](/kit/front-end)
 :::
 
 ## O mapa
@@ -43,6 +43,7 @@ explica cada linha.
 | [Impeccable](https://impeccable.style/docs/impeccable/) | vou revisar ou refinar uma interface com o agente | Apache 2.0 |
 | [Taste Skill](https://www.tasteskill.dev/) | o agente vai criar um site do zero | MIT |
 | [emilkowalski/skills](https://github.com/emilkowalski/skills) | o assunto é animação de interface | MIT |
+| [UI Skills](https://www.ui-skills.com/) | quero restrições objetivas de UI, acessibilidade e movimento | MIT |
 | [research](https://github.com/mattpocock/skills/tree/main/skills/engineering/research) | preciso levantar a marca de um cliente | MIT |
 | [Firecrawl](https://www.firecrawl.dev/) | o agente precisa ler o site do cliente | AGPL-3.0 |
 
@@ -341,7 +342,7 @@ regras:
 
 Boa parte das minhas interfaces hoje é escrita com um agente de código ao lado,
 e agente sem direção entrega sempre a mesma tela genérica. Uma skill é um pacote
-de instruções que o agente carrega quando a tarefa pede. Estas três tratam de
+de instruções que o agente carrega quando a tarefa pede. Estas quatro tratam de
 design e se instalam em agentes como Claude Code, Cursor e Codex.
 
 ### Impeccable
@@ -391,6 +392,22 @@ npx skills@latest add emilkowalski/skills
 
 Um exemplo do tipo de regra que elas ensinam: animação de entrada usa
 `ease-out`, não `ease-in`.
+
+### UI Skills
+
+O [UI Skills](https://www.ui-skills.com/), do Julien Thibeaut (ibelick), é um
+catálogo aberto de skills voltadas a engenheiros de design.[^uiskills] Em vez de
+dicas soltas, cada módulo funciona como um conjunto objetivo de restrições para
+o agente construir e revisar interfaces: a `baseline-ui` fixa regras de layout,
+tipografia e consistência, a `fixing-accessibility` audita foco, ARIA e
+contraste, a `fixing-metadata` confere metadados e Open Graph, e a
+`fixing-motion-performance` corta animações pesadas ou que travam o layout.
+
+::repo{owner=ibelick name=ui-skills desc="Skills para engenheiros de design: baseline de UI, acessibilidade, metadados e performance de movimento."}
+
+```bash title="terminal"
+npx skills@latest add ibelick/ui-skills
+```
 
 ## Pesquisa: a marca do cliente
 
@@ -488,3 +505,4 @@ junto.
 [^designmd]: Este site tem um `DESIGN.md` assim. É ele que mantém cor, tipografia e movimento coerentes entre a home e o Diário.
 [^firecrawl]: O código é aberto, sob AGPL-3.0, e dá para hospedar por conta própria. O serviço tem um plano gratuito com créditos mensais, sem cartão.
 [^taste]: Pede Node 22 ou mais novo e um navegador Chromium instalado, por causa da conferência no navegador.
+[^uiskills]: Além da instalação via `skills`, o catálogo pode ser consultado no terminal com `npx ui-skills` ou conectado direto ao agente via servidor MCP em `https://www.ui-skills.com/mcp`.
