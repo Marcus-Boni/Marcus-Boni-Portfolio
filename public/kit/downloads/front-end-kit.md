@@ -3,7 +3,7 @@
 Sixteen tools I open before designing an interface, on six shelves. All of them can be used for free; the license sits next to each one.
 
 - Kit page: https://marcusboni.com.br/en/kit/front-end
-- Full entry: https://marcusboni.com.br/blog/my-front-end-toolbox
+- Full entry: https://marcusboni.com.br/en/blog/caixa-de-ferramentas-front-end
 - Licenses checked on: 2026-11-18
 
 ## The base

@@ -34,7 +34,7 @@ const MIT = { pt: 'MIT', en: 'MIT' }
 export const KIT_PATH: Record<KitLocale, string> = { pt: '/kit/front-end', en: '/en/kit/front-end' }
 export const KIT_ENTRY: Record<KitLocale, string> = {
   pt: '/blog/caixa-de-ferramentas-front-end',
-  en: '/blog/my-front-end-toolbox',
+  en: '/en/blog/caixa-de-ferramentas-front-end',
 }
 export const KIT_DOWNLOADS: Record<KitLocale, { bookmarks: string; markdown: string }> = {
   pt: {

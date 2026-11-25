@@ -1,7 +1,18 @@
 import type { Config, Context } from '@netlify/edge-functions'
 
+import {
+  collapseLegacyPairs,
+  isBilingual,
+  localizedMeta,
+} from '../lib/blog-locale.ts'
+import {
+  postAlternates,
+  postUrl,
+  SITE_NAME,
+  SITE_URL,
+  validDate,
+} from '../lib/blog-seo.ts'
 import { escapeHtml, isConfigured, listAllPublished, type EdgePost } from '../lib/firestore.ts'
-import { postUrl, reciprocalTranslation, SITE_URL, SITE_NAME, validDate } from '../lib/blog-seo.ts'
 
 /**
  * Dynamic `/rss.xml` and `/sitemap.xml`.
@@ -21,6 +32,7 @@ const AUTHOR_EMAIL = 'mgalvaoboni@gmail.com'
 const STATIC_ROUTES: { path: string; priority: string; changefreq: string }[] = [
   { path: '/', priority: '1.0', changefreq: 'monthly' },
   { path: '/blog', priority: '0.9', changefreq: 'weekly' },
+  { path: '/en/blog', priority: '0.9', changefreq: 'weekly' },
   { path: '/developers', priority: '0.5', changefreq: 'yearly' },
   { path: '/about', priority: '0.7', changefreq: 'yearly' },
   { path: '/contact', priority: '0.7', changefreq: 'yearly' },
@@ -40,7 +52,11 @@ export default async function handler(request: Request, context: Context) {
   }
 
   const result = await listAllPublished()
-  if (result.state === 'unavailable' || result.posts.length + STATIC_ROUTES.length > 50000) {
+  const urlCount =
+    result.state === 'found'
+      ? result.posts.reduce((sum, post) => sum + (isBilingual(post) ? 2 : 1), STATIC_ROUTES.length)
+      : 0
+  if (result.state === 'unavailable' || urlCount > 50000) {
     return new Response(request.method === 'HEAD' ? null : 'Feed temporariamente indisponível.', {
       status: 503, headers: { 'content-type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-store', 'Netlify-CDN-Cache-Control': 'no-store', 'Retry-After': '300' },
@@ -70,37 +86,62 @@ function rfc822(value: string | null): string | undefined {
   return valid ? new Date(valid).toUTCString() : undefined
 }
 
+function renderAlternates(alternates: { hreflang: string; href: string }[]): string {
+  if (alternates.length === 0) return ''
+  return alternates
+    .map(
+      (entry) =>
+        `\n    <xhtml:link rel="alternate" hreflang="${entry.hreflang}" href="${escapeHtml(entry.href)}"/>`,
+    )
+    .join('')
+}
+
 function renderSitemap(posts: EdgePost[]): string {
   const newest = posts.map((post) => validDate(post.updatedAt) ?? validDate(post.publishedAt))
     .filter((value): value is string => Boolean(value)).sort().at(-1) ?? null
   const bySlug = new Map(posts.map((post) => [post.slug, post]))
+  const blogIndexAlternates = renderAlternates([
+    { hreflang: 'pt-BR', href: `${SITE_URL}/blog` },
+    { hreflang: 'en', href: `${SITE_URL}/en/blog` },
+    { hreflang: 'x-default', href: `${SITE_URL}/blog` },
+  ])
 
-  const staticEntries = STATIC_ROUTES.map(
-    ({ path, priority, changefreq }) => `  <url>
-    <loc>${SITE_URL}${path}</loc>
-    ${path === '/blog' && isoDate(newest) ? `<lastmod>${isoDate(newest)}</lastmod>` : ''}
-    <changefreq>${changefreq}</changefreq>
-    <priority>${priority}</priority>
-  </url>`,
-  )
-
-  const postEntries = posts.map((post) => {
-    // A translated pair declares each other as alternates, which is what makes
-    // Google serve the right language instead of picking one.
-    const counterpart = post.translationOf ? bySlug.get(post.translationOf) : undefined
-    const alternates = reciprocalTranslation(post, counterpart)
-      ? `
-    <xhtml:link rel="alternate" hreflang="${post.lang === 'pt' ? 'pt-BR' : 'en'}" href="${escapeHtml(postUrl(post.slug))}"/>
-    <xhtml:link rel="alternate" hreflang="${post.lang === 'pt' ? 'en' : 'pt-BR'}" href="${escapeHtml(postUrl(counterpart!.slug))}"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeHtml(postUrl(post.lang === 'pt' ? post.slug : counterpart!.slug))}"/>`
-      : ''
-    const modified = isoDate(post.updatedAt) ?? isoDate(post.publishedAt)
+  const staticEntries = STATIC_ROUTES.map(({ path, priority, changefreq }) => {
+    const isBlogIndex = path === '/blog' || path === '/en/blog'
     return `  <url>
+    <loc>${SITE_URL}${path}</loc>
+    ${isBlogIndex && isoDate(newest) ? `<lastmod>${isoDate(newest)}</lastmod>` : ''}
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority}</priority>${isBlogIndex ? blogIndexAlternates : ''}
+  </url>`
+  })
+
+  const postEntries = posts.flatMap((post) => {
+    const modified = isoDate(post.updatedAt) ?? isoDate(post.publishedAt)
+
+    if (isBilingual(post)) {
+      const alternates = renderAlternates(postAlternates(post))
+      return (['pt', 'en'] as const).map(
+        (lang) => `  <url>
+    <loc>${escapeHtml(postUrl(post.slug, lang))}</loc>
+    ${modified ? `<lastmod>${modified}</lastmod>` : ''}
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>${alternates}
+  </url>`,
+      )
+    }
+
+    // Legacy separate translated pairs keep reciprocal hreflang until merged.
+    const counterpart = post.translationOf ? bySlug.get(post.translationOf) : undefined
+    const alternates = renderAlternates(postAlternates(post, counterpart))
+    return [
+      `  <url>
     <loc>${escapeHtml(postUrl(post.slug))}</loc>
     ${modified ? `<lastmod>${modified}</lastmod>` : ''}
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>${alternates}
-  </url>`
+  </url>`,
+    ]
   })
 
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -110,20 +151,27 @@ ${[...staticEntries, ...postEntries].join('\n')}
 }
 
 function renderRss(posts: EdgePost[]): string {
-  const newest = posts.map((post) => validDate(post.updatedAt) ?? validDate(post.publishedAt))
-    .filter((value): value is string => Boolean(value)).sort().at(-1) ?? null
+  // One RSS item per publication — bilingual entries (and legacy reciprocal pairs)
+  // are never duplicated in subscribers' feeds.
+  const entries = collapseLegacyPairs(posts, 'pt')
+  const newest = entries
+    .map(({ post }) => validDate(post.updatedAt) ?? validDate(post.publishedAt))
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .at(-1) ?? null
   const built = rfc822(newest)
-  const items = posts.map((post) => {
+  const items = entries.map(({ post }) => {
+    const view = localizedMeta(post, 'pt')
     const url = postUrl(post.slug)
     const published = rfc822(post.publishedAt)
     return `    <item>
-      <title>${escapeHtml(post.title)}</title>
+      <title>${escapeHtml(view.title)}</title>
       <link>${escapeHtml(url)}</link>
       <guid isPermaLink="true">${escapeHtml(url)}</guid>
       ${published ? `<pubDate>${published}</pubDate>` : ''}
-      <description>${escapeHtml(post.excerpt || post.subtitle || post.title)}</description>
+      <description>${escapeHtml(view.excerpt || view.subtitle || view.title)}</description>
       <dc:creator>${SITE_NAME}</dc:creator>
-${post.tags.map((tag) => `      <category>${escapeHtml(tag)}</category>`).join('\n')}
+${view.tags.map((tag) => `      <category>${escapeHtml(tag)}</category>`).join('\n')}
     </item>`
   })
 

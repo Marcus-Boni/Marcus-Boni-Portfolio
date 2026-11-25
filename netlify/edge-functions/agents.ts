@@ -17,9 +17,10 @@ import {
   postMarkdown,
   privacyMarkdown,
 } from '../lib/agent-docs.ts'
+import { isBilingual, localizedBody } from '../lib/blog-locale.ts'
 import { kitMarkdown } from '../lib/kit.ts'
 import { getPostBody, isConfigured, listAllPublished, lookupPost } from '../lib/firestore.ts'
-import { blogSlug, matchRoute, type RouteKind } from '../lib/routes.ts'
+import { blogRouteLang, blogSlug, matchRoute, type RouteKind } from '../lib/routes.ts'
 
 /**
  * HTTP-level agent readiness: Markdown content negotiation, `Vary: Accept`,
@@ -80,6 +81,7 @@ export default async function handler(request: Request, context: Context) {
 
     if (chosen === MARKDOWN) {
       const doc = await buildMarkdown(url, kind)
+      if (doc instanceof Response) return doc
       // `null` means the route has a Markdown form but cannot produce it right
       // now (a post while Firestore is unreachable). Falling back to HTML beats
       // erroring: it is still a truthful representation of the URL, and a
@@ -130,7 +132,7 @@ export default async function handler(request: Request, context: Context) {
 async function buildMarkdown(
   url: URL,
   kind: Exclude<RouteKind, 'admin'>,
-): Promise<MarkdownDoc | null> {
+): Promise<MarkdownDoc | Response | null> {
   switch (kind) {
     case 'home':
       return { body: homeMarkdown(), status: 200 }
@@ -151,38 +153,50 @@ async function buildMarkdown(
       return { body: kitMarkdown(url.pathname.startsWith('/en/') ? 'en' : 'pt'), status: 200 }
 
     case 'blog-index': {
+      const routeLang = blogRouteLang(url.pathname)
       // A confirmed empty collection is a real answer; an outage must not
       // announce the removal of all published articles.
       const result = isConfigured ? await listAllPublished() : { state: 'found' as const, posts: [] }
       if (result.state === 'unavailable') return { body: '# Blog temporariamente indisponível\n\nTente novamente em alguns minutos.\n', status: 503 }
       return {
-        body: blogIndexMarkdown(result.posts),
+        body: blogIndexMarkdown(result.posts, routeLang),
         status: 200,
       }
     }
 
     case 'blog-post':
-      return await buildPostMarkdown(url.pathname)
+      return await buildPostMarkdown(url)
   }
 }
 
-async function buildPostMarkdown(pathname: string): Promise<MarkdownDoc | null> {
-  const slug = blogSlug(pathname)
+async function buildPostMarkdown(url: URL): Promise<MarkdownDoc | Response | null> {
+  const slug = blogSlug(url.pathname)
+  const routeLang = blogRouteLang(url.pathname)
   const lookup = await lookupPost(slug)
 
   // Not "no such post" — "cannot tell right now". Let HTML answer.
   if (lookup.state === 'unavailable') return null
   if (lookup.state === 'missing') {
-    return { body: notFoundMarkdown(pathname), status: 404 }
+    return { body: notFoundMarkdown(url.pathname), status: 404 }
+  }
+
+  const post = lookup.post
+  if (routeLang === 'en' && !isBilingual(post)) {
+    const canonical = new URL(url.toString())
+    canonical.pathname = `/blog/${encodeURIComponent(post.slug)}`
+    return Response.redirect(canonical.toString(), 301)
   }
 
   const content = await getPostBody(slug)
   if (!content) return null
 
+  const activeLang = isBilingual(post) ? routeLang : post.lang
+  const bodyText = localizedBody({ ...post, ...content }, activeLang)
+
   return {
-    body: postMarkdown(lookup.post, content.body, content.media),
+    body: postMarkdown(post, bodyText, content.media, activeLang),
     status: 200,
-    noindex: lookup.post.status === 'unlisted',
+    noindex: post.status === 'unlisted',
   }
 }
 

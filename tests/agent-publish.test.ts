@@ -444,6 +444,59 @@ describe('agent publishing endpoint', () => {
     expect((await json(response)).code).toBe('upstream_unavailable')
   })
 
+  it('creates a unified bilingual post with PT and EN locales in one request', async () => {
+    const writes: unknown[] = []
+    vi.stubGlobal('fetch', (async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input)
+      if (url === 'https://oauth2.googleapis.com/token') {
+        return Response.json({ access_token: 'test-access-token', expires_in: 3600 })
+      }
+      if (url.endsWith('/posts/explicando-apis') && init?.method !== 'POST') {
+        return new Response('{}', { status: 404 })
+      }
+      if (url.endsWith(':commit')) {
+        writes.push(JSON.parse(String(init?.body)))
+        return Response.json({
+          writeResults: [{ updateTime: 'meta' }, { updateTime: 'body' }],
+        })
+      }
+      return new Response('{}', { status: 500 })
+    }) as unknown as typeof fetch)
+    const handler = await load()
+
+    const response = await handler(
+      req('POST', {
+        requestId: 'bilingual-2026-11-25',
+        post: {
+          slug: 'explicando-apis',
+          locales: {
+            pt: {
+              title: 'Explicando APIs',
+              body: '## O que é uma API?\n\nTexto em português.',
+              tags: ['apis'],
+            },
+            en: {
+              title: 'Explaining APIs',
+              body: '## What is an API?\n\nEnglish text.',
+              tags: ['apis'],
+            },
+          },
+        },
+      }),
+    )
+
+    expect(response.status).toBe(201)
+    const body = await json(response)
+    expect(body.urls).toEqual({
+      pt: 'https://marcusboni.com.br/blog/explicando-apis',
+      en: 'https://marcusboni.com.br/en/blog/explicando-apis',
+    })
+    const serialized = JSON.stringify(writes[0])
+    expect(serialized).toContain('Explicando APIs')
+    expect(serialized).toContain('Explaining APIs')
+    expect(serialized).toContain('English text.')
+  })
+
   it('rejects destructive methods', async () => {
     vi.stubGlobal('fetch', firestore())
     const handler = await load()

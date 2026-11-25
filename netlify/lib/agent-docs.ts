@@ -12,12 +12,23 @@
  * `src/i18n/translations.tsx`. When the site's story changes, this changes too.
  */
 
+import {
+  availableLangs,
+  collapseLegacyPairs,
+  isBilingual,
+  localizedMeta,
+  type BlogLocale,
+  type PostLocales,
+} from './blog-locale.ts'
+import { postCanonicalUrl, postUrl } from './blog-seo.ts'
+
 const SITE_URL = 'https://marcusboni.com.br'
 
 /** The subset of post metadata these documents render. */
 export interface DocPost {
   slug: string
   lang: 'pt' | 'en'
+  status?: string
   title: string
   subtitle: string
   excerpt: string
@@ -26,6 +37,7 @@ export interface DocPost {
   publishedAt: string | null
   updatedAt: string
   translationOf: string | null
+  locales?: PostLocales
 }
 
 /** Body images, keyed by the id the Markdown references as `media:{id}`. */
@@ -545,33 +557,46 @@ were probing for an endpoint, \`/sitemap.xml\` is the complete answer.
 
 /* ─── /blog ─────────────────────────────────────────────────────────────── */
 
-function postLine(post: DocPost): string {
+function postLine(post: DocPost, lang: BlogLocale, langs: BlogLocale[]): string {
+  const view = localizedMeta({ ...post, status: post.status ?? 'published' }, lang)
+  const href = postCanonicalUrl({ ...post, status: post.status ?? 'published' }, lang)
   const date = (post.publishedAt ?? post.updatedAt).slice(0, 10)
-  const tags = post.tags.length > 0 ? ` · ${post.tags.join(', ')}` : ''
-  const dek = post.excerpt || post.subtitle
+  const tags = view.tags.length > 0 ? ` · ${view.tags.join(', ')}` : ''
+  const dek = view.excerpt || view.subtitle
+  const langLabel = langs.length > 1 ? langs.join('/') : view.lang
   return [
-    `### [${post.title}](${SITE_URL}/blog/${post.slug})`,
+    `### [${view.title}](${href})`,
     '',
-    `${date} · ${post.lang} · ${post.readingMinutes} min read${tags}`,
+    `${date} · ${langLabel} · ${view.readingMinutes} min read${tags}`,
     ...(dek ? ['', dek] : []),
     '',
   ].join('\n')
 }
 
 /** The blog index as Markdown. An empty list is a valid answer, not an error. */
-export function blogIndexMarkdown(posts: readonly DocPost[]): string {
+export function blogIndexMarkdown(posts: readonly DocPost[], lang: BlogLocale = 'pt'): string {
+  const entries = collapseLegacyPairs(
+    posts.map((post) => ({ ...post, status: post.status ?? 'published' })),
+    lang,
+  )
   const body =
-    posts.length > 0
-      ? posts.map(postLine).join('\n')
+    entries.length > 0
+      ? entries.map(({ post, availableLangs: langs }) => postLine(post, lang, langs)).join('\n')
       : 'No posts published yet.\n'
 
-  return `# Notas de campo — Marcus Boni
+  const heading = lang === 'en' ? '# Field notes — Marcus Boni' : '# Notas de campo — Marcus Boni'
+  const otherIndex =
+    lang === 'en'
+      ? `Portuguese index: [${SITE_URL}/blog](${SITE_URL}/blog)`
+      : `English index: [${SITE_URL}/en/blog](${SITE_URL}/en/blog)`
+
+  return `${heading}
 
 > Technical journal: market studies, project write-ups, and notes worth
-> sharing in a meeting. Written in Portuguese and English; each post declares
-> its own language.
+> sharing in a meeting. Bilingual entries can be read in Portuguese (\`/blog/{slug}\`)
+> or English (\`/en/blog/{slug}\`) from a single publication.
 
-Feed: [${SITE_URL}/rss.xml](${SITE_URL}/rss.xml)
+Feed: [${SITE_URL}/rss.xml](${SITE_URL}/rss.xml) · ${otherIndex}
 
 ## Posts
 
@@ -609,21 +634,40 @@ export function resolveMedia(body: string, media: DocMedia = {}): string {
  * recommends — posts are *written* in Markdown and stored that way, so the
  * Markdown representation is the original, not a conversion of the HTML.
  */
-export function postMarkdown(post: DocPost, body: string, media: DocMedia = {}): string {
+export function postMarkdown(
+  post: DocPost,
+  body: string,
+  media: DocMedia = {},
+  lang: BlogLocale = post.lang,
+): string {
+  const normalized = { ...post, status: post.status ?? 'published' }
+  const view = localizedMeta(normalized, lang)
+  const activeLang = view.lang
+  const url = postCanonicalUrl(normalized, activeLang)
+  const langs = availableLangs(normalized)
+  const bilingual = isBilingual(normalized)
+  const otherLang: BlogLocale = activeLang === 'pt' ? 'en' : 'pt'
+
   const front = [
     '---',
-    `title: ${yaml(post.title)}`,
-    ...(post.subtitle ? [`subtitle: ${yaml(post.subtitle)}`] : []),
-    ...(post.excerpt ? [`description: ${yaml(post.excerpt)}`] : []),
-    `url: ${yaml(`${SITE_URL}/blog/${post.slug}`)}`,
-    `lang: ${yaml(post.lang === 'pt' ? 'pt-BR' : 'en')}`,
+    `title: ${yaml(view.title)}`,
+    ...(view.subtitle ? [`subtitle: ${yaml(view.subtitle)}`] : []),
+    ...(view.excerpt ? [`description: ${yaml(view.excerpt)}`] : []),
+    `url: ${yaml(url)}`,
+    `lang: ${yaml(activeLang === 'pt' ? 'pt-BR' : 'en')}`,
+    ...(bilingual
+      ? [
+          `available_languages: [${langs.map((l) => yaml(l === 'pt' ? 'pt-BR' : 'en')).join(', ')}]`,
+          `alternate_${otherLang}: ${yaml(postUrl(post.slug, otherLang))}`,
+        ]
+      : []),
     ...(post.publishedAt ? [`date_published: ${yaml(post.publishedAt)}`] : []),
     ...(post.updatedAt ? [`date_modified: ${yaml(post.updatedAt)}`] : []),
-    `reading_minutes: ${post.readingMinutes}`,
-    ...(post.tags.length > 0
-      ? [`tags: [${post.tags.map(yaml).join(', ')}]`]
+    `reading_minutes: ${view.readingMinutes}`,
+    ...(view.tags.length > 0
+      ? [`tags: [${view.tags.map(yaml).join(', ')}]`]
       : []),
-    ...(post.translationOf
+    ...(!bilingual && post.translationOf
       ? [`translation_of: ${yaml(`${SITE_URL}/blog/${post.translationOf}`)}`]
       : []),
     'author: "Marcus Boni"',
@@ -632,13 +676,14 @@ export function postMarkdown(post: DocPost, body: string, media: DocMedia = {}):
   ].join('\n')
 
   const content = resolveMedia(body, media).trim()
+  const indexHref = bilingual && activeLang === 'en' ? `${SITE_URL}/en/blog` : `${SITE_URL}/blog`
 
-  return `${front}# ${post.title}
-${post.subtitle ? `\n_${post.subtitle}_\n` : ''}
+  return `${front}# ${view.title}
+${view.subtitle ? `\n_${view.subtitle}_\n` : ''}
 ${content}
 
 ---
 
-Source: ${SITE_URL}/blog/${post.slug} · More posts: ${SITE_URL}/blog · Feed: ${SITE_URL}/rss.xml
+Source: ${url} · More posts: ${indexHref} · Feed: ${SITE_URL}/rss.xml
 `
 }
