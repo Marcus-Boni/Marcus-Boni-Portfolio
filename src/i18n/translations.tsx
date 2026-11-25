@@ -199,9 +199,9 @@ export const translations: Record<Locale, Translation> = {
       portfolio: 'Portfólio',
       available: 'Disponível para projetos',
       intro:
-        'Forward Deployed Engineer construindo software full-stack, sistemas locais e IA aplicada',
+        'Engenheiro de software construindo aplicações full-stack, sistemas locais e IA aplicada',
       tagline:
-        'Do discovery com o cliente ao deploy em produção — engenharia sólida, IA aplicada e foco em resultado real.',
+        'TypeScript · Rust · IA aplicada — e a disciplina de transformar problemas reais em produto sólido.',
       scrollLine1: 'Role para',
       scrollLine2: 'explorar',
     },
@@ -209,20 +209,20 @@ export const translations: Record<Locale, Translation> = {
       label: 'Sobre',
       statement: (age) => (
         <>
-          Forward Deployed Engineer de <em className="text-ember">{age} anos</em>,
+          Engenheiro de software de <em className="text-ember">{age} anos</em>,
           focado em transformar problemas reais em software <em>sólido</em>{' '}
-          — do alinhamento direto com o cliente a sistemas nativos e IA aplicada em produção.
+          — de sistemas nativos em Rust a aplicações full-stack e IA aplicada em produção.
         </>
       ),
       p1: (repoCount) =>
-        `Do primeiro projeto em HTML puro ao trabalho diário com clientes entre TypeScript, Rust, Azure DevOps e IA aplicada, o método continua o mesmo: aprender construindo. Hoje são ${repoCount}+ repositórios públicos de ferramentas nativas, servidores MCP, pipelines RAG e produtos reais.`,
-      p2: 'Utilizo IA de forma deliberada como multiplicador de engenharia — sempre ancorado em fundamentos, boas práticas de mercado, limites explícitos e interfaces honestas que simplificam a rotina de quem usa.',
+        `Do primeiro projeto em HTML puro ao trabalho diário entre TypeScript, Rust, Azure DevOps e IA aplicada, o método continua o mesmo: aprender construindo. Hoje são ${repoCount}+ repositórios públicos de ferramentas nativas, servidores MCP, pipelines RAG e produtos reais.`,
+      p2: 'Utilizo IA de forma deliberada como multiplicador de engenharia — sempre ancorado em fundamentos e boas práticas de mercado — com facilidade para alinhar diretamente com clientes e levar soluções do entendimento do problema até produção.',
       figcaption: 'fig. 01 — o autor',
       portraitAlt: 'Retrato de Marcus Boni',
-      replayPortrait: 'Recriar retrato em código',
+      replayPortrait: 'Reanimar retrato em ASCII',
       facts: (repoCount) => [
         { label: 'Base', value: 'Espírito Santo, BR' },
-        { label: 'Foco', value: 'Forward Deployed' },
+        { label: 'Foco', value: 'Software & IA' },
         { label: 'Repositórios', value: `${repoCount}+` },
         { label: 'Status', value: 'Construindo' },
       ],
@@ -238,15 +238,15 @@ export const translations: Record<Locale, Translation> = {
     experience: {
       label: 'Experiência profissional',
       title: 'Trajetória',
-      role: 'Forward Deployed Engineer',
+      role: 'Desenvolvedor de Software',
       company: 'Optsolv',
       period: 'Jun 2024 — Presente',
       lead: (
         <>
-          Atuo diretamente com clientes do discovery técnico ao{' '}
-          <em className="text-ember">deploy</em> em produção — alinhando negócio,
-          arquitetura e evolução contínua em saúde, indústria, logística, meio
-          ambiente e mercado imobiliário.
+          Construo aplicações corporativas de ponta a ponta — unindo engenharia
+          sólida ao alinhamento direto com clientes do discovery ao{' '}
+          <em className="text-ember">deploy</em> em produção — em saúde,
+          indústria, logística, meio ambiente e mercado imobiliário.
         </>
       ),
       scopeLabel: 'Escopo',
@@ -293,7 +293,7 @@ export const translations: Record<Locale, Translation> = {
       ),
       cta: 'Escreva para mim',
       blurb:
-        'Aberto a projetos, posições como Forward Deployed Engineer e boas conversas sobre engenharia de software e IA aplicada — em português ou inglês.',
+        'Aberto a projetos, colaborações e boas conversas sobre engenharia de software e IA aplicada — em português ou inglês.',
       form: {
         heading: 'Ou mande uma mensagem direto por aqui',
         name: 'Nome',
@@ -408,9 +408,9 @@ export const translations: Record<Locale, Translation> = {
       portfolio: 'Portfolio',
       available: 'Open to projects',
       intro:
-        'Forward Deployed Engineer building full-stack systems, native tools and applied AI',
+        'Software engineer building full-stack applications, native systems and applied AI',
       tagline:
-        'From client discovery to production deployment — resilient software, applied AI and real-world adoption.',
+        'TypeScript · Rust · Applied AI — and the discipline of turning real problems into resilient products.',
       scrollLine1: 'Scroll to',
       scrollLine2: 'explore',
     },
@@ -418,21 +418,21 @@ export const translations: Record<Locale, Translation> = {
       label: 'About',
       statement: (age) => (
         <>
-          A <em className="text-ember">{age}-year-old</em> Forward Deployed
-          Engineer focused on turning real problems into <em>resilient</em>{' '}
-          software — from direct client discovery to native systems and applied
-          AI in production.
+          A <em className="text-ember">{age}-year-old</em> Brazilian software
+          engineer focused on turning real problems into <em>resilient</em>{' '}
+          software — from native Rust tools to full-stack apps and applied AI in
+          production.
         </>
       ),
       p1: (repoCount) =>
-        `From a first plain-HTML project to daily client work spanning TypeScript, Rust, Azure DevOps and applied AI, the method stays the same: learn by building. Today that adds up to ${repoCount}+ public repositories of native tools, MCP servers, RAG pipelines and shipped products.`,
-      p2: 'I use AI deliberately as an engineering multiplier — always grounded in fundamentals, industry best practices, explicit boundaries and honest interfaces that simplify how people work.',
+        `From a first plain-HTML project to daily work spanning TypeScript, Rust, Azure DevOps and applied AI, the method stays the same: learn by building. Today that adds up to ${repoCount}+ public repositories of native tools, MCP servers, RAG pipelines and shipped products.`,
+      p2: 'I use AI deliberately as an engineering multiplier — always grounded in fundamentals and industry best practices — while staying comfortable working directly with clients from discovery through production deployment.',
       figcaption: 'fig. 01 — the author',
       portraitAlt: 'Portrait of Marcus Boni',
-      replayPortrait: 'Rebuild portrait from code',
+      replayPortrait: 'Replay ASCII portrait',
       facts: (repoCount) => [
         { label: 'Based in', value: 'Espírito Santo, BR' },
-        { label: 'Focus', value: 'Forward Deployed' },
+        { label: 'Focus', value: 'Software & AI' },
         { label: 'Repositories', value: `${repoCount}+` },
         { label: 'Status', value: 'Building' },
       ],
@@ -448,14 +448,14 @@ export const translations: Record<Locale, Translation> = {
     experience: {
       label: 'Professional experience',
       title: 'Trajectory',
-      role: 'Forward Deployed Engineer',
+      role: 'Software Developer',
       company: 'Optsolv',
       period: 'Jun 2024 — Present',
       lead: (
         <>
-          I work directly with clients from technical discovery to production{' '}
-          <em className="text-ember">deploy</em> — aligning business context,
-          architecture and continuous evolution across healthcare, industry,
+          I build corporate applications end to end — combining solid
+          engineering with direct client alignment from discovery to production{' '}
+          <em className="text-ember">deploy</em> — across healthcare, industry,
           logistics, environment and real estate.
         </>
       ),
@@ -503,7 +503,7 @@ export const translations: Record<Locale, Translation> = {
       ),
       cta: 'Write to me',
       blurb:
-        'Open to projects, Forward Deployed Engineer roles and sharp conversations on software engineering and applied AI — in Portuguese or English.',
+        'Open to projects, collaborations and sharp conversations on software engineering and applied AI — in Portuguese or English.',
       form: {
         heading: 'Or send a message right here',
         name: 'Name',

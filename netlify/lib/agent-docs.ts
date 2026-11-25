@@ -61,16 +61,15 @@ function footer(): string {
  * answer. `tests/agent-docs.test.ts` checks the facts against `profile.ts`.
  */
 export function homeMarkdown(): string {
-  return `# Marcus Boni — Forward Deployed Engineer
+  return `# Marcus Boni — Software Engineer
 
-> Brazilian Forward Deployed Engineer building full-stack software, native
-> desktop systems (Rust/Tauri) and applied AI workflows (MCP servers, pgvector
-> RAG). Works directly with clients from discovery to production deployment.
-> Based in Espírito Santo, Brazil. Forward Deployed Engineer at Optsolv since
-> June 2024.
+> Brazilian software engineer building full-stack software, native desktop
+> systems (Rust/Tauri) and applied AI workflows (MCP servers, pgvector RAG),
+> comfortable aligning directly with clients from discovery to production.
+> Based in Espírito Santo, Brazil. Software Developer at Optsolv since June 2024.
 
 - **Name:** Marcus Boni (Marcus Evandro Galvão Boni)
-- **Role:** Forward Deployed Engineer — Optsolv (Jun 2024 — present)
+- **Role:** Software Engineer — Software Developer at Optsolv (Jun 2024 — present)
 - **Location:** Espírito Santo, Brazil
 - **Email:** mgalvaoboni@gmail.com
 - **GitHub:** https://github.com/Marcus-Boni (75 public repositories)
@@ -80,12 +79,13 @@ export function homeMarkdown(): string {
 
 ## About
 
-A Brazilian Forward Deployed Engineer focused on turning real operational
-problems into resilient software — from direct client discovery and
-architecture to deployment inside real-world environments. Uses AI deliberately
-as an engineering multiplier grounded in fundamentals, code review and industry
-best practices. The public GitHub account carries 75 repositories of native
-tools, MCP servers, RAG pipelines and shipped products.
+A Brazilian software engineer focused on turning real operational problems into
+resilient software — from native Rust tools to full-stack web apps and applied
+AI in production. Uses AI deliberately as an engineering multiplier grounded in
+fundamentals and industry best practices, while staying comfortable aligning
+directly with clients through production deployment. The public GitHub account
+carries 75 repositories of native tools, MCP servers, RAG pipelines and shipped
+products.
 
 ## Selected projects
 
@@ -99,9 +99,9 @@ tools, MCP servers, RAG pipelines and shipped products.
 
 ## Professional experience
 
-**Forward Deployed Engineer — Optsolv** (June 2024 — present). Client work
-delivered end to end — from stakeholder alignment to production deployment —
-across seven sectors:
+**Software Developer — Optsolv** (June 2024 — present). Client work delivered
+end to end — combining software engineering with direct stakeholder alignment
+through production deployment — across seven sectors:
 
 - **Unimed Sul Capixaba** — Healthcare. Medical-guide management platform:
   AD-authenticated service integration, CORS tuning on IIS, and full
@@ -140,9 +140,8 @@ Technical notes, architecture write-ups and applied AI articles live at
 
 ## Contact
 
-Email **mgalvaoboni@gmail.com** for Forward Deployed Engineer roles, freelance
-or full-time work, technical consulting, or a second opinion on architecture,
-applied AI or integrations. GitHub and LinkedIn are the other two public
+Email **mgalvaoboni@gmail.com** for freelance or full-time work, technical
+consulting, or a second opinion on architecture, applied AI or integrations. GitHub and LinkedIn are the other two public
 channels. There is no phone number, calendar link or chat widget on this site —
 email is the front door.
 
@@ -348,16 +347,17 @@ ${footer()}`
 export function aboutMarkdown(): string {
   return `# Sobre — Marcus Boni
 
-> Forward Deployed Engineer brasileiro, no Espírito Santo. Atua na Optsolv desde
-> junho de 2024, trabalhando diretamente com clientes do discovery técnico ao
-> deploy em produção — software full-stack, ferramentas nativas e IA aplicada.
+> Engenheiro de software brasileiro, no Espírito Santo. Desenvolvedor de
+> Software na Optsolv desde junho de 2024, construindo software full-stack,
+> sistemas nativos e IA aplicada com autonomia para atuar do discovery ao
+> deploy em produção.
 
 ## O que eu faço
 
-Atuo no ciclo inteiro junto ao cliente: entender o problema direto com quem vai
+Atuo no ciclo completo de engenharia: entender o problema direto com quem vai
 usar, traduzir requisitos de negócio em decisões técnicas claras, construir a
-interface e o serviço, integrar com o sistema legado que ninguém quer tocar, e
-acompanhar o deploy no ambiente real até a adoção se sustentar em produção.
+interface e o serviço, integrar com sistemas existentes e acompanhar o deploy
+em produção.
 
 Na prática: TypeScript, React e Next.js na frente; Rust/Tauri, Node.js, Python e
 C# atrás; PostgreSQL, Drizzle e pgvector nos dados; servidores MCP e pipelines
@@ -398,9 +398,9 @@ painel administrativo e a API.
 
 ## Trabalhar comigo
 
-Aberto a posições como Forward Deployed Engineer, trabalho freelance ou efetivo,
-consultoria técnica e segunda opinião em arquitetura, IA aplicada ou integração.
-E-mail: mgalvaoboni@gmail.com. Detalhes em [${SITE_URL}/contact](${SITE_URL}/contact).
+Aberto a trabalho freelance ou efetivo, consultoria técnica e segunda opinião
+em arquitetura, IA aplicada ou integração. E-mail: mgalvaoboni@gmail.com.
+Detalhes em [${SITE_URL}/contact](${SITE_URL}/contact).
 
 ${footer()}`
 }

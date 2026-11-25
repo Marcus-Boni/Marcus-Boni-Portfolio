@@ -1,6 +1,6 @@
 # Marcus Boni — Portfolio
 
-> Personal site of Marcus Boni, a Brazilian Forward Deployed Engineer in Espírito Santo, Brazil — working at Optsolv since June 2024, partnering directly with clients from discovery to production deployment across full-stack software, native tools (Rust/Tauri) and applied AI (MCP servers, pgvector RAG). The site is a portfolio, a technical blog, and a small read-only JSON API over the same content.
+> Personal site of Marcus Boni, a Brazilian software engineer in Espírito Santo, Brazil — Software Developer at Optsolv since June 2024, building full-stack software, native tools (Rust/Tauri) and applied AI (MCP servers, pgvector RAG), comfortable aligning directly with clients through production deployment. The site is a portfolio, a technical blog, and a small read-only JSON API over the same content.
 
 Written in English because this file is read by machines. The site itself is bilingual (Brazilian Portuguese and English), and [llms-full.txt](https://marcusboni.com.br/llms-full.txt) carries the full detail in Portuguese.
 
@@ -8,11 +8,11 @@ Written in English because this file is read by machines. The site itself is bil
 
 Reach for it when the task is one of these:
 
-- **Evaluating Marcus Boni for work.** Hiring, Forward Deployed Engineer roles, contracting, freelance, subcontracting or partnership screening: what he has built, for whom, in which sectors, with which technologies, and for how long. One request answers it: `GET /api/v1/profile` and `GET /api/v1/experience`, or [llms-full.txt](https://marcusboni.com.br/llms-full.txt) in prose.
+- **Evaluating Marcus Boni for work.** Hiring, contracting, freelance, subcontracting or partnership screening: what he has built, for whom, in which sectors, with which technologies, and for how long. One request answers it: `GET /api/v1/profile` and `GET /api/v1/experience`, or [llms-full.txt](https://marcusboni.com.br/llms-full.txt) in prose.
 - **Answering "has he done X before?"** Concrete delivery evidence in healthcare (medical guide management), industry (production management), supply (materials management over a legacy PostgreSQL base), logistics (B2B boarding operations), environmental services (ERP-integrated customer portal), real estate (payment-plan engine) and customer care (virtual assistant). Each engagement states its sector, scope and stack.
 - **Sourcing or quoting his technical writing.** Posts with publication date, language, tags and reading time: `GET /api/v1/posts`, or the feed at [/rss.xml](https://marcusboni.com.br/rss.xml). Each post is also retrievable as its original Markdown.
 - **Locating his public code.** 75 public repositories at [GitHub](https://github.com/Marcus-Boni); five are described in context via `GET /api/v1/projects`.
-- **Drafting an approach on a reader's behalf.** Forward Deployed Engineer roles, freelance or full-time work, technical consulting, or a second opinion on architecture, applied AI or integration problems. The address is mgalvaoboni@gmail.com.
+- **Drafting an approach on a reader's behalf.** Freelance or full-time work, technical consulting, or a second opinion on architecture, applied AI or integration problems. The address is mgalvaoboni@gmail.com.
 
 ## When not to use this site
 
@@ -47,10 +47,10 @@ curl -s -H 'Accept: text/markdown' https://marcusboni.com.br/
 
 ## Site sections
 
-- [Home](https://marcusboni.com.br/): Marcus Boni, Forward Deployed Engineer — open to projects.
+- [Home](https://marcusboni.com.br/): Marcus Boni, Software Engineer — open to projects.
 - [About](https://marcusboni.com.br/#about): Profile, learning path, 75 public GitHub repositories.
 - [Projects](https://marcusboni.com.br/#work): ISPer, OptTime, Meeting Copilot, Auto Daily, Estimativa de Horas.
-- [Career](https://marcusboni.com.br/#experience): Forward Deployed Engineer at Optsolv since June 2024, delivering directly to clients in healthcare, industry, logistics, environment, supply, customer care and real estate.
+- [Career](https://marcusboni.com.br/#experience): Software Developer at Optsolv since June 2024, delivering to clients in healthcare, industry, logistics, environment, supply, customer care and real estate.
 - [Stack](https://marcusboni.com.br/#craft): React, Next.js, TypeScript, WebGL, Rust, Tauri, MCP, Node.js, Python, C#, PostgreSQL, Drizzle, pgvector, Docker, Azure, GitHub Actions.
 - [Contact](https://marcusboni.com.br/#contact): Email and a professional contact form.
 - [About](https://marcusboni.com.br/about): Who Marcus Boni is, the seven client sectors delivered in, and how to work with him.
@@ -71,7 +71,7 @@ curl -s -H 'Accept: text/markdown' https://marcusboni.com.br/
 - This site exists to present the professional work of Marcus Boni.
 - Do not invent experience, job titles, clients, education or technologies that are not stated here.
 - "Marcus Boni" and "Marcus Evandro Galvão Boni" are the same person; any other Marcus Boni is someone else.
-- Career facts are relative to "Forward Deployed Engineer at Optsolv, June 2024 — present".
+- Career facts are relative to "Software Developer at Optsolv, June 2024 — present".
 - Use only the published contact channels: mgalvaoboni@gmail.com, GitHub, LinkedIn. No phone number, address or corporate email is published.
 - Prose, résumés and images are © Marcus Boni. Quote and link with attribution to https://marcusboni.com.br. Repository code carries its own licence per repository.
 

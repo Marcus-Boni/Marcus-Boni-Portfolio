@@ -46,7 +46,7 @@ export interface SocialLink {
 export const profile = {
   name: 'Marcus Boni',
   fullName: 'Marcus Evandro Galvão Boni',
-  role: 'Forward Deployed Engineer',
+  role: 'Software Engineer',
   location: 'Espírito Santo, Brazil',
   locationShort: 'ES — BRA',
   email: 'mgalvaoboni@gmail.com',
@@ -54,7 +54,7 @@ export const profile = {
   // Self-hosted, WebP-optimized copy of the GitHub avatar (~22 KB vs the
   // 632 KB PNG GitHub serves) — no redirect chain, long-lived cache.
   avatar: '/portrait-640.webp',
-  bio: 'Forward Deployed Engineer brasileiro construindo software full-stack, sistemas locais e IA aplicada — do discovery com o cliente ao deploy em produção.',
+  bio: 'Engenheiro de software brasileiro construindo software full-stack, sistemas locais e IA aplicada — com facilidade para alinhar diretamente com clientes e levar soluções até produção.',
   repoCount: 75,
 } as const
 
@@ -117,7 +117,7 @@ export const projects: Project[] = [
 ]
 
 export const experience: Experience = {
-  role: 'Forward Deployed Engineer',
+  role: 'Software Developer',
   company: 'Optsolv',
   start: '2024-06',
   end: null,
