@@ -1,26 +1,65 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
+import { useBlogLocaleSwitch } from '@/blog/lib/locale-switch'
+import { LanguageToggle } from '@/components/ui/LanguageToggle'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { useScrollHeader } from '@/hooks/useScrollHeader'
 import { useLanguage } from '@/i18n/LanguageContext'
 import type { Locale } from '@/i18n/translations'
+import { transitionLocale } from '@/lib/locale-transition'
 import { cn } from '@/lib/utils'
 
 /**
- * Header for the blog routes.
+ * Header for the blog routes (`/blog/*` and `/en/blog/*`).
  *
- * The portfolio's header scrolls between sections of one long page, which has
- * no meaning here, so this is a quieter variant: wordmark home, the section
- * label, and the language toggle. It uses the same glass-on-scroll treatment so
- * the transition between the two areas reads as one site.
+ * Anchored in place (`vt-header`) during language View Transitions while the
+ * edition below cross-dissolves smoothly.
  */
-export function BlogHeader() {
+export function BlogHeader({ routeLang = 'pt' }: { routeLang?: Locale }) {
   const { locale, setLocale, t } = useLanguage()
   const { scrolled } = useScrollHeader(false)
-  const options: Locale[] = ['pt', 'en']
+  const { pathname, search } = useLocation()
+  const navigate = useNavigate()
+  const { getAlternate } = useBlogLocaleSwitch()
+
+  const normalized = pathname.replace(/\/+$/, '') || '/'
+  const isIndex = normalized === '/blog' || normalized === '/en/blog'
+  const activeLocale: Locale = isIndex ? (routeLang === 'en' ? 'en' : locale) : locale
+  const indexTo = activeLocale === 'en' ? '/en/blog' : '/blog'
+
+  const switchLocale = (next: Locale) => {
+    if (isIndex) {
+      const params = new URLSearchParams(search)
+      // Tag labels are localized (e.g. IA vs AI), so clear tag filter on language switch.
+      params.delete('tag')
+      const qs = params.toString()
+      const target = `${next === 'en' ? '/en/blog' : '/blog'}${qs ? `?${qs}` : ''}`
+      if (next === activeLocale && target === `${normalized}${search}`) return
+      transitionLocale(next, () => {
+        setLocale(next)
+        if (target !== `${normalized}${search}`) navigate(target)
+      })
+      return
+    }
+
+    const alternate = getAlternate()
+    const targetPath =
+      alternate && alternate.lang === next
+        ? alternate.path
+        : normalized.startsWith('/en/blog/') && next === 'pt'
+          ? normalized.slice('/en'.length)
+          : null
+
+    if (next === locale && !targetPath) return
+
+    transitionLocale(next, () => {
+      setLocale(next)
+      if (targetPath && targetPath !== normalized) navigate(targetPath)
+    })
+  }
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50">
+    <header className="vt-header fixed inset-x-0 top-0 z-50">
       <div
         aria-hidden
         className={cn(
@@ -39,7 +78,7 @@ export function BlogHeader() {
             mb<span className="text-ember">.</span>
           </Link>
           <Link
-            to="/blog"
+            to={indexTo}
             className="font-mono text-[10px] tracking-[0.3em] text-smoke uppercase transition-colors hover:text-bone"
           >
             {t.blog.nav}
@@ -54,30 +93,7 @@ export function BlogHeader() {
             {t.header.backHome}
           </Link>
 
-          <div
-            className="flex items-center gap-2 font-mono text-[11px] tracking-[0.18em]"
-            role="group"
-            aria-label="Language"
-          >
-            {options.map((option, index) => (
-              <span key={option} className="flex items-center gap-2">
-                {index > 0 && <span className="text-smoke">/</span>}
-                <button
-                  type="button"
-                  onClick={() => setLocale(option)}
-                  aria-pressed={locale === option}
-                  className={cn(
-                    'uppercase transition-colors duration-300',
-                    locale === option
-                      ? 'text-ember'
-                      : 'text-smoke hover:text-bone',
-                  )}
-                >
-                  {option}
-                </button>
-              </span>
-            ))}
-          </div>
+          <LanguageToggle activeLocale={activeLocale} onSelect={switchLocale} />
           <ThemeToggle />
         </div>
       </div>

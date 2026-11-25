@@ -1,4 +1,7 @@
 import type { Locale } from '@/i18n/translations'
+import type { PostBodies, PostLocaleMeta, PostLocales } from '../../netlify/lib/blog-locale'
+
+export type { PostBodies, PostLocaleMeta, PostLocales }
 
 /**
  * Publication state. `unlisted` is deliberate: it keeps a post reachable by
@@ -41,15 +44,19 @@ export interface PostSeries {
 /**
  * Post metadata — the `posts/{slug}` document.
  *
- * The Markdown body deliberately lives in a subcollection
- * (`posts/{slug}/content/main`) so listing the index does not download every
- * post's full text, and so the SEO edge function can resolve a post's `<head>`
- * with a single REST read.
+ * One publication = one document, optionally carrying both Portuguese and
+ * English metadata inside `locales`. The top-level fields (`lang`, `title`,
+ * `subtitle`, `excerpt`, `tags`, `readingMinutes`) mirror the primary language
+ * so existing queries, legacy documents, and console inspections keep working.
+ *
+ * The Markdown bodies live in a subcollection (`posts/{slug}/content/main`) so
+ * listing the index does not download every post's full text, and so the SEO
+ * edge function can resolve a post's `<head>` with a single REST read.
  */
 export interface PostMeta {
-  /** Also the document id — URLs are `/blog/{slug}`. */
+  /** Also the document id — PT lives at `/blog/{slug}`, EN at `/en/blog/{slug}` when bilingual. */
   slug: string
-  /** Posts are written in one language; `translationOf` pairs them up. */
+  /** Primary / default language (`pt` whenever PT exists, otherwise `en`). */
   lang: Locale
   status: PostStatus
   title: string
@@ -60,12 +67,14 @@ export interface PostMeta {
   cover?: MediaRef
   tags: string[]
   series?: PostSeries
-  /** Derived from the body on save — never hand-edited. */
+  /** Derived from the primary body on save — never hand-edited. */
   readingMinutes: number
   /** ISO string; `null` until the post is first published. */
   publishedAt: string | null
   updatedAt: string
-  /** Slug of the counterpart in the other language, when one exists. */
+  /** Per-language metadata (`pt`, `en`) carried by this single publication. */
+  locales?: PostLocales
+  /** Legacy slug of a separate counterpart post (kept only for pre-unification docs). */
   translationOf?: string
   /** Pins the post to the index hero slot. */
   featured?: boolean
@@ -73,8 +82,14 @@ export interface PostMeta {
 
 /** The `posts/{slug}/content/main` document. */
 export interface PostBody {
-  /** Markdown source — the single source of truth for the post's content. */
+  /** Primary language Markdown source (kept for backward compatibility). */
   body: string
+  /**
+   * Per-language Markdown sources (`{ pt?: string, en?: string }`).
+   * Keeping both in the same `content/main` document lets the reader switch
+   * between PT and EN instantaneously with zero extra Firestore reads.
+   */
+  bodies?: PostBodies
   /**
    * Mirrored from the parent so security rules can gate reads without a
    * `get()` lookup (which would bill an extra read per request). Written in
@@ -104,13 +119,12 @@ export interface TocEntry {
 
 /** Filters accepted by the public index. */
 export interface PostQuery {
-  lang?: Locale | 'all'
   tag?: string
   limit?: number
 }
 
 /** A fresh, unsaved post. Kept here so admin and service agree on defaults. */
-export function emptyPost(lang: Locale): Post {
+export function emptyPost(lang: Locale = 'pt'): Post {
   return {
     slug: '',
     lang,

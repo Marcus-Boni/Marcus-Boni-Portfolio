@@ -14,73 +14,114 @@ import { useLanguage } from '@/i18n/LanguageContext'
 import type { Locale } from '@/i18n/translations'
 import { trackEvent } from '@/lib/analytics'
 import { cn } from '@/lib/utils'
+import {
+  collapseLegacyPairs,
+  localizedMeta,
+  postPath,
+  type CollapsedEntry,
+} from '../../../netlify/lib/blog-locale'
 
-type LangFilter = Locale | 'all'
+interface IndexItem {
+  entry: CollapsedEntry<PostMeta>
+  title: string
+  tags: string[]
+  readingMinutes: number
+  href: string
+}
 
 /**
  * The journal's index, laid out as a field notebook: a masthead with the
  * figures of the notebook itself, then a ledger of numbered, dated entries.
  *
- * Filters live in the URL (`?lang=pt&tag=react`) so a filtered view is
- * shareable and survives a refresh. Filtering itself is done in memory over
- * the already-fetched list — no extra Firestore reads, no spinner between
- * clicks.
+ * Every publication appears ONCE — never split into separate Portuguese and
+ * English entries. The reader's active language (from the header toggle or
+ * `/en/blog`) projects each bilingual entry into that language while keeping
+ * single-language entries accessible with their language tag.
  */
-export function BlogIndex() {
-  const { t, locale } = useLanguage()
+export function BlogIndex({ routeLang = 'pt' }: { routeLang?: Locale }) {
+  const { t, locale, setLocale } = useLanguage()
   const { posts, status, retry } = usePostList()
   const [params, setParams] = useSearchParams()
   const titleRef = useScrollReveal<HTMLHeadingElement>({ immediate: true })
 
-  const langFilter = (params.get('lang') ?? 'all') as LangFilter
+  // Visiting `/en/blog` directly brings the interface into English on arrival.
+  const syncedRoute = useRef<Locale | null>(null)
+  useEffect(() => {
+    if (routeLang === 'en' && syncedRoute.current !== 'en') {
+      syncedRoute.current = 'en'
+      setLocale?.('en')
+    } else if (routeLang === 'pt') {
+      syncedRoute.current = 'pt'
+    }
+  }, [routeLang, setLocale])
+
+  const displayLang: Locale = routeLang === 'en' ? 'en' : locale
   const tagFilter = params.get('tag') ?? ''
 
-  useBlogIndexHead(posts, locale)
+  useBlogIndexHead(posts, displayLang)
   useReleaseServerDocument(status === 'ready')
 
   useEffect(() => {
     trackEvent('blog_index_view')
   }, [])
 
+  // Collapse any legacy reciprocal `translationOf` pairs so every publication
+  // is counted and rendered once, then project each entry to `displayLang`.
+  const items = useMemo<IndexItem[]>(() => {
+    const collapsed = collapseLegacyPairs(posts, displayLang)
+    return collapsed.map((entry) => {
+      const view = localizedMeta(entry.post, displayLang)
+      return {
+        entry,
+        title: view.title,
+        tags: view.tags,
+        readingMinutes: view.readingMinutes,
+        href: postPath(entry.post, displayLang),
+      }
+    })
+  }, [posts, displayLang])
+
   const tags = useMemo(() => {
     const counts = new Map<string, number>()
-    for (const post of posts) {
-      for (const tag of post.tags) {
+    for (const item of items) {
+      for (const tag of item.tags) {
         counts.set(tag, (counts.get(tag) ?? 0) + 1)
       }
     }
     return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-  }, [posts])
+  }, [items])
 
   // An entry's ordinal is its place in the whole journal, oldest first — so
-  // it stays put no matter which filter is narrowing the list.
+  // it stays put across languages and topic filters.
   const ordinals = useMemo(
-    () => new Map(posts.map((post, index) => [post.slug, posts.length - index])),
-    [posts],
+    () =>
+      new Map(
+        items.map((item, index) => [item.entry.canonicalSlug, items.length - index]),
+      ),
+    [items],
   )
 
   const filtered = useMemo(
     () =>
-      posts.filter(
-        (post) =>
-          (langFilter === 'all' || post.lang === langFilter) &&
-          (!tagFilter || post.tags.includes(tagFilter)),
-      ),
-    [posts, langFilter, tagFilter],
+      items.filter((item) => !tagFilter || item.tags.includes(tagFilter)),
+    [items, tagFilter],
   )
 
   const [featured, ...rest] = splitFeatured(filtered)
-  const hasFilters = langFilter !== 'all' || Boolean(tagFilter)
+  const hasFilters = Boolean(tagFilter)
 
-  const setFilter = (key: 'lang' | 'tag', value: string) => {
+  const setTagFilter = (value: string) => {
     const next = new URLSearchParams(params)
-    if (!value || value === 'all') next.delete(key)
-    else next.set(key, value)
+    if (!value) next.delete('tag')
+    else next.set('tag', value)
     setParams(next, { replace: true })
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-5 pt-32 pb-24 md:px-8 md:pt-40">
+    <div
+      data-locale-surface
+      className="mx-auto max-w-6xl px-5 pt-32 pb-24 md:px-8 md:pt-40"
+    >
       <header className="border-b border-line pb-10">
         <h1
           ref={titleRef}
@@ -94,24 +135,13 @@ export function BlogIndex() {
           <p className="max-w-xl text-base leading-relaxed text-pretty text-bone-dim md:text-lg lg:col-span-5">
             {t.blog.lead}
           </p>
-          {posts.length > 0 && <JournalFigures posts={posts} topics={tags.length} />}
+          {items.length > 0 && <JournalFigures items={items} topics={tags.length} />}
         </div>
       </header>
 
       {/* ─── Filters ─────────────────────────────────────────────── */}
-      {posts.length > 0 && (
+      {items.length > 0 && (
         <div className="flex flex-wrap items-center gap-x-8 gap-y-4 border-b border-line py-5">
-          <FilterGroup
-            label={t.blog.filters.language}
-            options={[
-              { value: 'all', label: t.blog.filters.all },
-              { value: 'pt', label: 'PT' },
-              { value: 'en', label: 'EN' },
-            ]}
-            active={langFilter}
-            onSelect={(value) => setFilter('lang', value)}
-          />
-
           {tags.length > 0 && (
             <FilterGroup
               label={t.blog.filters.allTags}
@@ -120,7 +150,7 @@ export function BlogIndex() {
                 ...tags.map(([tag, count]) => ({ value: tag, label: tag, count })),
               ]}
               active={tagFilter}
-              onSelect={(value) => setFilter('tag', value)}
+              onSelect={setTagFilter}
             />
           )}
 
@@ -132,7 +162,7 @@ export function BlogIndex() {
             {hasFilters && (
               <button
                 type="button"
-                onClick={() => setParams(new URLSearchParams(), { replace: true })}
+                onClick={() => setTagFilter('')}
                 className="min-h-8 text-ember uppercase underline-offset-4 hover:underline"
               >
                 {t.blog.filters.clear}
@@ -159,24 +189,37 @@ export function BlogIndex() {
       )}
 
       {status === 'ready' && filtered.length === 0 && (
-        <EmptyJournal filtered={hasFilters && posts.length > 0}
-          onClear={() => setParams(new URLSearchParams(), { replace: true })} />
+        <EmptyJournal
+          filtered={hasFilters && items.length > 0}
+          onClear={() => setTagFilter('')}
+        />
       )}
 
       {status === 'ready' && featured && (
         <div className="mt-14">
-          <FeaturedPostCard post={featured} ordinal={ordinals.get(featured.slug)} />
+          <FeaturedPostCard
+            post={featured.entry.post}
+            ordinal={ordinals.get(featured.entry.canonicalSlug)}
+            lang={displayLang}
+            href={featured.href}
+            availableLangs={featured.entry.availableLangs}
+            canonicalSlug={featured.entry.canonicalSlug}
+          />
         </div>
       )}
 
       {status === 'ready' && rest.length > 0 && (
-        <ul className="mt-16 border-t border-line" key={`${locale}-${langFilter}-${tagFilter}`}>
-          {rest.map((post, index) => (
+        <ul className="mt-16 border-t border-line" key={`${displayLang}-${tagFilter}`}>
+          {rest.map((item, index) => (
             <PostRow
-              key={post.slug}
-              post={post}
-              ordinal={ordinals.get(post.slug) ?? 0}
+              key={item.entry.canonicalSlug}
+              post={item.entry.post}
+              ordinal={ordinals.get(item.entry.canonicalSlug) ?? 0}
               index={index}
+              lang={displayLang}
+              href={item.href}
+              availableLangs={item.entry.availableLangs}
+              canonicalSlug={item.entry.canonicalSlug}
             />
           ))}
         </ul>
@@ -189,33 +232,36 @@ export function BlogIndex() {
  * The lead slot goes to an explicitly featured post, otherwise to the newest
  * one — the list is already sorted by `publishedAt` desc.
  */
-function splitFeatured(posts: PostMeta[]): [PostMeta | undefined, ...PostMeta[]] {
-  if (posts.length === 0) return [undefined]
+function splitFeatured(items: IndexItem[]): [IndexItem | undefined, ...IndexItem[]] {
+  if (items.length === 0) return [undefined]
   const index = Math.max(
     0,
-    posts.findIndex((post) => post.featured),
+    items.findIndex((item) => item.entry.post.featured),
   )
-  return [posts[index], ...posts.filter((_, i) => i !== index)]
+  return [items[index], ...items.filter((_, i) => i !== index)]
 }
 
 /* ─── Masthead figures ──────────────────────────────────────────────────── */
 
 /**
- * The notebook's own numbers — how many entries, on how many topics, how much
- * reading, and when the last one went in. All derived from the list on screen.
+ * The notebook's own numbers — how many unique entries, on how many topics,
+ * how much reading, and when the last one went in.
  */
-function JournalFigures({ posts, topics }: { posts: PostMeta[]; topics: number }) {
+function JournalFigures({ items, topics }: { items: IndexItem[]; topics: number }) {
   const { t, locale } = useLanguage()
-  const minutes = posts.reduce((sum, post) => sum + (post.readingMinutes || 0), 0)
-  const latest = posts.reduce<string | null>(
-    (best, post) => (post.publishedAt && (!best || post.publishedAt > best) ? post.publishedAt : best),
+  const minutes = items.reduce((sum, item) => sum + (item.readingMinutes || 0), 0)
+  const latest = items.reduce<string | null>(
+    (best, { entry }) =>
+      entry.post.publishedAt && (!best || entry.post.publishedAt > best)
+        ? entry.post.publishedAt
+        : best,
     null,
   )
 
   return (
     <dl className="grid grid-cols-2 gap-px border border-line bg-line sm:grid-cols-[1fr_1fr_1.25fr_1.7fr] lg:col-span-7">
       <Figure label={t.blog.stats.entries}>
-        <CountUp value={posts.length} />
+        <CountUp value={items.length} />
       </Figure>
       <Figure label={t.blog.stats.topics}>
         <CountUp value={topics} />

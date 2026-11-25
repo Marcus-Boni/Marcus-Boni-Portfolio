@@ -1,6 +1,9 @@
-import type { Post } from '@/blog/types'
+import type { Post, PostLocaleMeta } from '@/blog/types'
+import { readingMinutes } from '@/blog/lib/text'
 
 import toolboxBody from '../../docs/diario/caixa-de-ferramentas-front-end.md?raw'
+import wifiBody from '../../docs/diario/diagnosticar-wi-fi-lento-com-ia.md?raw'
+import wifiBodyEn from '../../docs/diario/how-i-improved-my-wi-fi-with-ai.md?raw'
 import toolboxBodyEn from '../../docs/diario/my-front-end-toolbox.md?raw'
 
 /**
@@ -12,13 +15,13 @@ import toolboxBodyEn from '../../docs/diario/my-front-end-toolbox.md?raw'
  * once: headings for the table of contents, code fences, a callout, a pull
  * quote, a table, lists.
  *
- * One entry is real writing: the first one, with its English translation,
- * reads its body from `docs/diario/`, the Markdown that gets pasted into
- * `/admin/blog`, so a draft can be read on the real page before it is
- * published. The others are placeholders.
+ * Each bilingual entry is ONE publication carrying both `pt` and `en` versions
+ * inside `locales` and `bodies`, matching production Firestore documents.
+ * Editorial drafts read their Markdown bodies from `docs/diario/`.
  */
 
 const NOTICE = '> Registro de exemplo — visível apenas em desenvolvimento (`/blog?demo=1`).'
+const NOTICE_EN = '> Sample entry — visible in development only (`/blog?demo=1`).'
 
 const LONG_BODY = `${NOTICE}
 
@@ -142,6 +145,42 @@ O restante fica para o próximo registro.
 [^ordem]: \`Promise.all\` devolve os resultados na ordem das promessas, seja qual for a ordem de conclusão.
 `
 
+const LONG_BODY_EN = `${NOTICE_EN}
+
+Every spreadsheet that lives too long turns into an unowned system.[^owner] This
+entry tracks replacing one of them with a real application, from the first
+discovery pass to the week the file was finally archived.
+
+:::takeaways
+- A shared spreadsheet is an unowned system: the cost shows up on the invoice, not as an error.
+- Stop copying by hand before automating anything.
+- The migration is only done when nobody opens the old file anymore.
+:::
+
+## The starting problem
+
+Hour estimates lived in a shared file. Every row was a work item copied by hand,
+and every copy was another chance to drift.[^copy]
+
+- Duplicate rows across tabs
+- Broken formulas from someone simply sorting a column
+- Zero history of who changed what
+
+## Reading straight from the source
+
+The first cut was to stop copying. The app started pulling work items straight
+from the API and treating spreadsheets strictly as exports, never as the source.
+
+## Next steps
+
+1. Close the loop between planned and actual hours
+2. Keep one-click export for stakeholders who still need a sheet
+3. Retire the spreadsheet for good
+
+[^owner]: Nobody owns it, yet everyone relies on it to close the month.
+[^copy]: In a typical month, around three hundred rows were copied by hand.
+`
+
 const SHORT_BODY = `${NOTICE}
 
 ## Contexto
@@ -155,125 +194,216 @@ O sumário aparece a partir de dois títulos; a barra de leitura acompanha a
 rolagem mesmo em textos pequenos.
 `
 
-function entry(
-  fields: Pick<Post, 'slug' | 'lang' | 'title' | 'excerpt' | 'tags' | 'publishedAt'> &
-    Partial<Post>,
-): Post {
+const SHORT_BODY_EN = `${NOTICE_EN}
+
+## Context
+
+A short entry to verify how the page behaves with concise copy and a couple of
+section headings.
+
+## Notes
+
+The table of contents appears from two headings onward, and the reading bar
+tracks scroll even on brief notes.
+`
+
+interface LocaleDraft {
+  title: string
+  subtitle?: string
+  excerpt: string
+  tags: string[]
+  body: string
+  readingMinutes?: number
+}
+
+function toLocaleMeta(draft: LocaleDraft): PostLocaleMeta {
   return {
+    title: draft.title,
+    subtitle: draft.subtitle ?? '',
+    excerpt: draft.excerpt,
+    tags: draft.tags,
+    readingMinutes: draft.readingMinutes ?? readingMinutes(draft.body),
+  }
+}
+
+function entry(
+  fields: {
+    slug: string
+    publishedAt: string
+    updatedAt?: string
+    featured?: boolean
+    series?: Post['series']
+    pt?: LocaleDraft
+    en?: LocaleDraft
+  },
+): Post {
+  const primaryLang = fields.pt ? 'pt' : 'en'
+  const primary = (fields.pt ?? fields.en)!
+  const locales: NonNullable<Post['locales']> = {}
+  const bodies: NonNullable<Post['bodies']> = {}
+
+  if (fields.pt) {
+    locales.pt = toLocaleMeta(fields.pt)
+    bodies.pt = fields.pt.body
+  }
+  if (fields.en) {
+    locales.en = toLocaleMeta(fields.en)
+    bodies.en = fields.en.body
+  }
+
+  const primaryMeta = locales[primaryLang]!
+
+  return {
+    slug: fields.slug,
+    lang: primaryLang,
     status: 'published',
-    subtitle: '',
-    readingMinutes: 4,
-    updatedAt: fields.publishedAt ?? new Date().toISOString(),
-    body: SHORT_BODY,
-    ...fields,
+    title: primaryMeta.title,
+    subtitle: primaryMeta.subtitle,
+    excerpt: primaryMeta.excerpt,
+    tags: primaryMeta.tags,
+    readingMinutes: primaryMeta.readingMinutes,
+    publishedAt: fields.publishedAt,
+    updatedAt: fields.updatedAt ?? fields.publishedAt,
+    featured: fields.featured ?? false,
+    series: fields.series,
+    locales,
+    body: primary.body,
+    bodies,
   }
 }
 
 export const fixturePosts: Post[] = [
   entry({
-    slug: 'caixa-de-ferramentas-front-end',
-    lang: 'pt',
-    title: 'Minha caixa de ferramentas de front-end',
-    subtitle:
-      'Dezesseis endereços que eu abro antes de desenhar uma interface, da pesquisa da marca do cliente ao 3D.',
-    excerpt:
-      'Onde eu busco componentes, movimento e critério de design para construir interfaces: dezesseis ferramentas com versão gratuita e o que conferir antes de copiar.',
-    tags: ['Front-end', 'Design', 'Animação', '3D', 'IA'],
-    readingMinutes: 11,
-    publishedAt: '2026-11-18T12:00:00.000Z',
-    // A pair only counts when each side names the other.
-    translationOf: 'my-front-end-toolbox',
-    body: toolboxBody,
+    slug: 'diagnosticar-wi-fi-lento-com-ia',
+    publishedAt: '2026-11-24T12:00:00.000Z',
+    pt: {
+      title: 'Como diagnostiquei e melhorei meu Wi-Fi com IA',
+      subtitle:
+        'Dois roteadores dividiam o mesmo bloco de 5 GHz. O que mudou quando separei os canais e o prompt para testar sua rede.',
+      excerpt:
+        'O pico de ping ao roteador caiu de 330 para 12 ms. Veja o antes e depois no Windows e copie o prompt para diagnosticar seu Wi-Fi.',
+      tags: ['Wi-Fi', 'Windows', 'IA'],
+      body: wifiBody,
+    },
+    en: {
+      title: 'How I diagnosed and improved my Wi-Fi with AI',
+      subtitle:
+        'Two routers shared the same 5 GHz channels. What changed when I separated them, plus a prompt to test your own network.',
+      excerpt:
+        'Peak ping to my router dropped from 330 to 12 ms. See the before-and-after results on Windows and copy the prompt to diagnose your Wi-Fi.',
+      tags: ['Wi-Fi', 'Windows', 'AI'],
+      body: wifiBodyEn,
+    },
   }),
   entry({
-    slug: 'my-front-end-toolbox',
-    lang: 'en',
-    title: 'My front-end toolbox',
-    subtitle:
-      "Sixteen addresses I open before designing an interface, from researching a client's brand to 3D.",
-    excerpt:
-      'Where I get components, motion and design judgment to build interfaces: sixteen tools that are free to use, and what to check before copying.',
-    tags: ['Front-end', 'Design', 'Animation', '3D', 'AI'],
-    readingMinutes: 11,
+    slug: 'caixa-de-ferramentas-front-end',
     publishedAt: '2026-11-18T12:00:00.000Z',
-    translationOf: 'caixa-de-ferramentas-front-end',
-    body: toolboxBodyEn,
+    pt: {
+      title: 'Minha caixa de ferramentas de front-end',
+      subtitle:
+        'Dezesseis endereços que eu abro antes de desenhar uma interface, da pesquisa da marca do cliente ao 3D.',
+      excerpt:
+        'Onde eu busco componentes, movimento e critério de design para construir interfaces: dezesseis ferramentas com versão gratuita e o que conferir antes de copiar.',
+      tags: ['Front-end', 'Design', 'Animação', '3D', 'IA'],
+      readingMinutes: 11,
+      body: toolboxBody,
+    },
+    en: {
+      title: 'My front-end toolbox',
+      subtitle:
+        "Sixteen addresses I open before designing an interface, from researching a client's brand to 3D.",
+      excerpt:
+        'Where I get components, motion and design judgment to build interfaces: sixteen tools that are free to use, and what to check before copying.',
+      tags: ['Front-end', 'Design', 'Animation', '3D', 'AI'],
+      readingMinutes: 11,
+      body: toolboxBodyEn,
+    },
   }),
   entry({
     slug: 'da-planilha-ao-produto',
-    lang: 'pt',
-    title: 'Da planilha ao produto',
-    subtitle:
-      'Como uma estimativa de horas saiu do Excel e passou a ler os itens direto da fonte.',
-    excerpt:
-      'O caminho de uma planilha frágil até uma aplicação que busca os itens de trabalho na API e guarda o histórico de cada mudança.',
-    tags: ['TypeScript', 'Azure DevOps', 'Bastidores'],
-    readingMinutes: 7,
     publishedAt: '2026-11-12T12:00:00.000Z',
     updatedAt: '2026-11-14T12:00:00.000Z',
     featured: true,
-    body: LONG_BODY,
+    pt: {
+      title: 'Da planilha ao produto',
+      subtitle:
+        'Como uma estimativa de horas saiu do Excel e passou a ler os itens direto da fonte.',
+      excerpt:
+        'O caminho de uma planilha frágil até uma aplicação que busca os itens de trabalho na API e guarda o histórico de cada mudança.',
+      tags: ['TypeScript', 'Azure DevOps', 'Bastidores'],
+      readingMinutes: 7,
+      body: LONG_BODY,
+    },
+    en: {
+      title: 'From spreadsheet to product',
+      subtitle:
+        'How an hour-estimation sheet left Excel and started reading work items straight from the source.',
+      excerpt:
+        'From a fragile spreadsheet to an application that fetches work items straight from the API and keeps a full history of every change.',
+      tags: ['TypeScript', 'Azure DevOps', 'Behind the scenes'],
+      readingMinutes: 7,
+      body: LONG_BODY_EN,
+    },
   }),
   entry({
     slug: 'rag-sobre-notas-de-reuniao',
-    lang: 'pt',
-    title: 'RAG sobre notas de reunião',
-    excerpt:
-      'O que funcionou, e o que não, ao responder perguntas sobre transcrições guardadas em um vault.',
-    tags: ['IA', 'RAG', 'TypeScript'],
-    readingMinutes: 9,
     publishedAt: '2026-11-03T12:00:00.000Z',
     series: { id: 'agentes', title: 'Agentes na prática', order: 2 },
+    pt: {
+      title: 'RAG sobre notas de reunião',
+      excerpt:
+        'O que funcionou, e o que não, ao responder perguntas sobre transcrições guardadas em um vault.',
+      tags: ['IA', 'RAG', 'TypeScript'],
+      readingMinutes: 9,
+      body: SHORT_BODY,
+    },
   }),
   entry({
     slug: 'agentes-como-colegas-de-time',
-    lang: 'pt',
-    title: 'Agentes como colegas de time',
-    excerpt:
-      'Dividir uma entrega entre pessoas e agentes de IA muda mais o processo do que o código.',
-    tags: ['IA', 'Bastidores'],
-    readingMinutes: 6,
     publishedAt: '2026-10-21T12:00:00.000Z',
     series: { id: 'agentes', title: 'Agentes na prática', order: 1 },
-  }),
-  entry({
-    slug: 'from-spreadsheet-to-product',
-    lang: 'en',
-    title: 'From spreadsheet to product',
-    excerpt:
-      'How an hour-estimation sheet left Excel and started reading work items straight from the source.',
-    tags: ['TypeScript', 'Azure DevOps'],
-    readingMinutes: 7,
-    publishedAt: '2026-10-14T12:00:00.000Z',
-    translationOf: 'da-planilha-ao-produto',
+    pt: {
+      title: 'Agentes como colegas de time',
+      excerpt:
+        'Dividir uma entrega entre pessoas e agentes de IA muda mais o processo do que o código.',
+      tags: ['IA', 'Bastidores'],
+      readingMinutes: 6,
+      body: SHORT_BODY,
+    },
   }),
   entry({
     slug: 'postgres-legado-sem-medo',
-    lang: 'pt',
-    title: 'PostgreSQL legado sem medo',
-    excerpt:
-      'Ler uma base antiga com APIs de consulta antes de propor qualquer mudança de esquema.',
-    tags: ['PostgreSQL', 'APIs'],
-    readingMinutes: 5,
     publishedAt: '2026-10-02T12:00:00.000Z',
+    pt: {
+      title: 'PostgreSQL legado sem medo',
+      excerpt:
+        'Ler uma base antiga com APIs de consulta antes de propor qualquer mudança de esquema.',
+      tags: ['PostgreSQL', 'APIs'],
+      readingMinutes: 5,
+      body: SHORT_BODY,
+    },
   }),
   entry({
     slug: 'pwa-para-portal-do-cliente',
-    lang: 'pt',
-    title: 'PWA para um portal do cliente',
-    excerpt:
-      'Perfis diferentes, um ERP por trás e a decisão de entregar pelo navegador em vez de uma loja.',
-    tags: ['PWA', 'Node.js', 'Bastidores'],
-    readingMinutes: 8,
     publishedAt: '2026-09-18T12:00:00.000Z',
+    pt: {
+      title: 'PWA para um portal do cliente',
+      excerpt:
+        'Perfis diferentes, um ERP por trás e a decisão de entregar pelo navegador em vez de uma loja.',
+      tags: ['PWA', 'Node.js', 'Bastidores'],
+      readingMinutes: 8,
+      body: SHORT_BODY,
+    },
   }),
   entry({
     slug: 'what-a-hackathon-teaches',
-    lang: 'en',
-    title: 'What a hackathon teaches about scope',
-    excerpt: 'Three days, one product, and the features that were cut on purpose.',
-    tags: ['React', 'IA'],
-    readingMinutes: 4,
     publishedAt: '2026-09-05T12:00:00.000Z',
+    en: {
+      title: 'What a hackathon teaches about scope',
+      excerpt: 'Three days, one product, and the features that were cut on purpose.',
+      tags: ['React', 'AI'],
+      readingMinutes: 4,
+      body: SHORT_BODY_EN,
+    },
   }),
 ]

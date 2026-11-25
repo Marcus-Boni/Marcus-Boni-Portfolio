@@ -81,11 +81,16 @@ function parse(key: string, raw: string): LocalDraft | null {
     | { savedAt?: number; post?: Post }
     | (Post & { savedAt?: never })
   const post = 'post' in parsed && parsed.post ? parsed.post : (parsed as Post)
-  if (!post || typeof post.body !== 'string') return null
+  if (!post || (typeof post.body !== 'string' && !post.bodies)) return null
+  const displayTitle =
+    post.title?.trim() ||
+    post.locales?.pt?.title?.trim() ||
+    post.locales?.en?.title?.trim() ||
+    '(sem título)'
   return {
     key,
     slug: key.slice(PREFIX.length),
-    title: post.title?.trim() || '(sem título)',
+    title: displayTitle,
     savedAt: ('savedAt' in parsed && parsed.savedAt) || 0,
     post,
   }

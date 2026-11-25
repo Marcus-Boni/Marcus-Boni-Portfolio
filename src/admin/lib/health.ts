@@ -1,5 +1,6 @@
 import { stripMarkdown } from '@/blog/lib/text'
 import type { Post, PostMeta } from '@/blog/types'
+import type { Locale } from '@/i18n/translations'
 import type {
   ExperienceProject,
   Project,
@@ -7,6 +8,7 @@ import type {
   SiteProfile,
   SocialLink,
 } from '@/content/types'
+import { localizedBody, localizedMeta } from '../../../netlify/lib/blog-locale'
 
 /**
  * Content checks, in one place.
@@ -242,10 +244,23 @@ function proseMarkdown(body: string): string {
  * at before flipping the status, so the thing that reaches LinkedIn has a
  * title, a description and an image.
  */
-export function publishChecklist(post: Post): Check[] {
-  const titleLength = post.title.trim().length
-  const excerpt = post.excerpt.trim()
-  const body = proseMarkdown(post.body)
+export function publishChecklist(post: Post, lang?: Locale): Check[] {
+  const activeLang = lang ?? post.lang
+  const storedLocale = post.locales?.[activeLang]
+  const rawTitle = storedLocale ? storedLocale.title : (activeLang === post.lang ? post.title : '')
+  const rawExcerpt = storedLocale ? storedLocale.excerpt : (activeLang === post.lang ? post.excerpt : '')
+  const rawTags = storedLocale ? storedLocale.tags : (activeLang === post.lang ? post.tags : [])
+  const rawBody =
+    post.bodies?.[activeLang] !== undefined
+      ? post.bodies[activeLang]!
+      : activeLang === post.lang
+        ? post.body
+        : ''
+  const coverAlt = storedLocale?.coverAlt?.trim() || post.cover?.alt.trim() || ''
+
+  const titleLength = rawTitle.trim().length
+  const excerpt = rawExcerpt.trim()
+  const body = proseMarkdown(rawBody)
   const bodyWords = stripMarkdown(body).split(/\s+/).filter(Boolean).length
   const referenceKey = (value: string) => value.trim().replace(/\s+/g, ' ').toLowerCase()
   const references = new Map(
@@ -276,6 +291,10 @@ export function publishChecklist(post: Post): Check[] {
   const internalLinks = links.filter((url) => {
     return /^\/(?!\/)/.test(url) || /^https:\/\/marcusboni\.com\.br(?:\/|$)/i.test(url)
   })
+  const viewUrl =
+    activeLang === 'en' && Boolean(post.locales?.pt?.title?.trim()) && Boolean(post.locales?.en?.title?.trim())
+      ? `/en/blog/${post.slug}`
+      : `/blog/${post.slug}`
 
   return [
     {
@@ -287,7 +306,7 @@ export function publishChecklist(post: Post): Check[] {
       label: 'URL legível, em minúsculas e com hífens',
       ok: /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(post.slug),
       hint: post.slug
-        ? `/blog/${post.slug} — mantenha a URL estável depois de publicar.`
+        ? `${viewUrl} — mantenha a URL estável depois de publicar.`
         : 'Defina o título para gerar o slug.',
     },
     {
@@ -297,14 +316,14 @@ export function publishChecklist(post: Post): Check[] {
     },
     {
       label: 'Imagem de compartilhamento disponível',
-      ok: !post.cover || Boolean(post.cover.alt.trim()),
+      ok: !post.cover || Boolean(coverAlt),
       hint: post.cover
         ? 'Descreva a capa para leitores de tela e para o card social.'
         : 'Sem capa própria, o compartilhamento usa a imagem padrão do site. Uma capa específica ajuda a identificar o artigo.',
     },
     {
       label: 'Pelo menos uma tag',
-      ok: post.tags.length > 0,
+      ok: rawTags.length > 0,
       hint: 'As tags alimentam os filtros do índice.',
     },
     {
@@ -335,4 +354,12 @@ export function publishChecklist(post: Post): Check[] {
       hint: 'Quando fizer sentido, conecte outros artigos ou páginas do portfólio com texto descritivo. Use fontes externas para sustentar afirmações; não há quantidade obrigatória de links.',
     },
   ]
+}
+
+export function postLocaleSummary(post: PostMeta, lang: Locale) {
+  return localizedMeta(post, lang)
+}
+
+export function postLocaleMarkdown(post: Post, lang: Locale) {
+  return localizedBody(post, lang)
 }

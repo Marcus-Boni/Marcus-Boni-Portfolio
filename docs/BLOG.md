@@ -78,14 +78,18 @@ pré-lançamento sem colocá-lo no índice público.
 
 Depois que o texto principal estiver de pé, preencha os detalhes:
 
-- **Resumo**: alimenta cards, meta description, RSS e respostas de agentes.
-- **Tags**: ajudam o índice e agrupam assuntos recorrentes.
-- **Capa e alt text**: tornam o compartilhamento mais forte e acessível.
-- **Idioma e tradução**: declare o par traduzido só quando ele existir de fato.
-  A tradução é outro post, no outro idioma, e o par só vale quando **os dois**
-  apontam um para o outro e estão publicados. Com o par formado, cada versão
-  mostra o link para a outra, e trocar o idioma no cabeçalho (PT / EN) leva o
-  leitor para a versão naquele idioma. Sem par, a troca muda só os controles.
+- **Resumo**: alimenta cards, meta description, RSS e respostas de agentes (por idioma).
+- **Tags**: ajudam o índice e agrupam assuntos recorrentes (por idioma).
+- **Capa e alt text**: uma capa compartilhada para a publicação, com alt/legenda adaptáveis por idioma.
+- **Idiomas (PT e EN na mesma publicação)**: toda publicação é um único registro
+  com abas **Português** e **English** dentro do mesmo editor. Preencha só um
+  idioma ou os dois — sem duplicar posts nem ligar `translationOf` na mão.
+  Quando a publicação tem os dois idiomas, o leitor alterna entre PT e EN
+  dentro do mesmo artigo: o português vive em `/blog/{slug}` e o inglês em
+  `/en/blog/{slug}`, com `hreflang` recíproco automático, mesma prancha, mesmo
+  número (`Nº`) e uma única entrada no índice e no RSS. Publicações antigas
+  criadas separadas por `translationOf` podem ser unificadas com um clique no
+  topo de `/admin/blog`.
 
 O checklist mostra pontos de atenção sobre título, URL, resumo, capa, tags e
 estrutura do texto antes de trocar a visibilidade para `published`.
@@ -280,12 +284,14 @@ junto com o portfólio. Definições em [`ANALYTICS.md`](./ANALYTICS.md).
 ### Dados
 
 ```
-posts/{slug}                 metadados — o que o índice lista
-posts/{slug}/content/main    { body: markdown, status, media }
+posts/{slug}                 metadados + `locales.{pt,en}` — o que o índice lista
+posts/{slug}/content/main    { body, bodies: { pt, en }, status, media }
 ```
 
 A separação é o que mantém o índice barato: listar 40 posts baixa 40 documentos
-pequenos, não 40 artigos inteiros. `status` é espelhado no documento do corpo e
+pequenos, não 40 artigos inteiros. Guardar PT e EN dentro do mesmo par de
+documentos elimina posts duplicados e faz a troca de idioma na leitura custar
+zero leituras extras no Firestore. `status` é espelhado no documento do corpo e
 escrito no **mesmo `writeBatch`**, para as regras poderem filtrar sem um `get()`
 — um `get()` nas regras cobra uma leitura por requisição.
 
@@ -393,17 +399,28 @@ chama este endpoint.
   "requestId": "api-explainer-2026-09-28",
   "post": {
     "slug": "explicando-apis",
-    "lang": "pt",
-    "title": "Explicando APIs",
-    "subtitle": "Uma introdução prática",
-    "body": "## O que é uma API?\n\n...",
-    "tags": ["apis", "arquitetura"],
-    "status": "published"
+    "status": "published",
+    "locales": {
+      "pt": {
+        "title": "Explicando APIs",
+        "subtitle": "Uma introdução prática",
+        "body": "## O que é uma API?\n\n...",
+        "tags": ["apis", "arquitetura"]
+      },
+      "en": {
+        "title": "Explaining APIs",
+        "subtitle": "A practical introduction",
+        "body": "## What is an API?\n\n...",
+        "tags": ["apis", "architecture"]
+      }
+    }
   }
 }
 ```
 
-Envie esse JSON com `Content-Type: application/json` para
+O formato de idioma único (`lang`, `title`, `body`) continua aceito para
+compatibilidade, e enviar `locales` grava PT e EN na mesma publicação (ou
+adiciona o segundo idioma via `PATCH`). Envie esse JSON com `Content-Type: application/json` para
 `POST https://marcusboni.com.br/agent/v1/posts`. Para uma revisão, envie
 `PATCH` para a mesma URL com `requestId`, `post.slug` e somente os campos que
 quer alterar. A revisão mantém título, Markdown, capa, tags e demais campos

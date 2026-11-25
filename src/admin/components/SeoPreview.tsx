@@ -1,22 +1,45 @@
 import { SectionHeader } from '@/admin/components/ui'
 import { autoExcerpt } from '@/blog/lib/text'
 import type { Post } from '@/blog/types'
+import type { Locale } from '@/i18n/translations'
 import { DEFAULT_OG, postUrl, SITE_NAME, SITE_URL } from '../../../netlify/lib/blog-seo'
 
-type PreviewPost = Pick<Post, 'title' | 'slug' | 'excerpt' | 'body' | 'cover' | 'status'>
+type PreviewPost = Pick<
+  Post,
+  'title' | 'slug' | 'excerpt' | 'body' | 'cover' | 'status' | 'lang' | 'locales' | 'bodies'
+>
 
 /** The same editable metadata powers both approximate previews. */
-export function SeoPreview({ post }: { post: PreviewPost }) {
-  const title = post.title.trim() || 'Título do artigo'
-  const description = post.excerpt.trim() || autoExcerpt(post.body) ||
-    'Escreva um resumo que explique o que o leitor encontrará neste artigo.'
-  const url = postUrl(post.slug || 'slug-do-artigo')
+export function SeoPreview({ post, lang }: { post: PreviewPost; lang?: Locale }) {
+  const activeLang = lang ?? post.lang ?? 'pt'
+  const entry = post.locales?.[activeLang]
+  const rawTitle = entry ? entry.title : activeLang === post.lang ? post.title : ''
+  const rawExcerpt = entry ? entry.excerpt : activeLang === post.lang ? post.excerpt : ''
+  const rawBody =
+    post.bodies?.[activeLang] !== undefined
+      ? post.bodies[activeLang]!
+      : activeLang === post.lang
+        ? post.body
+        : ''
+  const hasPt = Boolean(post.locales?.pt?.title?.trim() || (post.lang === 'pt' && post.title.trim()))
+  const hasEn = Boolean(post.locales?.en?.title?.trim() || (post.lang === 'en' && post.title.trim()))
+  const bilingual = hasPt && hasEn
+
+  const title = rawTitle.trim() || (activeLang === 'en' ? 'Article title' : 'Título do artigo')
+  const description =
+    rawExcerpt.trim() ||
+    autoExcerpt(rawBody) ||
+    (activeLang === 'en'
+      ? 'Write a summary explaining what readers will learn in this article.'
+      : 'Escreva um resumo que explique o que o leitor encontrará neste artigo.')
+  const url = postUrl(post.slug || 'slug-do-artigo', bilingual && activeLang === 'en' ? 'en' : 'pt')
   const image = post.cover?.src || DEFAULT_OG
+  const coverAlt = entry?.coverAlt?.trim() || post.cover?.alt
 
   return (
     <div className="mt-6 border-t border-line pt-5">
       <SectionHeader
-        label="Prévia de busca e compartilhamento"
+        label={`Prévia de busca e compartilhamento (${activeLang.toUpperCase()})`}
         hint="Atualizada enquanto você escreve. É uma simulação: cada plataforma pode ajustar título, resumo e recorte da imagem."
       />
       <div className="grid gap-5 md:grid-cols-2">
@@ -31,7 +54,7 @@ export function SeoPreview({ post }: { post: PreviewPost }) {
         <div className="min-w-0 overflow-hidden border border-line bg-ink">
           <img
             src={image}
-            alt={post.cover ? post.cover.alt || 'Prévia da capa do artigo' : 'Imagem padrão de compartilhamento do site'}
+            alt={post.cover ? coverAlt || 'Prévia da capa do artigo' : 'Imagem padrão de compartilhamento do site'}
             loading="lazy"
             className="aspect-[1.91/1] w-full object-cover"
           />
@@ -50,7 +73,7 @@ export function SeoPreview({ post }: { post: PreviewPost }) {
           : post.status === 'unlisted'
             ? 'Não listado: acessível pelo link, com instrução para não indexar.'
             : 'Rascunho: esta prévia é local. O artigo ainda não está disponível ao público.'}
-        {!post.excerpt.trim() && ' O resumo exibido foi extraído do corpo.'}
+        {!rawExcerpt.trim() && ' O resumo exibido foi extraído do corpo.'}
       </p>
     </div>
   )

@@ -10,24 +10,27 @@ import {
   writeBatch,
 } from 'firebase/firestore'
 
+import type { Locale } from '@/i18n/translations'
 import { db, isFirebaseConfigured, requireDb } from '@/lib/firebase'
+import { BLOG_LOCALES, type PostBodies, type PostLocaleMeta, type PostLocales } from '../../netlify/lib/blog-locale'
 
-import { readingMinutes } from './lib/text'
+import { autoExcerpt, readingMinutes } from './lib/text'
 import type { Post, PostBody, PostMeta } from './types'
 
 /**
  * Firestore access for the blog.
  *
  * Layout:
- *   posts/{slug}                → PostMeta   (light; what the index lists)
- *   posts/{slug}/content/main   → PostBody   (the Markdown source)
+ *   posts/{slug}                → PostMeta   (light; includes `locales` for PT/EN)
+ *   posts/{slug}/content/main   → PostBody   (includes `bodies` for PT/EN + shared media)
  *
  * The split is what keeps the index cheap: listing 40 posts downloads 40 small
- * metadata docs instead of 40 full articles. It also lets the SEO edge function
- * build a post's `<head>` from one REST read.
+ * metadata docs instead of 40 full articles. Putting both languages inside the
+ * same publication eliminates duplicate posts while keeping language switches
+ * instantaneous and read-free.
  *
  * This module imports the Firebase SDK, so public code must reach it through a
- * dynamic `import()` (see `BlogDataContext`), never a top-level import.
+ * dynamic `import()` (see `usePosts.ts` / `PostsContext.tsx`), never a top-level import.
  */
 
 const POSTS = 'posts'
@@ -41,21 +44,85 @@ function bodyRef(slug: string) {
   return doc(requireDb(), POSTS, slug, ...BODY_DOC)
 }
 
+function cleanTags(tags: unknown): string[] {
+  if (!Array.isArray(tags)) return []
+  return tags
+    .filter((tag): tag is string => typeof tag === 'string')
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+}
+
+/** Normalizes stored per-language metadata, backfilling the primary language for older docs. */
+function normalizeLocales(
+  data: Partial<PostMeta>,
+  primaryLang: Locale,
+  primaryTitle: string,
+  primarySubtitle: string,
+  primaryExcerpt: string,
+  primaryTags: string[],
+  primaryMinutes: number,
+): PostLocales {
+  const out: PostLocales = {}
+  const stored = data.locales
+  if (stored && typeof stored === 'object') {
+    for (const locale of BLOG_LOCALES) {
+      const entry = stored[locale]
+      if (!entry || typeof entry !== 'object') continue
+      const title = typeof entry.title === 'string' ? entry.title : ''
+      const subtitle = typeof entry.subtitle === 'string' ? entry.subtitle : ''
+      const excerpt = typeof entry.excerpt === 'string' ? entry.excerpt : ''
+      const tags = cleanTags(entry.tags)
+      if (!title.trim() && !subtitle.trim() && !excerpt.trim() && tags.length === 0) continue
+      out[locale] = {
+        title,
+        subtitle,
+        excerpt,
+        tags,
+        readingMinutes: typeof entry.readingMinutes === 'number' ? entry.readingMinutes : 1,
+        ...(typeof entry.coverAlt === 'string' && entry.coverAlt ? { coverAlt: entry.coverAlt } : {}),
+        ...(typeof entry.coverCaption === 'string' && entry.coverCaption
+          ? { coverCaption: entry.coverCaption }
+          : {}),
+      }
+    }
+  }
+  if (!out[primaryLang]) {
+    out[primaryLang] = {
+      title: primaryTitle,
+      subtitle: primarySubtitle,
+      excerpt: primaryExcerpt,
+      tags: primaryTags,
+      readingMinutes: primaryMinutes,
+    }
+  }
+  return out
+}
+
 /** Fills in fields a stored doc may predate, so the UI never sees `undefined`. */
 function normalizeMeta(slug: string, data: Partial<PostMeta>): PostMeta {
+  const lang: Locale = data.lang === 'en' ? 'en' : 'pt'
+  const title = data.title ?? '(sem título)'
+  const subtitle = data.subtitle ?? ''
+  const excerpt = data.excerpt ?? ''
+  const tags = cleanTags(data.tags)
+  const minutes = data.readingMinutes ?? 1
+  const locales = normalizeLocales(data, lang, title, subtitle, excerpt, tags, minutes)
+  const primary = locales[lang]
+
   return {
     slug,
-    lang: data.lang === 'en' ? 'en' : 'pt',
+    lang,
     status: data.status ?? 'draft',
-    title: data.title ?? '(sem título)',
-    subtitle: data.subtitle ?? '',
-    excerpt: data.excerpt ?? '',
+    title: primary?.title || title,
+    subtitle: primary?.subtitle ?? subtitle,
+    excerpt: primary?.excerpt ?? excerpt,
     cover: data.cover,
-    tags: Array.isArray(data.tags) ? data.tags : [],
+    tags: primary?.tags ?? tags,
     series: data.series,
-    readingMinutes: data.readingMinutes ?? 1,
+    readingMinutes: primary?.readingMinutes ?? minutes,
     publishedAt: data.publishedAt ?? null,
     updatedAt: data.updatedAt ?? new Date().toISOString(),
+    locales,
     translationOf: data.translationOf,
     featured: data.featured ?? false,
   }
@@ -64,10 +131,10 @@ function normalizeMeta(slug: string, data: Partial<PostMeta>): PostMeta {
 /**
  * Published posts, newest first.
  *
- * Language and tag filtering happen client-side on purpose: a personal blog
+ * Tag filtering and localization happen client-side on purpose: a personal blog
  * stays well inside a single page of metadata, and filtering locally means one
  * composite index instead of one per filter combination, plus instant
- * (read-free) filter switches in the UI.
+ * (read-free) switches in the UI.
  */
 export async function fetchPublishedPosts(max?: number): Promise<PostMeta[]> {
   if (!isFirebaseConfigured || !db) return []
@@ -92,9 +159,10 @@ export async function fetchAllPosts(max = 300): Promise<PostMeta[]> {
 }
 
 /**
- * One post with its body. Returns `null` for "no such post" — which includes a
- * draft requested by a signed-out visitor, since the rules reject that read and
- * a 404 is the right answer for someone with no business seeing it.
+ * One post with its body (all languages). Returns `null` for "no such post" —
+ * which includes a draft requested by a signed-out visitor, since the rules
+ * reject that read and a 404 is the right answer for someone with no business
+ * seeing it.
  *
  * Any other failure (offline, quota) is rethrown so the page can show a retry
  * instead of claiming the post does not exist.
@@ -109,9 +177,23 @@ export async function fetchPost(slug: string): Promise<Post | null> {
     if (!metaSnap.exists()) return null
     const meta = normalizeMeta(slug, metaSnap.data() as Partial<PostMeta>)
     const stored = bodySnap.data() as PostBody | undefined
+    const bodies: PostBodies = {}
+    if (stored?.bodies && typeof stored.bodies === 'object') {
+      for (const locale of BLOG_LOCALES) {
+        if (typeof stored.bodies[locale] === 'string') {
+          bodies[locale] = stored.bodies[locale]
+        }
+      }
+    }
+    if (bodies[meta.lang] === undefined) {
+      bodies[meta.lang] = stored?.body ?? ''
+    }
+    const primaryBody = bodies[meta.lang] ?? stored?.body ?? ''
+
     return {
       ...meta,
-      body: stored?.body ?? '',
+      body: primaryBody,
+      bodies,
       media: stored?.media ?? {},
       status: meta.status,
     }
@@ -130,8 +212,18 @@ function isPermissionDenied(error: unknown): boolean {
   )
 }
 
+function localeHasContent(meta: PostLocaleMeta | undefined, body: string): boolean {
+  return Boolean(
+    meta?.title.trim() ||
+      meta?.subtitle?.trim() ||
+      meta?.excerpt.trim() ||
+      (meta?.tags && meta.tags.length > 0) ||
+      body.trim(),
+  )
+}
+
 /**
- * Writes metadata and body atomically.
+ * Writes metadata (all locales) and bodies atomically.
  *
  * `status` is mirrored onto the body doc so security rules can gate it without
  * a `get()` on the parent — a rules `get()` bills a document read on every
@@ -142,34 +234,95 @@ export async function savePost(post: Post): Promise<void> {
   if (!post.slug) throw new Error('Post precisa de um slug.')
 
   const now = new Date().toISOString()
-  const meta: PostMeta = {
-    slug: post.slug,
-    lang: post.lang,
-    status: post.status,
+
+  // Assemble clean per-language metadata and bodies.
+  const rawLocales: PostLocales = { ...(post.locales ?? {}) }
+  const rawBodies: PostBodies = { ...(post.bodies ?? {}) }
+  if (!rawLocales[post.lang]) {
+    rawLocales[post.lang] = {
+      title: post.title,
+      subtitle: post.subtitle,
+      excerpt: post.excerpt,
+      tags: post.tags,
+      readingMinutes: post.readingMinutes,
+    }
+  }
+  if (rawBodies[post.lang] === undefined) {
+    rawBodies[post.lang] = post.body
+  }
+
+  const locales: PostLocales = {}
+  const bodies: PostBodies = {}
+  for (const locale of BLOG_LOCALES) {
+    const entry = rawLocales[locale]
+    const body = rawBodies[locale] ?? ''
+    if (!localeHasContent(entry, body)) continue
+    const title = entry?.title.trim() ?? ''
+    const subtitle = entry?.subtitle?.trim() || undefined
+    const excerpt = entry?.excerpt.trim() || (body.trim() ? autoExcerpt(body) : '')
+    const tags = cleanTags(entry?.tags)
+    const minutes = body.trim() ? readingMinutes(body) : 1
+    locales[locale] = {
+      title,
+      subtitle,
+      excerpt,
+      tags,
+      readingMinutes: minutes,
+      coverAlt: entry?.coverAlt?.trim() || undefined,
+      coverCaption: entry?.coverCaption?.trim() || undefined,
+    }
+    bodies[locale] = body
+  }
+
+  // Portuguese is the primary language whenever present; otherwise English.
+  const primaryLang: Locale = locales.pt ? 'pt' : locales.en ? 'en' : post.lang
+  const primaryMeta = locales[primaryLang] ?? {
     title: post.title.trim(),
     subtitle: post.subtitle?.trim() || undefined,
     excerpt: post.excerpt.trim(),
-    cover: post.cover,
-    tags: post.tags.map((tag) => tag.trim()).filter(Boolean),
-    series: post.series,
+    tags: cleanTags(post.tags),
     readingMinutes: readingMinutes(post.body),
+  }
+  const primaryBody = bodies[primaryLang] ?? post.body
+  if (!locales[primaryLang]) locales[primaryLang] = primaryMeta
+  if (bodies[primaryLang] === undefined) bodies[primaryLang] = primaryBody
+
+  const bilingual = Boolean(locales.pt && locales.en)
+
+  const meta: PostMeta = {
+    slug: post.slug,
+    lang: primaryLang,
+    status: post.status,
+    title: primaryMeta.title,
+    subtitle: primaryMeta.subtitle,
+    excerpt: primaryMeta.excerpt,
+    cover: post.cover,
+    tags: primaryMeta.tags,
+    series: post.series,
+    readingMinutes: primaryMeta.readingMinutes,
     // First publish stamps the date; re-publishing keeps the original.
     publishedAt:
       post.status === 'draft'
         ? post.publishedAt
         : (post.publishedAt ?? now),
     updatedAt: now,
-    translationOf: post.translationOf || undefined,
+    locales,
+    // Unified bilingual posts carry both languages internally, so clear any legacy pair link.
+    translationOf: bilingual ? undefined : (post.translationOf || undefined),
     featured: post.featured ?? false,
   }
 
   const batch = writeBatch(database)
-  batch.set(doc(database, POSTS, post.slug), stripUndefined(meta))
-  batch.set(doc(database, POSTS, post.slug, ...BODY_DOC), {
-    body: post.body,
-    status: post.status,
-    media: post.media ?? {},
-  })
+  batch.set(doc(database, POSTS, post.slug), stripUndefinedDeep(meta))
+  batch.set(
+    doc(database, POSTS, post.slug, ...BODY_DOC),
+    stripUndefinedDeep({
+      body: primaryBody,
+      bodies,
+      status: post.status,
+      media: post.media ?? {},
+    }),
+  )
   await batch.commit()
 }
 
@@ -190,11 +343,22 @@ export async function slugExists(slug: string): Promise<boolean> {
 }
 
 /**
- * Firestore rejects `undefined` field values outright, and optional metadata
- * (no cover, no series) legitimately produces them.
+ * Firestore rejects `undefined` field values anywhere in a document tree, and
+ * optional metadata (no cover, no series, empty subtitle in one locale)
+ * legitimately produces them.
  */
-function stripUndefined<T extends object>(value: T): T {
-  return Object.fromEntries(
-    Object.entries(value).filter(([, v]) => v !== undefined),
-  ) as T
+function stripUndefinedDeep<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => stripUndefinedDeep(item)) as T
+  }
+  if (value !== null && typeof value === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [key, entry] of Object.entries(value)) {
+      if (entry !== undefined) {
+        out[key] = stripUndefinedDeep(entry)
+      }
+    }
+    return out as T
+  }
+  return value
 }

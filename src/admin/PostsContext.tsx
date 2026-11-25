@@ -8,8 +8,9 @@ import {
   type ReactNode,
 } from 'react'
 
-import type { PostMeta, PostStatus } from '@/blog/types'
+import type { Post, PostMeta, PostStatus } from '@/blog/types'
 import { isFirebaseConfigured } from '@/lib/firebase'
+import { BLOG_LOCALES } from '../../netlify/lib/blog-locale'
 
 /**
  * The post index, loaded once per admin session.
@@ -32,8 +33,10 @@ interface PostsValue {
   reload: () => void
   /** Publishes / unpublishes without opening the editor. */
   setStatus: (slug: string, status: PostStatus) => Promise<void>
-  /** Copies a post into a fresh draft and returns the new slug. */
+  /** Copies a post (all languages) into a fresh draft and returns the new slug. */
   duplicate: (slug: string) => Promise<string>
+  /** Merges a legacy separate PT/EN pair into one unified bilingual post. */
+  mergePair: (ptSlug: string, enSlug: string) => Promise<void>
   remove: (slug: string) => Promise<void>
 }
 
@@ -124,17 +127,81 @@ export function PostsProvider({ children }: { children: ReactNode }) {
       attempt += 1
     }
 
-    const copy = {
+    const locales: NonNullable<Post['locales']> = {}
+    for (const locale of BLOG_LOCALES) {
+      const entry = post.locales?.[locale]
+      if (!entry) continue
+      const suffix = locale === 'en' ? ' (copy)' : ' (cópia)'
+      locales[locale] = { ...entry, title: `${entry.title}${suffix}` }
+    }
+
+    const copy: Post = {
       ...post,
       slug: candidate,
-      title: `${post.title} (cópia)`,
-      status: 'draft' as PostStatus,
+      title: locales[post.lang]?.title ?? `${post.title} (cópia)`,
+      locales,
+      translationOf: undefined,
+      status: 'draft',
       publishedAt: null,
     }
     await service.savePost(copy)
     setPosts((current) => [{ ...copy }, ...(current ?? [])])
     return candidate
   }, [])
+
+  const mergePair = useCallback(
+    async (ptSlug: string, enSlug: string) => {
+      const service = await import('@/blog/service')
+      const [ptPost, enPost] = await Promise.all([
+        service.fetchPost(ptSlug),
+        service.fetchPost(enSlug),
+      ])
+      if (!ptPost || !enPost) {
+        throw new Error('Não foi possível carregar os dois posts para unificar.')
+      }
+
+      const merged: Post = {
+        ...ptPost,
+        lang: 'pt',
+        translationOf: undefined,
+        cover: ptPost.cover ?? enPost.cover,
+        featured: Boolean(ptPost.featured || enPost.featured),
+        series: ptPost.series ?? enPost.series,
+        locales: {
+          pt: ptPost.locales?.pt ?? {
+            title: ptPost.title,
+            subtitle: ptPost.subtitle ?? '',
+            excerpt: ptPost.excerpt,
+            tags: ptPost.tags,
+            readingMinutes: ptPost.readingMinutes,
+          },
+          en: enPost.locales?.en ?? {
+            title: enPost.title,
+            subtitle: enPost.subtitle ?? '',
+            excerpt: enPost.excerpt,
+            tags: enPost.tags,
+            readingMinutes: enPost.readingMinutes,
+            ...(enPost.cover?.alt && enPost.cover.alt !== ptPost.cover?.alt
+              ? { coverAlt: enPost.cover.alt }
+              : {}),
+            ...(enPost.cover?.caption && enPost.cover.caption !== ptPost.cover?.caption
+              ? { coverCaption: enPost.cover.caption }
+              : {}),
+          },
+        },
+        bodies: {
+          pt: ptPost.bodies?.pt ?? ptPost.body,
+          en: enPost.bodies?.en ?? enPost.body,
+        },
+        media: { ...(enPost.media ?? {}), ...(ptPost.media ?? {}) },
+      }
+
+      await service.savePost(merged)
+      await service.deletePost(enSlug)
+      reload()
+    },
+    [reload],
+  )
 
   const remove = useCallback(async (slug: string) => {
     const { deletePost } = await import('@/blog/service')
@@ -151,9 +218,10 @@ export function PostsProvider({ children }: { children: ReactNode }) {
       reload,
       setStatus,
       duplicate,
+      mergePair,
       remove,
     }),
-    [loaded, posts, error, counts, reload, setStatus, duplicate, remove],
+    [loaded, posts, error, counts, reload, setStatus, duplicate, mergePair, remove],
   )
 
   return <PostsContext.Provider value={value}>{children}</PostsContext.Provider>
