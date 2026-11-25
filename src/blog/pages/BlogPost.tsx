@@ -493,19 +493,43 @@ function Neighbors({
   const { t } = useLanguage()
   if (!older && !newer) return null
 
-  const cell = (entry: CollapsedEntry<PostMeta> | undefined, label: string, end: boolean) => {
-    if (!entry) return <div aria-hidden className="bg-ink max-sm:hidden" />
+  const both = Boolean(older && newer)
+
+  const cell = (entry: CollapsedEntry<PostMeta>, label: string, direction: 'prev' | 'next') => {
+    const alignEnd = both && direction === 'next'
     const number = ordinals.get(entry.canonicalSlug)
     const view = localizedMeta(entry.post, lang)
     return (
       <Link
+        key={entry.canonicalSlug}
         to={postPath(entry.post, lang)}
         data-cursor="view"
-        className={`group flex flex-col gap-3 bg-ink py-8 ${end ? 'sm:items-end sm:pl-8 sm:text-right' : 'sm:pr-8'}`}
+        className={cn(
+          'group flex flex-col gap-3 bg-ink py-8',
+          both && (alignEnd ? 'sm:items-end sm:pl-8 sm:text-right' : 'sm:pr-8'),
+        )}
       >
-        <span className="font-mono text-[10px] tracking-[0.2em] text-smoke uppercase transition-colors duration-300 group-hover:text-ember">
-          {label}
-          {number !== undefined && ` / ${t.blog.entry(entryNumber(number))}`}
+        <span className="inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] text-smoke uppercase transition-colors duration-300 group-hover:text-ember">
+          {direction === 'prev' && (
+            <span
+              aria-hidden
+              className="transition-transform duration-300 ease-out-expo group-hover:-translate-x-0.5"
+            >
+              ←
+            </span>
+          )}
+          <span>
+            {label}
+            {number !== undefined && ` / ${t.blog.entry(entryNumber(number))}`}
+          </span>
+          {direction === 'next' && (
+            <span
+              aria-hidden
+              className="transition-transform duration-300 ease-out-expo group-hover:translate-x-0.5"
+            >
+              →
+            </span>
+          )}
         </span>
         <span className="font-display text-[clamp(1.5rem,2.6vw,2.1rem)] leading-[1.1] text-balance text-bone">
           <HoverItalic text={view.title} />
@@ -517,10 +541,13 @@ function Neighbors({
   return (
     <nav
       aria-label={t.blog.post.neighbors}
-      className="mt-20 grid gap-px border-y border-line bg-line sm:grid-cols-2"
+      className={cn(
+        'mt-20 border-y border-line',
+        both && 'grid gap-px bg-line sm:grid-cols-2',
+      )}
     >
-      {cell(older, t.blog.post.previous, false)}
-      {cell(newer, t.blog.post.next, true)}
+      {older && cell(older, t.blog.post.previous, 'prev')}
+      {newer && cell(newer, t.blog.post.next, 'next')}
     </nav>
   )
 }
@@ -626,11 +653,21 @@ function PostFooter({
 
       <Link
         to={indexPath}
-        className="group mt-10 flex items-baseline gap-4 border-t border-line pt-8"
+        className="group mt-10 flex items-center gap-4 border-t border-line pt-8"
       >
-        <span className="font-mono text-xs text-smoke transition-colors group-hover:text-ember">
-          ←
-        </span>
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-6 w-6 shrink-0 text-smoke transition-[color,transform] duration-500 ease-out-expo group-hover:-translate-x-1.5 group-hover:text-ember md:h-7 md:w-7"
+        >
+          <path d="M19 12H5" />
+          <path d="M11 6l-6 6 6 6" />
+        </svg>
         <span className="font-display text-3xl text-bone transition-colors duration-500 group-hover:text-ember md:text-4xl">
           {backLabel}
         </span>
