@@ -182,6 +182,200 @@ html.theme-switch::view-transition-new(root) {
   }
 }
 
+/* ─── Changing language (PT ↔ EN) ───────────────────────────
+   Editorial edition flip: the header and the entry's terrain plate stay
+   anchored while the old language glides softly out and the new one sets in
+   with an exponential settle, accompanied by a razor-thin ember signal sweep
+   along the top edge. Scoped to `html.locale-switch` so `theme-switch` keeps
+   full-page ownership of its circular flood. */
+
+html.locale-switch .vt-header {
+  view-transition-name: site-header;
+}
+
+html.locale-switch .vt-plate {
+  view-transition-name: post-plate;
+}
+
+html.locale-switch::view-transition-old(site-header),
+html.locale-switch::view-transition-new(site-header),
+html.locale-switch::view-transition-old(post-plate),
+html.locale-switch::view-transition-new(post-plate) {
+  animation-duration: 0.28s;
+  animation-timing-function: var(--ease-out-expo);
+}
+
+html.locale-switch::view-transition-old(root),
+html.locale-switch::view-transition-new(root) {
+  mix-blend-mode: normal;
+}
+
+html.locale-switch[data-locale-dir='to-en']::view-transition-old(root) {
+  animation: locale-out-left 0.26s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+html.locale-switch[data-locale-dir='to-en']::view-transition-new(root) {
+  animation: locale-in-from-right 0.46s var(--ease-out-expo) both;
+}
+
+html.locale-switch[data-locale-dir='to-pt']::view-transition-old(root) {
+  animation: locale-out-right 0.26s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+html.locale-switch[data-locale-dir='to-pt']::view-transition-new(root) {
+  animation: locale-in-from-left 0.46s var(--ease-out-expo) both;
+}
+
+/* Reduced motion: calm opacity cross-fade, zero spatial travel or blur. */
+html.locale-switch-reduced::view-transition-old(root) {
+  animation: locale-fade-out 0.14s ease-out both;
+}
+
+html.locale-switch-reduced::view-transition-new(root) {
+  animation: locale-fade-in 0.16s ease-out both;
+}
+
+/* Fallback for browsers without startViewTransition: directional ink settle. */
+html.locale-fallback[data-locale-dir='to-en'] [data-locale-surface] {
+  animation: locale-in-from-right 0.42s var(--ease-out-expo) both;
+}
+
+html.locale-fallback[data-locale-dir='to-pt'] [data-locale-surface] {
+  animation: locale-in-from-left 0.42s var(--ease-out-expo) both;
+}
+
+@keyframes locale-out-left {
+  from {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    filter: blur(3px);
+    transform: translateX(-16px);
+  }
+}
+
+@keyframes locale-in-from-right {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+    clip-path: inset(0 0 0 3%);
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    clip-path: inset(0 0 0 0);
+    transform: translateX(0);
+  }
+}
+
+@keyframes locale-out-right {
+  from {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    filter: blur(3px);
+    transform: translateX(16px);
+  }
+}
+
+@keyframes locale-in-from-left {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+    clip-path: inset(0 3% 0 0);
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    clip-path: inset(0 0 0 0);
+    transform: translateX(0);
+  }
+}
+
+@keyframes locale-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes locale-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Signature Signal & Ink ember hairline sweeping across the top viewport edge
+   in the direction of the language switch. */
+.locale-signal-sweep {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 120;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-ember) 48%,
+    var(--color-bone) 85%,
+    transparent 100%
+  );
+  will-change: transform, opacity;
+}
+
+.locale-signal-to-en {
+  transform-origin: left center;
+  animation: locale-sweep-right 0.52s var(--ease-out-expo) both;
+}
+
+.locale-signal-to-pt {
+  transform-origin: right center;
+  animation: locale-sweep-left 0.52s var(--ease-out-expo) both;
+}
+
+@keyframes locale-sweep-right {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%) scaleX(0.35);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%) scaleX(0.7);
+  }
+}
+
+@keyframes locale-sweep-left {
+  0% {
+    opacity: 0;
+    transform: translateX(100%) scaleX(0.35);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-100%) scaleX(0.7);
+  }
+}
+
 /* ─── Base ──────────────────────────────────────────────── */
 
 html {

@@ -82,7 +82,7 @@ export default function App() {
       <SectionRail />
 
       {/* keyed by locale: text reveals re-split and ScrollTriggers rebuild */}
-      <main key={locale}>
+      <main key={locale} data-locale-surface>
         <Hero />
         <Marquee items={techMarquee} className="mt-px" repeat={2} />
         <About />
