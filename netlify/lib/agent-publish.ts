@@ -315,22 +315,24 @@ function validatePayload(
     )
   }
 
-  if (method === 'PATCH' && post.title !== undefined && !isCleanText(post.title, 1, 160)) {
+  // Whatever is sent is checked, on POST as on PATCH: with `locales` the
+  // top-level title and body are optional, but they are still written.
+  if (post.title !== undefined && !isCleanText(post.title, 1, 160)) {
     return problemResponse(
       'bad_request',
       400,
-      'post.title must be a non-empty string when it is revised.',
+      'post.title must be a non-empty string when it is sent.',
       path,
       'Omit post.title to keep the current title, or send a replacement title.',
       false,
     )
   }
 
-  if (method === 'PATCH' && post.body !== undefined && !isCleanText(post.body, 1, 120_000)) {
+  if (post.body !== undefined && !isCleanText(post.body, 1, 120_000)) {
     return problemResponse(
       'bad_request',
       400,
-      'post.body must be a non-empty Markdown string when it is revised.',
+      'post.body must be a non-empty Markdown string when it is sent.',
       path,
       'Omit post.body to keep the current Markdown body, or send a replacement body.',
       false,

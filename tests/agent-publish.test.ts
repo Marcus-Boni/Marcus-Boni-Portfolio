@@ -497,6 +497,25 @@ describe('agent publishing endpoint', () => {
     expect(serialized).toContain('English text.')
   })
 
+  it('validates a top-level title and body even when locales are sent', async () => {
+    const fetchSpy = vi.fn(async () => new Response('{}', { status: 500 }))
+    vi.stubGlobal('fetch', fetchSpy as unknown as typeof fetch)
+    const handler = await load()
+    const locales = { pt: { title: 'Explicando APIs', body: 'Texto em português.' } }
+
+    for (const extra of [{ title: 'x'.repeat(161) }, { title: 42 }, { body: '' }, { body: ['a'] }]) {
+      const response = await handler(
+        req('POST', {
+          requestId: 'bilingual-bad-top-level',
+          post: { slug: 'explicando-apis', locales, ...extra },
+        }),
+      )
+      expect(response.status).toBe(400)
+    }
+    // rejected before anything is read or written
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
   it('rejects destructive methods', async () => {
     vi.stubGlobal('fetch', firestore())
     const handler = await load()
