@@ -8,6 +8,7 @@ import {
   fieldChar,
   printHead,
   simplex,
+  toothText,
   veinHeat,
 } from '../src/animations/codeField'
 
@@ -47,6 +48,20 @@ describe('source field', () => {
     expect(near).toBeGreaterThan(0)
     expect(near).toBeLessThan(1)
     expect(calmAt(250, 400, zone)).toBe(0)
+  })
+
+  it('thins a source into whole fragments and repeats it to fill the margin', () => {
+    const source = 'const a = 1\n  export function b() {\n  return a + 2 }'
+    const print = toothText(source, 400)
+    expect(print.length).toBeGreaterThanOrEqual(400)
+    // one run of text: whatever survives is a whole token of the source
+    const tokens = source.trim().split(/\s+/)
+    const kept = print.trim().split(/\s+/)
+    expect(kept.length).toBeGreaterThan(0)
+    for (const token of kept) expect(tokens).toContain(token)
+    // a file shorter than the margin starts over instead of leaving it bare
+    expect(print.slice(200).trim()).not.toBe('')
+    expect(toothText('', 10)).toBe(' '.repeat(10))
   })
 
   it('moves the print head row by row, left to right', () => {

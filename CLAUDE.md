@@ -64,7 +64,10 @@ pnpm test     # vitest run
    rasterizados uma vez numa máscara e cada quadro só sombreia um buffer
    pequeno; não desenhe texto por quadro. A textura das margens (`CodeTooth`)
    fica sob o `<main>`, que por isso é `isolate` na home e no Diário: sem isso
-   ela passa por cima do conteúdo.
+   ela passa por cima do conteúdo. Na home ela imprime o componente da seção
+   em vista (`import.meta.glob` com `?raw` sobre `src/components/sections`):
+   seção nova entra no mapa `COMPONENT` de `CodeTooth.tsx`, e quem precisar
+   da seção ativa usa `useActiveSection`, como o `SectionRail`.
 5. **Testes que fixam contrato de interface.** `tests/stack-content.test.ts`
    (todas as tecnologias visíveis, uma vez, sem painel fechado),
    `tests/work-accessibility.test.ts` (galeria sem motion) e

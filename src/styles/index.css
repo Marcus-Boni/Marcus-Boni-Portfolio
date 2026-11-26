@@ -459,9 +459,11 @@ textarea {
 /* Code tooth: the page's margins carry a sparse print of the site's own
    source, under the content. It is the page's only texture and it holds
    still: on a reading surface anything that moves on its own costs the
-   reader. A flat token colour shows through three masks at once: the glyph
-   tile (`CodeTooth` sets it), a fade in from each page edge, and a clearing
-   around the section rail so its numbers stay alone in the gutter. */
+   reader. A flat token colour shows through four masks at once: the glyph
+   tile (`CodeTooth` sets it), a fade in from each page edge, a clearing
+   around the section rail so its numbers stay alone in the gutter, and a slot
+   on the right edge for the name of the file being printed (`--tooth-slot`,
+   zero where no file is named). */
 @utility code-tooth {
   display: none;
   position: fixed;
@@ -477,9 +479,11 @@ textarea {
       transparent calc(100% - min(10vw, 140px)),
       black
     ),
-    radial-gradient(150px 230px at 0 50%, transparent 72%, black);
+    radial-gradient(150px 230px at 0 50%, transparent 72%, black),
+    radial-gradient(var(--tooth-slot, 0px) 250px at 100% 50%, transparent 72%, black);
   mask-size:
     var(--tooth-size),
+    100% 100%,
     100% 100%,
     100% 100%;
   mask-composite: intersect;

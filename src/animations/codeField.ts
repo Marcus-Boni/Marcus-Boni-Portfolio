@@ -151,17 +151,34 @@ export interface ToothTile {
   height: number
 }
 
-let tooth: Promise<ToothTile | null> | undefined
+/**
+ * What a margin prints of a source file: its text as one run, thinned so that
+ * one run of three tokens in four survives (what is left still reads as
+ * fragments of code, not stray characters), and repeated to fill `cells`.
+ */
+export function toothText(source: string, cells: number) {
+  const sparse = source
+    .trim()
+    .split(/\s+/)
+    .map((token, i) =>
+      Math.imul(Math.floor(i / 3) + 1, 0x9e3779b1) >>> 30 ? ' '.repeat(token.length) : token,
+    )
+    .join(' ')
+  return sparse.padEnd(cells, ` ${sparse}`)
+}
+
+const tiles = new Map<string, Promise<ToothTile | null>>()
 
 /**
- * The page's code tooth: a sparse cut of the same source on the wall's own
- * grid, as an alpha tile the stylesheet uses for a mask. One run of three
- * tokens in four survives, so what is left still reads as fragments of code
- * and not as stray characters. Rasterized once per visit, however many pages
- * ask.
+ * The page's code tooth: a sparse print of a source file (this one, unless a
+ * page asks for another) on the wall's own grid, as an alpha tile the
+ * stylesheet uses for a mask. Rasterized once per file, however often it is
+ * asked for.
  */
-export function toothTile(): Promise<ToothTile | null> {
-  tooth ??= document.fonts.load(`${FONT_PX}px "Fragment Mono"`).then(() => {
+export function toothTile(source = FIELD_SOURCE): Promise<ToothTile | null> {
+  const made = tiles.get(source)
+  if (made) return made
+  const tile = document.fonts.load(`${FONT_PX}px "Fragment Mono"`).then(() => {
     const cols = 30
     const rows = 72
     const dpr = Math.min(window.devicePixelRatio || 1, 2)
@@ -175,13 +192,9 @@ export function toothTile(): Promise<ToothTile | null> {
     canvas.height = Math.round(rows * LINE_PX * dpr)
     ctx.font = font // sizing the canvas reset it
     ctx.textBaseline = 'top'
-    const sparse = FIELD_SOURCE.split(' ')
-      .map((token, i) =>
-        Math.imul(Math.floor(i / 3) + 1, 0x9e3779b1) >>> 30 ? ' '.repeat(token.length) : token,
-      )
-      .join(' ')
+    const text = toothText(source, cols * rows)
     for (let row = 0; row < rows; row++) {
-      ctx.fillText(sparse.slice(row * cols, (row + 1) * cols), 0, row * LINE_PX * dpr)
+      ctx.fillText(text.slice(row * cols, (row + 1) * cols), 0, row * LINE_PX * dpr)
     }
     return new Promise<ToothTile | null>((resolve) =>
       canvas.toBlob((blob) =>
@@ -195,7 +208,8 @@ export function toothTile(): Promise<ToothTile | null> {
       ),
     )
   })
-  return tooth
+  tiles.set(source, tile)
+  return tile
 }
 
 /**
