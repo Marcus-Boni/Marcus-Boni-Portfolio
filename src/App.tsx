@@ -94,8 +94,6 @@ export default function App() {
         <Stack />
         <Contact />
       </main>
-
-      <div aria-hidden className="grain z-[90]" />
     </SmoothScroll>
   )
 }

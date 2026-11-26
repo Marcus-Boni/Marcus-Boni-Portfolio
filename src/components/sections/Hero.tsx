@@ -66,21 +66,27 @@ export function Hero() {
         data-hero-meta
         className="pointer-events-none absolute top-24 right-5 left-5 flex justify-between font-mono text-[10px] tracking-[0.25em] text-bone-dim uppercase md:top-28 md:right-8 md:left-24 lg-short:top-14"
       >
-        <span data-hero-fade>
+        <span data-hero-fade data-field-quiet>
           {t.hero.portfolio} — {new Date().getFullYear()}
         </span>
-        {profile.available && <span data-hero-fade>{t.hero.available}</span>}
+        {profile.available && (
+          <span data-hero-fade data-field-quiet>
+            {t.hero.available}
+          </span>
+        )}
       </div>
 
       <div className="relative z-10 px-5 pb-10 md:px-8 md:pb-14 lg:pl-24 lg-short:pb-6">
+        {/* `data-field-quiet`: the source field steps back around these */}
         <p
           data-hero-fade
+          data-field-quiet
           className="mb-4 max-w-md font-mono text-[11px] leading-relaxed tracking-[0.18em] text-bone-dim uppercase md:mb-6 lg-short:mb-2"
         >
           {t.hero.intro}
         </p>
 
-        <h1 className="flex flex-col" aria-label={profile.name}>
+        <h1 className="flex flex-col" aria-label={profile.name} data-field-quiet="veins">
           <span
             ref={firstNameRef}
             data-reveal
@@ -98,6 +104,7 @@ export function Hero() {
             </span>
             <span
               data-hero-fade
+              data-field-quiet
               className="hidden font-mono text-xs tracking-[0.2em] text-smoke sm:inline"
             >
               ©{new Date().getFullYear()}
@@ -109,10 +116,16 @@ export function Hero() {
           data-hero-fade
           className="mt-8 flex items-end justify-between border-t border-line pt-5 lg-short:mt-4 lg-short:pt-3"
         >
-          <p className="max-w-xs font-sans text-sm leading-relaxed text-bone-dim md:max-w-sm md:text-base">
+          <p
+            data-field-quiet
+            className="max-w-xs font-sans text-sm leading-relaxed text-bone-dim md:max-w-sm md:text-base"
+          >
             {t.hero.tagline}
           </p>
-          <div className="flex flex-col items-end gap-1 font-mono text-[10px] tracking-[0.25em] text-smoke uppercase">
+          <div
+            data-field-quiet
+            className="flex flex-col items-end gap-1 font-mono text-[10px] tracking-[0.25em] text-smoke uppercase"
+          >
             <span>{t.hero.scrollLine1}</span>
             <span className="flex items-center gap-3">
               {t.hero.scrollLine2}

@@ -28,6 +28,8 @@ const PRINT_TRAIL = 7
 const HAZE = 0.14
 /** Device pixels the canvas may hold before its density is lowered. */
 const PIXEL_BUDGET = 4_000_000
+/** CSS pixels over which the wall comes back around a quiet zone. */
+const QUIET_EDGE = 52
 /** Seconds a single character takes to decode and cool. */
 const SPARK_S = 0.9
 const SPARK_GLYPHS = '!<>-_\\/[]{}=+*^?#:.'
@@ -196,6 +198,26 @@ export function toothTile(): Promise<ToothTile | null> {
   return tooth
 }
 
+/**
+ * A box of the canvas, in CSS pixels, that the field must not compete with.
+ * Around small type the wall itself steps back. `veinsOnly` is for display
+ * type: the wall stays behind it and only the veins calm down.
+ */
+export interface QuietZone {
+  x: number
+  y: number
+  width: number
+  height: number
+  veinsOnly?: boolean
+}
+
+/** 1 inside the zone, easing to 0 over `QUIET_EDGE` pixels outside it. */
+export function calmAt(x: number, y: number, zone: QuietZone) {
+  const dx = Math.max(zone.x - x, 0, x - zone.x - zone.width)
+  const dy = Math.max(zone.y - y, 0, y - zone.y - zone.height)
+  return 1 - smoothstep(0, QUIET_EDGE, Math.hypot(dx, dy))
+}
+
 /** What moves the field. A plain object, so GSAP can tween it. */
 export interface FieldState {
   /** 0..1, how much of the wall has been printed. */
@@ -212,10 +234,11 @@ export interface FieldState {
 /**
  * Rasterizes the wall for the canvas's current size and palette, and returns
  * the painter for one frame. Call again after a resize or a change of scheme.
+ * `quiet` lists what sits on top of the canvas and must stay easy to read.
  * The painter's `live` flag adds the single characters that decode on their
  * own; a still frame leaves them out.
  */
-export function createCodeField(canvas: HTMLCanvasElement) {
+export function createCodeField(canvas: HTMLCanvasElement, quiet: QuietZone[] = []) {
   const ctx = canvas.getContext('2d')
   if (!ctx || !canvas.clientWidth || !canvas.clientHeight) return null
   // sharp on a laptop, bounded on a 5K screen: the canvas and its mask each
@@ -259,6 +282,19 @@ export function createCodeField(canvas: HTMLCanvasElement) {
   const image = shade.createImageData(tw, BUFFER_ROWS)
   const px = image.data
 
+  // how far each texel steps back: `hush` for the wall, `cool` for the veins
+  const hush = new Float32Array(tw * BUFFER_ROWS)
+  const cool = new Float32Array(tw * BUFFER_ROWS)
+  for (let k = 0; k < hush.length; k++) {
+    const x = (((k % tw) + 0.5) / tw) * canvas.clientWidth
+    const y = ((Math.floor(k / tw) + 0.5) / BUFFER_ROWS) * canvas.clientHeight
+    for (const zone of quiet) {
+      const calm = calmAt(x, y, zone)
+      cool[k] = Math.max(cool[k], calm)
+      if (!zone.veinsOnly) hush[k] = Math.max(hush[k], calm)
+    }
+  }
+
   const boneCss = paintColor(canvas, '--color-bone')
   const emberCss = paintColor(canvas, '--color-ember')
   // "rgb(r, g, b)" → the bytes the buffer is written in
@@ -277,13 +313,17 @@ export function createCodeField(canvas: HTMLCanvasElement) {
         const x = ((i + 0.5) / tw - 0.5) * aspect
         const pull = state.lens * Math.exp(-((x - lensX) ** 2 + (y - lensY) ** 2) * 16)
         const field = current(x, y, t, 0.22 + state.energy, pull)
-        const heat = Math.min(
-          1,
-          veinHeat(field, state.energy * 0.1 + pull * 0.14) *
-            (0.85 + pull * 0.9 + state.energy * 0.45),
-        )
+        const k = o >> 2
+        const heat =
+          Math.min(
+            1,
+            veinHeat(field, state.energy * 0.1 + pull * 0.14) *
+              (0.85 + pull * 0.9 + state.energy * 0.45),
+          ) *
+          (1 - cool[k] * 0.82)
         // the wall itself: barely there, breathing with the current
-        const glow = 0.05 + smoothstep(-0.7, 0.9, field) * 0.13 + pull * 0.3
+        const glow =
+          (0.05 + smoothstep(-0.7, 0.9, field) * 0.13 + pull * 0.3) * (1 - hush[k] * 0.94)
         // ember as the vein warms, then a step back toward the type colour at its core
         const tint = Math.min(1, heat * 1.6) - smoothstep(0.7, 1, heat) * 0.3
         px[o] = bone[0] + (ember[0] - bone[0]) * tint
@@ -338,7 +378,12 @@ export function createCodeField(canvas: HTMLCanvasElement) {
       const near = Math.random() < state.lens
       const col = near ? (state.x * dpr) / cell + (Math.random() - 0.5) * 26 : Math.random() * cols
       const row = near ? (state.y * dpr) / line + (Math.random() - 0.5) * 9 : Math.random() * rows
-      sparks.push({ col: Math.floor(col), row: Math.floor(row), born: seconds })
+      const texel =
+        Math.floor(((row * line) / h) * BUFFER_ROWS) * tw + Math.floor(((col * cell) / w) * tw)
+      // never over the type the wall stepped back for
+      if (!(hush[texel] > 0.2)) {
+        sparks.push({ col: Math.floor(col), row: Math.floor(row), born: seconds })
+      }
     }
     ctx.font = font
     ctx.textBaseline = 'top'

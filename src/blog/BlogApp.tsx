@@ -95,8 +95,6 @@ export default function BlogApp({ routeLang = 'pt' }: { routeLang?: Locale }) {
             </Routes>
           </Suspense>
         </main>
-
-        <div aria-hidden className="grain z-[90]" />
       </SmoothScroll>
     </BlogLocaleSwitchContext>
   )

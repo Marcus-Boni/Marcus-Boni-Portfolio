@@ -456,21 +456,12 @@ textarea {
   font-variation-settings: 'wdth' 75;
 }
 
-/* Paper tooth: one fixed layer of noise, and it holds still. It lies over the
-   journal's text too, where anything that moves on its own costs the reader. */
-@utility grain {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  opacity: 0.05;
-}
-
 /* Code tooth: the page's margins carry a sparse print of the site's own
-   source, under the content, and it holds still like the grain. A flat token
-   colour shows through three masks at once: the glyph tile (`CodeTooth` sets
-   it), a fade in from each page edge, and a clearing around the section rail
-   so its numbers stay alone in the gutter. */
+   source, under the content. It is the page's only texture and it holds
+   still: on a reading surface anything that moves on its own costs the
+   reader. A flat token colour shows through three masks at once: the glyph
+   tile (`CodeTooth` sets it), a fade in from each page edge, and a clearing
+   around the section rail so its numbers stay alone in the gutter. */
 @utility code-tooth {
   display: none;
   position: fixed;
@@ -521,24 +512,11 @@ textarea {
   );
 }
 
-/* The source field is strongest where the wash is. It thins out toward the
-   name and clears the header and the meta strip, the small type it must never
-   compete with. On a phone or an upright tablet that leaves a band between
-   the strip and the name. */
+/* The source field fills the hero. It only fades out under the fixed header
+   and into the hero's bottom edge; around the type inside the hero the canvas
+   itself steps back (`data-field-quiet`, see `CodeField`). */
 @utility hero-field {
-  --field-shape: radial-gradient(95% 30% at 78% 30%, black 20%, transparent 95%);
-  --field-top: linear-gradient(to bottom, transparent 16%, black 30%);
-  mask-image: var(--field-shape);
-
-  @supports (mask-composite: intersect) {
-    mask-image: var(--field-shape), var(--field-top);
-    mask-composite: intersect;
-  }
-
-  @media (min-width: 1024px) {
-    --field-shape: radial-gradient(54% 58% at 82% 38%, black 22%, transparent 90%);
-    --field-top: linear-gradient(to bottom, transparent 5%, black 22%);
-  }
+  mask-image: linear-gradient(to bottom, transparent 5%, black 20%, black 90%, transparent);
 }
 
 .animate-ledger-row {

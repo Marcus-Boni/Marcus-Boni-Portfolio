@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  calmAt,
   current,
   FIELD_SOURCE,
   fieldChar,
@@ -36,6 +37,16 @@ describe('source field', () => {
     expect(veinHeat(-0.4)).toBe(0)
     expect(veinHeat(0.6)).toBe(0)
     expect(veinHeat(0.22, 0.2)).toBeGreaterThan(veinHeat(0.22))
+  })
+
+  it('steps back inside a quiet zone and returns over a soft edge', () => {
+    const zone = { x: 100, y: 200, width: 300, height: 40 }
+    expect(calmAt(250, 220, zone)).toBe(1)
+    expect(calmAt(100, 200, zone)).toBe(1)
+    const near = calmAt(80, 220, zone)
+    expect(near).toBeGreaterThan(0)
+    expect(near).toBeLessThan(1)
+    expect(calmAt(250, 400, zone)).toBe(0)
   })
 
   it('moves the print head row by row, left to right', () => {

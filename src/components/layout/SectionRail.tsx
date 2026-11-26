@@ -45,6 +45,8 @@ export function SectionRail() {
   return (
     <nav
       aria-label={t.sections.rail}
+      // over the hero the source field steps back for the rail (see `CodeField`)
+      data-field-quiet
       className="fixed left-3 top-1/2 z-30 flex -translate-y-1/2 items-center gap-2.5"
     >
       <span

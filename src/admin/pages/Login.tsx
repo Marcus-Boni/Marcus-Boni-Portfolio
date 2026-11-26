@@ -75,7 +75,6 @@ export function Login() {
 
   return (
     <div className="relative flex min-h-svh items-center justify-center bg-ink px-5 py-12">
-      <div aria-hidden className="grain z-0 opacity-[0.04]" />
       <div className="relative z-10 w-full max-w-sm">
         <div className="mb-10 text-center">
           <span className="font-display-italic text-5xl">

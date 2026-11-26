@@ -18,6 +18,11 @@ type Engine = typeof import('@/animations/codeField')
  * The hero's source field: a wall of this site's own code in Canvas 2D, lit
  * by a slow current (see `animations/codeField`).
  *
+ * It fills the hero. Anything marked `data-field-quiet` (the hero's small
+ * type, the section rail) is measured and the wall steps back around it;
+ * `data-field-quiet="veins"` (the name) keeps the wall and only calms the
+ * veins.
+ *
  * GSAP drives it through one plain state object. The wall prints once on
  * entry, the pointer lights and bends it, a fast scroll runs the veins hotter
  * and the canvas steps back as the hero leaves. The loop rides the GSAP ticker
@@ -86,7 +91,23 @@ export function CodeField() {
     let first = true
     const build = () => {
       if (disposed || !engine) return
-      render = engine.createCodeField(canvas)
+      // The wall fills the hero and parts around whatever asked for quiet: the
+      // hero's own type, and the section rail that floats over its gutter.
+      const box = canvas.getBoundingClientRect()
+      const quiet = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-field-quiet]'),
+        (el) => {
+          const rect = el.getBoundingClientRect()
+          return {
+            x: rect.left - box.left,
+            y: rect.top - box.top,
+            width: rect.width,
+            height: rect.height,
+            veinsOnly: el.dataset.fieldQuiet === 'veins',
+          }
+        },
+      ).filter((zone) => zone.width > 0 && zone.height > 0)
+      render = engine.createCodeField(canvas, quiet)
       render?.(seconds, state, !reduced)
       sync()
       if (first && render && state.reveal < 1) {
