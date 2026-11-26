@@ -1,29 +1,18 @@
-import { Suspense, lazy } from 'react'
-
+import { CodeField } from '@/components/canvas/CodeField'
 import { useSiteContent } from '@/content/SiteContentContext'
-import { useDeferredActivation } from '@/hooks/useDeferredActivation'
-import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { useScrollReveal, useGsapScope } from '@/hooks/useScrollReveal'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { gsap } from '@/animations/gsap'
 import { shouldSkipIntro } from '@/lib/defer'
 
-const InkFieldScene = lazy(() =>
-  import('@/components/canvas/InkFieldScene').then((module) => ({
-    default: module.InkFieldScene,
-  })),
-)
-
 /**
- * Full-viewport hero: WebGL ink field behind a massive typographic lockup.
+ * Full-viewport hero: the source field behind a massive typographic lockup.
  * The name splits into characters and pours in; metadata fades after.
  */
 export function Hero() {
   const { t } = useLanguage()
   const { content } = useSiteContent()
   const { profile } = content
-  const reduced = usePrefersReducedMotion()
-  const showCanvas = useDeferredActivation() && !reduced
   const firstNameRef = useScrollReveal<HTMLSpanElement>({
     mode: 'chars',
     stagger: 0.035,
@@ -68,14 +57,9 @@ export function Hero() {
       className="relative flex h-svh flex-col justify-end overflow-hidden"
       aria-label={t.sections.hero}
     >
-      {/* static backdrop, painted immediately — the WebGL canvas mounts over
-          it only after the first user interaction so it never blocks load */}
+      {/* static backdrop, painted immediately; the source field prints over it */}
       <div aria-hidden className="hero-backdrop absolute inset-0" />
-      {showCanvas && (
-        <Suspense fallback={null}>
-          <InkFieldScene />
-        </Suspense>
-      )}
+      <CodeField />
 
       {/* metadata strip pinned near the top */}
       <div

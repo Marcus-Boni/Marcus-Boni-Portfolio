@@ -466,14 +466,79 @@ textarea {
   opacity: 0.05;
 }
 
-/* The hero's ground, before and without the WebGL field: a faint wash from
-   the top right. Mixed from the tokens, so it follows the colour scheme. */
+/* Code tooth: the page's margins carry a sparse print of the site's own
+   source, under the content, and it holds still like the grain. A flat token
+   colour shows through three masks at once: the glyph tile (`CodeTooth` sets
+   it), a fade in from each page edge, and a clearing around the section rail
+   so its numbers stay alone in the gutter. */
+@utility code-tooth {
+  display: none;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-color: color-mix(in srgb, var(--color-smoke) 46%, transparent);
+  mask-image:
+    var(--tooth),
+    linear-gradient(
+      to right,
+      black,
+      transparent min(8vw, 104px),
+      transparent calc(100% - min(10vw, 140px)),
+      black
+    ),
+    radial-gradient(150px 230px at 0 50%, transparent 72%, black);
+  mask-size:
+    var(--tooth-size),
+    100% 100%,
+    100% 100%;
+  mask-composite: intersect;
+
+  @supports (mask-composite: intersect) {
+    display: block;
+  }
+}
+
+/* The glyphs nearest the pointer warm to ember. */
+@utility code-tooth-warm {
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-ember);
+  mask-image: radial-gradient(
+    circle 230px at var(--tooth-x, -999px) var(--tooth-y, -999px),
+    black,
+    transparent
+  );
+}
+
+/* The hero's ground, under the source field and before it prints: a faint
+   wash from the top right. Mixed from the tokens, so it follows the colour
+   scheme. */
 @utility hero-backdrop {
   background: radial-gradient(
     120% 90% at 70% 20%,
     color-mix(in srgb, var(--color-ink) 93%, var(--color-bone)) 0%,
     var(--color-ink) 60%
   );
+}
+
+/* The source field is strongest where the wash is. It thins out toward the
+   name and clears the header and the meta strip, the small type it must never
+   compete with. On a phone or an upright tablet that leaves a band between
+   the strip and the name. */
+@utility hero-field {
+  --field-shape: radial-gradient(95% 30% at 78% 30%, black 20%, transparent 95%);
+  --field-top: linear-gradient(to bottom, transparent 16%, black 30%);
+  mask-image: var(--field-shape);
+
+  @supports (mask-composite: intersect) {
+    mask-image: var(--field-shape), var(--field-top);
+    mask-composite: intersect;
+  }
+
+  @media (min-width: 1024px) {
+    --field-shape: radial-gradient(54% 58% at 82% 38%, black 22%, transparent 90%);
+    --field-top: linear-gradient(to bottom, transparent 5%, black 22%);
+  }
 }
 
 .animate-ledger-row {

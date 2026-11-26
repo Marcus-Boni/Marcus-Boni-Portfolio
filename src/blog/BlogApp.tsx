@@ -8,8 +8,8 @@ import {
 } from '@/blog/lib/locale-switch'
 import { BlogIndex } from '@/blog/pages/BlogIndex'
 import { Cursor } from '@/components/cursor/Cursor'
+import { CodeTooth } from '@/components/layout/CodeTooth'
 import { SmoothScroll } from '@/components/layout/SmoothScroll'
-import { usePointerTracking } from '@/hooks/usePointer'
 import type { Locale } from '@/i18n/translations'
 import { trackEvent } from '@/lib/analytics'
 
@@ -65,7 +65,6 @@ function RouteChange() {
  * navigates between sections of a single page, which does not exist here.
  */
 export default function BlogApp({ routeLang = 'pt' }: { routeLang?: Locale }) {
-  usePointerTracking()
   const alternateRef = useRef<PostAlternateTarget | null>(null)
   const switchContext = useMemo(
     () => ({
@@ -84,7 +83,10 @@ export default function BlogApp({ routeLang = 'pt' }: { routeLang?: Locale }) {
         <Cursor />
         <BlogHeader routeLang={routeLang} />
 
-        <main className="min-h-svh">
+        {/* under the content: `main` is isolated so it paints over this layer */}
+        <CodeTooth quiet />
+
+        <main className="isolate min-h-svh">
           <Suspense fallback={<div className="min-h-svh bg-ink" />}>
             <Routes>
               <Route index element={<BlogIndex routeLang={routeLang} />} />

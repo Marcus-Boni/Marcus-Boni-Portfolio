@@ -18,7 +18,7 @@ Uma seleção do que construo, dos problemas que resolvo e do que aprendo no cam
 
 ## A experiência
 
-Signal & Ink combina tipografia editorial com gráficos desenhados em código. Na abertura, um campo de tinta reage ao movimento. A galeria reúne projetos como **ISPer**, **OptTime**, **Meeting Copilot** e **Auto Daily**, ao lado de entregas ponta a ponta junto a clientes em aplicações web, sistemas locais e IA aplicada.
+Signal & Ink combina tipografia editorial com gráficos desenhados em código. Na abertura, o código do próprio site é impresso atrás do nome e aceso por uma corrente que reage ao movimento. A galeria reúne projetos como **ISPer**, **OptTime**, **Meeting Copilot** e **Auto Daily**, ao lado de entregas ponta a ponta junto a clientes em aplicações web, sistemas locais e IA aplicada.
 
 Na seção [Sobre](https://marcusboni.com.br/#about), o busto cromado é desenhado em **ASCII animado** em Canvas 2D — monta linha por linha e mantém um reflexo especular suave enquanto está visível, acompanhando o tema claro ou escuro e respeitando `prefers-reduced-motion`.
 
@@ -30,7 +30,7 @@ Na seção [Sobre](https://marcusboni.com.br/#about), o busto cromado é desenha
 
 | Área | Implementação |
 | --- | --- |
-| **Interface e movimento** | React, TypeScript e Tailwind CSS. GSAP e Lenis coordenam a navegação e as transições. Three.js e Canvas 2D desenham o campo de tinta e o retrato. |
+| **Interface e movimento** | React, TypeScript e Tailwind CSS. GSAP e Lenis coordenam a navegação e as transições. Canvas 2D desenha o campo de código da abertura e o retrato. |
 | **Publicação** | O diário usa Markdown e realce com Shiki. Um painel autenticado com Firebase centraliza edição de conteúdo, publicação e mensagens. |
 | **Entrega e leitura por máquinas** | Vite gera o site. Netlify Edge Functions entregam o HTML público do diário, os metadados e a API de leitura descrita em OpenAPI. |
 

@@ -46,8 +46,7 @@ interface DeferOptions {
 }
 
 /**
- * Runs `callback` once, on the first user interaction. Non-hook counterpart
- * of `useDeferredActivation` for effects that don't need a re-render — used
+ * Runs `callback` once, on the first user interaction. Used
  * to keep the Firestore SDK (live content + analytics) out of the initial
  * load window so it never contributes to Total Blocking Time.
  *

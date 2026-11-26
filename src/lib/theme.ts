@@ -6,7 +6,7 @@ import { useSyncExternalStore } from 'react'
  * CSS does the theming (see "Colour scheme" in `styles/index.css`). This
  * module only moves the reader's choice between `localStorage`, the
  * `<meta name="color-scheme">` the stylesheet reads, and whatever paints
- * outside the cascade: canvases, the WebGL field, the browser's own chrome.
+ * outside the cascade: canvases and the browser's own chrome.
  */
 
 export type Theme = 'light' | 'dark'
