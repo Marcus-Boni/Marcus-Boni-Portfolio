@@ -87,6 +87,7 @@ export default function AgentDrawer({
             <button
               type="button"
               onClick={() => {
+                lenis?.start()
                 onClose()
                 navigate(fullPagePath)
               }}

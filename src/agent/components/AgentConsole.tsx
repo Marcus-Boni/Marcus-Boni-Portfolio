@@ -106,10 +106,14 @@ export function AgentConsole({
       return
     }
 
-    bottomRef.current?.scrollIntoView({
-      behavior: reduced ? 'instant' : 'smooth',
-      block: 'end',
-    })
+    const pageDistanceFromBottom =
+      document.documentElement.scrollHeight - window.scrollY - window.innerHeight
+    if (turnAdded || pageDistanceFromBottom < 180) {
+      bottomRef.current?.scrollIntoView({
+        behavior: reduced ? 'instant' : 'smooth',
+        block: 'end',
+      })
+    }
   }, [turns.length, lastTurnText, lastTurnToolCount, reduced, variant])
 
   useEffect(() => {
@@ -402,10 +406,12 @@ export function AgentConsole({
             >
               <div
                 ref={scrollContainerRef}
-                data-lenis-prevent
+                data-lenis-prevent={variant === 'drawer' ? '' : undefined}
                 className={cn(
-                  'min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 [scrollbar-color:var(--color-line)_transparent] [scrollbar-width:thin]',
-                  variant === 'page' ? 'pt-6 pb-10' : 'py-5',
+                  'flex-1 px-5',
+                  variant === 'drawer'
+                    ? 'min-h-0 overflow-y-auto overscroll-contain py-5 [scrollbar-color:var(--color-line)_transparent] [scrollbar-width:thin]'
+                    : 'pt-6 pb-10',
                 )}
               >
                 <div className="mx-auto max-w-2xl">
