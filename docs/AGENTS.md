@@ -271,6 +271,19 @@ Inspect live capability (never returns secrets):
 curl -s https://marcusboni.com.br/agent/v1/chat
 ```
 
+### Shareable deep-links, exports & Admin telemetry
+
+- **Deep-linking (`/ask` & `/en/ask`):** Accepts `?q=<prompt>&lens=recruiter|engineer|client&mode=auto|local`
+  (parsed defensively by `src/agent/share.ts`). Every completed answer and `/fit`
+  evidence ledger exposes copyable Markdown, downloadable `.md` briefs, and
+  canonical deep-links so recruiters or engineers can share reproducible runs.
+- **Blog contextual entry:** Every article footer on `/blog/:slug` links directly
+  to `/ask?lens=engineer&q=...` pre-filled with the article title and tags.
+- **Admin Dossier Intelligence (`/admin/analytics`):** Aggregates anonymous
+  `agent_open`, `agent_query`, `agent_fit`, `agent_handoff`, and `agent_share`
+  events into KPI tiles and Signal & Ink single-series breakdowns (intents,
+  audience lenses, and active runtime/provider) plus RFC 4180 CSV export.
+
 ---
 
 ## Verifying

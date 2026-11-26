@@ -29,6 +29,40 @@ const TYPE_LABEL: Record<string, string> = {
   agent_query: 'Consulta ao dossiê',
   agent_fit: 'Análise de vaga (/fit)',
   agent_handoff: 'Handoff do dossiê',
+  agent_share: 'Briefing compartilhado',
+}
+
+const LENS_LABEL: Record<string, string> = {
+  recruiter: 'Recrutador',
+  engineer: 'Técnico / CTO',
+  client: 'Cliente',
+}
+
+const INTENT_LABEL: Record<string, string> = {
+  fit: 'Análise de vaga (/fit)',
+  stack: 'Stack técnico',
+  projects: 'Projetos públicos',
+  experience: 'Entregas (Optsolv)',
+  ai_work: 'IA aplicada & MCP',
+  posts: 'Diário / blog',
+  profile: 'Perfil geral',
+  availability: 'Disponibilidade',
+  contact: 'Contato / handoff',
+  cv: 'Currículo PDF',
+  api: 'Arquitetura & API',
+  out_of_scope: 'Fora do escopo',
+  general: 'Consulta geral',
+}
+
+const PROVIDER_LABEL: Record<string, string> = {
+  groq: 'Groq (Free)',
+  nvidia: 'NVIDIA NIM (Free)',
+  openrouter: 'OpenRouter (Free)',
+  gemini: 'Gemini',
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  local: 'Local determinístico',
+  'edge-llm': 'Edge LLM',
 }
 
 function timeAgo(date: Date | null): string {
@@ -231,6 +265,85 @@ export function Analytics() {
             </ChartCard>
           </div>
 
+          {/* ─── Dossiê interativo (IA & Fit) ──────────────────── */}
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-2 gap-px bg-line lg:grid-cols-4">
+              <MetricTile
+                label="Aberturas do dossiê"
+                metric={summary.agent.opens}
+                hint={
+                  summary.agent.bySurface.length > 0
+                    ? summary.agent.bySurface
+                        .map((s) => `${s.name}: ${s.count}`)
+                        .join(' · ')
+                    : 'drawer ⌘K e /ask'
+                }
+              />
+              <MetricTile
+                label="Consultas ao dossiê"
+                metric={summary.agent.queries}
+                accent
+              />
+              <MetricTile
+                label="Análises de vaga (/fit)"
+                metric={summary.agent.fitRuns}
+                hint={
+                  summary.agent.fitRuns.current > 0
+                    ? `média ${summary.agent.avgFitMatched} matches · ${summary.agent.avgFitGaps} lacunas`
+                    : 'cole uma vaga em /ask'
+                }
+              />
+              <MetricTile
+                label="Handoffs & briefings"
+                metric={{
+                  current:
+                    summary.agent.handoffs.current + summary.agent.shares.current,
+                  previous:
+                    summary.agent.handoffs.previous + summary.agent.shares.previous,
+                }}
+                hint={`${summary.agent.handoffs.current} envios · ${summary.agent.shares.current} cópias/links`}
+              />
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-3">
+              <ChartCard
+                title="Intenções mais consultadas"
+                hint="O que recrutadores, CTOs e clientes perguntam ao dossiê."
+                table={toTable(summary.agent.byIntent, 'Intenção')}
+              >
+                <BarList
+                  data={summary.agent.byIntent}
+                  formatName={(name) => INTENT_LABEL[name] ?? name}
+                  emptyLabel="Nenhuma consulta no período"
+                />
+              </ChartCard>
+
+              <ChartCard
+                title="Lente selecionada"
+                hint="Perfil de leitura escolhido no console."
+                table={toTable(summary.agent.byLens, 'Lente')}
+              >
+                <BarList
+                  data={summary.agent.byLens}
+                  formatName={(name) => LENS_LABEL[name] ?? name}
+                  emptyLabel="Sem dados de lente ainda"
+                />
+              </ChartCard>
+
+              <ChartCard
+                title="Motor / provedor de IA"
+                hint="Distribuição real do waterfall gratuito vs motor determinístico local."
+                table={toTable(summary.agent.byProvider, 'Motor')}
+              >
+                <BarList
+                  data={summary.agent.byProvider}
+                  formatName={(name) => PROVIDER_LABEL[name] ?? name}
+                  emptyLabel="Sem execuções registradas"
+                />
+              </ChartCard>
+            </div>
+          </div>
+
           {/* ─── Blog ──────────────────────────────────────────── */}
           <ChartCard
             title="Desempenho do blog"
@@ -421,7 +534,13 @@ export function Analytics() {
                         </Badge>
                       </td>
                       <td className="max-w-48 truncate py-2.5 pr-4 font-mono text-xs">
-                        {event.slug ? `/blog/${event.slug}` : prettyPath(event.path)}
+                        {event.slug
+                          ? `/blog/${event.slug}`
+                          : event.type === 'agent_query' && event.intent
+                            ? `${event.intent}${event.provider ? ` · ${event.provider}` : ''}`
+                            : event.type === 'agent_fit' && event.matched !== undefined
+                              ? `/fit · ${event.matched}↑ ${event.gaps ?? 0}↓`
+                              : prettyPath(event.path)}
                       </td>
                       <td className="py-2.5 pr-4">{event.country}</td>
                       <td className="py-2.5 pr-4 capitalize">
