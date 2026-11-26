@@ -32,7 +32,7 @@ export default function AgentDrawer({
     document.body.style.overflow = 'hidden'
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && !event.defaultPrevented) {
         event.preventDefault()
         onClose()
       }
@@ -81,7 +81,7 @@ export default function AgentDrawer({
                 onClose()
                 navigate(fullPagePath)
               }}
-              className="inline-flex h-7 items-center gap-1.5 rounded-full border border-line px-3 font-mono text-[10px] tracking-[0.12em] text-bone-dim uppercase transition-colors hover:border-ember hover:text-bone"
+              className="inline-flex h-7 items-center gap-1.5 rounded-full border border-line px-3 font-mono text-[10px] tracking-[0.12em] text-bone-dim uppercase transition-colors hover:border-ember hover:text-bone focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember"
             >
               <IconExpand className="size-3" />
               <span>{t.agent.expandFull}</span>
@@ -91,7 +91,7 @@ export default function AgentDrawer({
               type="button"
               onClick={onClose}
               aria-label={t.header.close}
-              className="flex size-7 items-center justify-center rounded-full border border-line text-smoke transition-colors hover:border-ember hover:text-bone"
+              className="flex size-7 items-center justify-center rounded-full border border-line text-smoke transition-colors hover:border-ember hover:text-bone focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember"
             >
               <IconClose className="size-3.5" />
             </button>

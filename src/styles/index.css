@@ -408,10 +408,14 @@ body {
 }
 
 /* Keyboard focus and the text caret are drawn from the palette too — one
-   hairline of ember, the same accent every other state uses. */
-:focus-visible {
-  outline: 1px solid var(--color-ember);
-  outline-offset: 4px;
+   hairline of ember, the same accent every other state uses. Kept inside
+   `@layer base` so Tailwind `focus-visible:*` utilities (e.g. a parent
+   composer owning the rounded focus ring) can cleanly override it. */
+@layer base {
+  :focus-visible {
+    outline: 1px solid var(--color-ember);
+    outline-offset: 4px;
+  }
 }
 
 input,

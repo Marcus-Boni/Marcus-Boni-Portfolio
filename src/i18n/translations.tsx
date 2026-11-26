@@ -487,7 +487,8 @@ export const translations: Record<Locale, Translation> = {
       pageTitle: 'Consulte o dossiê',
       pageHeading: (
         <>
-          O que você quer saber sobre o <em className="text-ember">Marcus</em>?
+          O que você quer saber sobre o{' '}
+          <em className="font-display-italic pl-[0.02em] pr-[0.09em] text-ember">Marcus</em>?
         </>
       ),
       pageSubtitle:
@@ -802,7 +803,8 @@ export const translations: Record<Locale, Translation> = {
       pageTitle: 'Query the dossier',
       pageHeading: (
         <>
-          What would you like to know about <em className="text-ember">Marcus</em>?
+          What would you like to know about{' '}
+          <em className="font-display-italic pl-[0.02em] pr-[0.09em] text-ember">Marcus</em>?
         </>
       ),
       pageSubtitle:

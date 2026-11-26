@@ -121,6 +121,7 @@ export function ContextMeter({
   postCount,
   turnCount,
   source,
+  menuSide = 'top',
 }: {
   projectCount: number
   engagementCount: number
@@ -128,6 +129,7 @@ export function ContextMeter({
   postCount: number
   turnCount: number
   source: 'live' | 'static'
+  menuSide?: 'top' | 'bottom'
 }) {
   const { t } = useLanguage()
   const [open, setOpen] = useState(false)
@@ -143,6 +145,7 @@ export function ContextMeter({
     }
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        event.preventDefault()
         if (rootRef.current?.contains(document.activeElement)) {
           triggerRef.current?.focus()
         }
@@ -186,7 +189,7 @@ export function ContextMeter({
         aria-label={t.agent.meter.ariaLabel(totalDocs)}
         onClick={() => setOpen((prev) => !prev)}
         className={cn(
-          'flex h-8 items-center gap-1.5 rounded-full px-2.5 font-mono text-[11px] text-bone-dim transition-colors hover:bg-ink hover:text-bone focus-visible:outline-1 focus-visible:outline-ember',
+          'flex h-8 items-center gap-1.5 rounded-full px-2.5 font-mono text-[11px] text-bone-dim transition-colors hover:bg-ink hover:text-bone focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember',
           open && 'bg-ink text-bone',
         )}
       >
@@ -199,16 +202,21 @@ export function ContextMeter({
         {open && (
           <motion.div
             id={panelId}
-            initial={{ opacity: 0, scale: 0.96, y: 4 }}
+            initial={{ opacity: 0, scale: 0.96, y: menuSide === 'bottom' ? -4 : 4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{
               opacity: 0,
               scale: 0.96,
-              y: 4,
+              y: menuSide === 'bottom' ? -4 : 4,
               transition: { duration: 0.12, ease: EASE_OUT },
             }}
             transition={{ duration: 0.16, ease: EASE_OUT }}
-            className="absolute right-0 bottom-full z-30 mb-2 w-72 origin-bottom-right rounded-2xl border border-line bg-ink-soft p-3.5 shadow-[0_16px_40px_-12px_var(--shade)]"
+            className={cn(
+              'absolute right-0 z-30 w-72 rounded-2xl border border-line bg-ink-soft p-3.5 shadow-[0_16px_40px_-12px_var(--shade)]',
+              menuSide === 'bottom'
+                ? 'top-full mt-2 origin-top-right'
+                : 'bottom-full mb-2 origin-bottom-right',
+            )}
           >
             <div className="mb-2.5 flex items-baseline justify-between gap-2">
               <p className="text-xs font-medium text-bone">

@@ -84,6 +84,7 @@ export function PromptBar({
   postCount,
   turnCount,
   source,
+  menuSide = 'top',
   autoFocus = false,
 }: {
   value: string
@@ -99,6 +100,7 @@ export function PromptBar({
   postCount: number
   turnCount: number
   source: 'live' | 'static'
+  menuSide?: 'top' | 'bottom'
   autoFocus?: boolean
 }) {
   const { locale, t } = useLanguage()
@@ -154,7 +156,10 @@ export function PromptBar({
       if (!lensMenuRef.current?.contains(event.target as Node)) setLensOpen(false)
     }
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setLensOpen(false)
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        setLensOpen(false)
+      }
     }
     document.addEventListener('pointerdown', onPointer)
     document.addEventListener('keydown', onKey as unknown as EventListener)
@@ -324,17 +329,28 @@ export function PromptBar({
         }}
       />
 
-      {/* Kokonut AI-01 Slash Command Menu */}
+      {/* Kokonut AI-01 Slash Command Menu — direction-aware so it never clips */}
       <AnimatePresence>
         {slashOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, y: menuSide === 'bottom' ? -4 : 4 }}
+            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, transition: { duration: 0.08 } }}
-            transition={{ duration: 0.12, ease: EASE_OUT }}
-            className="absolute inset-x-0 bottom-full z-30 mb-2 rounded-2xl border border-line bg-ink-soft p-1.5 shadow-[0_16px_40px_-12px_var(--shade)]"
+            transition={{ duration: 0.14, ease: EASE_OUT }}
+            className={cn(
+              'absolute inset-x-0 z-30 rounded-2xl border border-line bg-ink-soft p-1.5 shadow-[0_16px_40px_-12px_var(--shade)]',
+              menuSide === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2',
+            )}
           >
-            <div id={menuId} role="listbox" aria-label={t.agent.input.commandsLabel}>
+            <div
+              id={menuId}
+              role="listbox"
+              aria-label={t.agent.input.commandsLabel}
+              className={cn(
+                'overflow-y-auto [scrollbar-color:var(--color-line)_transparent] [scrollbar-width:thin]',
+                menuSide === 'bottom' ? 'max-h-[168px]' : 'max-h-56',
+              )}
+            >
               {filteredCommands.map((cmd, idx) => {
                 const active = idx === activeSlash
                 return (
@@ -348,7 +364,7 @@ export function PromptBar({
                     onPointerMove={() => setSlashIndex(idx)}
                     onClick={() => pickCommand(cmd)}
                     className={cn(
-                      'flex h-9 cursor-pointer items-center gap-2.5 rounded-xl px-2.5 text-sm',
+                      'flex h-8 cursor-pointer items-center gap-2.5 rounded-xl px-2.5 text-sm',
                       active && 'bg-ink text-bone',
                     )}
                   >
@@ -377,13 +393,13 @@ export function PromptBar({
         )}
       </AnimatePresence>
 
-      {/* Main Composer Surface */}
+      {/* Main Composer Surface — owns the rounded focus ring cleanly */}
       <div
         className={cn(
-          'rounded-2xl border bg-ink-soft transition-colors duration-200',
+          'rounded-2xl border bg-ink-soft transition-[border-color,box-shadow] duration-200',
           dragging
-            ? 'border-ember'
-            : 'border-line focus-within:border-bone/40',
+            ? 'border-ember ring-1 ring-ember/50'
+            : 'border-line has-[textarea:focus]:border-ember/80 has-[textarea:focus]:ring-1 has-[textarea:focus]:ring-ember/35',
         )}
       >
         <AnimatePresence initial={false} mode="wait">
@@ -495,7 +511,7 @@ export function PromptBar({
                     ? t.agent.input.fitPlaceholder
                     : t.agent.input.placeholder
                 }
-                className="block max-h-44 min-h-[52px] w-full resize-none bg-transparent px-4 pt-3.5 pb-2 text-[15px] leading-relaxed text-bone placeholder:text-smoke focus:outline-none"
+                className="block max-h-44 min-h-[52px] w-full resize-none bg-transparent px-4 pt-3.5 pb-2 text-[15px] leading-relaxed text-bone placeholder:text-smoke focus:outline-none focus-visible:outline-none"
               />
 
               {/* Clean minimalist Kokonut action toolbar */}
@@ -507,7 +523,7 @@ export function PromptBar({
                     onClick={() => fileInputRef.current?.click()}
                     aria-label={t.agent.input.attachFile}
                     title={t.agent.input.attachFile}
-                    className="flex size-8 items-center justify-center rounded-full text-smoke transition-colors hover:bg-ink hover:text-bone focus-visible:outline-1 focus-visible:outline-ember"
+                    className="flex size-8 items-center justify-center rounded-full text-smoke transition-colors hover:bg-ink hover:text-bone focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember"
                   >
                     <IconPlus className="size-4" />
                   </button>
@@ -523,7 +539,7 @@ export function PromptBar({
                     }}
                     aria-label={t.agent.input.slashToggle}
                     title={t.agent.input.slashToggle}
-                    className="flex size-8 items-center justify-center rounded-full text-smoke transition-colors hover:bg-ink hover:text-bone focus-visible:outline-1 focus-visible:outline-ember"
+                    className="flex size-8 items-center justify-center rounded-full text-smoke transition-colors hover:bg-ink hover:text-bone focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember"
                   >
                     <IconSlash className="size-3.5" />
                   </button>
@@ -536,7 +552,7 @@ export function PromptBar({
                       aria-label={t.agent.lenses.label}
                       onClick={() => setLensOpen((prev) => !prev)}
                       className={cn(
-                        'flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs text-bone-dim transition-colors hover:bg-ink hover:text-bone focus-visible:outline-1 focus-visible:outline-ember',
+                        'flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs text-bone-dim transition-colors hover:bg-ink hover:text-bone focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember',
                         lensOpen && 'bg-ink text-bone',
                       )}
                     >
@@ -565,16 +581,25 @@ export function PromptBar({
                     <AnimatePresence>
                       {lensOpen && (
                         <motion.div
-                          initial={{ opacity: 0, scale: 0.96, y: 4 }}
+                          initial={{
+                            opacity: 0,
+                            scale: 0.96,
+                            y: menuSide === 'bottom' ? -4 : 4,
+                          }}
                           animate={{ opacity: 1, scale: 1, y: 0 }}
                           exit={{
                             opacity: 0,
                             scale: 0.96,
-                            y: 4,
+                            y: menuSide === 'bottom' ? -4 : 4,
                             transition: { duration: 0.1, ease: EASE_OUT },
                           }}
                           transition={{ duration: 0.15, ease: EASE_OUT }}
-                          className="absolute bottom-full left-0 z-30 mb-2 w-60 origin-bottom-left rounded-2xl border border-line bg-ink-soft p-1.5 shadow-[0_16px_40px_-12px_var(--shade)]"
+                          className={cn(
+                            'absolute left-0 z-30 w-60 rounded-2xl border border-line bg-ink-soft p-1.5 shadow-[0_16px_40px_-12px_var(--shade)]',
+                            menuSide === 'bottom'
+                              ? 'top-full mt-2 origin-top-left'
+                              : 'bottom-full mb-2 origin-bottom-left',
+                          )}
                         >
                           <p className="px-2.5 pt-1 pb-1.5 font-mono text-[10px] text-smoke uppercase">
                             {t.agent.lenses.label}
@@ -623,6 +648,7 @@ export function PromptBar({
                     postCount={postCount}
                     turnCount={turnCount}
                     source={source}
+                    menuSide={menuSide}
                   />
 
                   {voiceAvailable && !streaming && (
@@ -631,7 +657,7 @@ export function PromptBar({
                       onClick={() => setVoiceActive(true)}
                       aria-label={t.agent.voice.start}
                       title={t.agent.voice.start}
-                      className="flex size-8 items-center justify-center rounded-full text-smoke transition-colors hover:bg-ink hover:text-ember focus-visible:outline-1 focus-visible:outline-ember"
+                      className="flex size-8 items-center justify-center rounded-full text-smoke transition-colors hover:bg-ink hover:text-ember focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember"
                     >
                       <IconMic className="size-4" />
                     </button>
@@ -644,7 +670,7 @@ export function PromptBar({
                     disabled={!(streaming || canSend)}
                     onClick={streaming ? onStop : commitSend}
                     className={cn(
-                      'relative size-8 shrink-0 rounded-full transition-colors duration-150 focus-visible:outline-1 focus-visible:outline-ember',
+                      'relative size-8 shrink-0 rounded-full transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember',
                       streaming || canSend
                         ? 'bg-ember text-ink hover:bg-bone'
                         : 'bg-ink text-smoke/50',

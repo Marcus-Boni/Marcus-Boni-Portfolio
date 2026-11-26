@@ -316,7 +316,7 @@ export function ToolApprovalCard({
                         setName(event.target.value)
                       }}
                       placeholder={t.agent.approval.namePlaceholder}
-                      className="min-w-0 flex-1 border-b border-smoke/60 bg-transparent pb-0.5 text-[13px] text-bone placeholder:text-smoke focus:border-ember focus:outline-none"
+                      className="min-w-0 flex-1 border-b border-smoke/60 bg-transparent pb-0.5 text-[13px] text-bone placeholder:text-smoke focus:border-ember focus:outline-none focus-visible:outline-none"
                     />
                   </div>
                   <div className="flex items-center gap-2">
@@ -336,7 +336,7 @@ export function ToolApprovalCard({
                         setEmail(event.target.value)
                       }}
                       placeholder={t.agent.approval.emailPlaceholder}
-                      className="min-w-0 flex-1 border-b border-smoke/60 bg-transparent pb-0.5 text-[13px] text-bone placeholder:text-smoke focus:border-ember focus:outline-none"
+                      className="min-w-0 flex-1 border-b border-smoke/60 bg-transparent pb-0.5 text-[13px] text-bone placeholder:text-smoke focus:border-ember focus:outline-none focus-visible:outline-none"
                     />
                   </div>
                 </div>
@@ -352,7 +352,7 @@ export function ToolApprovalCard({
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
                 className={cn(
-                  'block w-full resize-none border-t border-line/70 bg-transparent px-4 pt-3 pb-3.5 text-sm leading-6 text-bone-dim transition-opacity duration-200 focus:text-bone focus:outline-none',
+                  'block w-full resize-none border-t border-line/70 bg-transparent px-4 pt-3 pb-3.5 text-sm leading-6 text-bone-dim transition-opacity duration-200 focus:text-bone focus:outline-none focus-visible:outline-none',
                   status !== 'draft' && 'opacity-50',
                 )}
               />
@@ -403,7 +403,7 @@ export function ToolApprovalCard({
                     disabled={status !== 'draft'}
                     onClick={startSend}
                     className={cn(
-                      'group/send flex h-8 min-w-[92px] items-center justify-center gap-1.5 rounded-full px-3.5 text-xs font-medium transition-colors duration-200 focus-visible:outline-1 focus-visible:outline-ember',
+                      'group/send flex h-8 min-w-[92px] items-center justify-center gap-1.5 rounded-full px-3.5 text-xs font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember',
                       status !== 'draft'
                         ? 'border border-line bg-ink text-bone-dim'
                         : canStartSend

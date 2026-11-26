@@ -182,7 +182,7 @@ export function ToolCallsTrace({
           setUserToggled(true)
           setOpen((prev) => !prev)
         }}
-        className="group flex h-7 items-center gap-2 rounded-full pr-2 text-left text-[13px] transition-colors focus-visible:outline-1 focus-visible:outline-ember disabled:cursor-default"
+        className="group flex h-7 items-center gap-2 rounded-full pr-2 text-left text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember disabled:cursor-default"
       >
         <AnimatePresence initial={false} mode="popLayout">
           {finished ? (

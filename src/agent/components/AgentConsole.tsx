@@ -305,6 +305,7 @@ export function AgentConsole({
       postCount={posts.length}
       turnCount={turns.length}
       source={source}
+      menuSide={isEmpty ? 'bottom' : 'top'}
       autoFocus={variant === 'drawer'}
     />
   )
@@ -328,16 +329,16 @@ export function AgentConsole({
               transition={{ duration: 0.3, ease: EASE_OUT }}
               className={cn(
                 'mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-5',
-                variant === 'page' ? 'py-10 md:py-16' : 'py-8',
+                variant === 'page' ? 'py-10 md:py-16' : 'pt-4 pb-20',
               )}
             >
               <div className="mb-7 text-center">
                 {variant === 'page' ? (
-                  <h1 className="font-display text-[clamp(2.4rem,6vw,4rem)] leading-[1.02] tracking-[-0.02em] text-bone text-balance">
+                  <h1 className="font-display text-[clamp(2.4rem,6vw,4rem)] leading-[1.06] tracking-normal text-bone text-balance">
                     {t.agent.pageHeading}
                   </h1>
                 ) : (
-                  <p className="font-display text-3xl leading-[1.06] tracking-[-0.02em] text-bone text-balance">
+                  <p className="font-display text-3xl leading-[1.1] tracking-normal text-bone text-balance">
                     {t.agent.pageHeading}
                   </p>
                 )}
@@ -353,7 +354,7 @@ export function AgentConsole({
                 <button
                   type="button"
                   onClick={() => void runPrompt(sampleJd.text)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-ember/50 bg-ember/10 px-3.5 py-1.5 text-xs font-medium text-ember transition-colors hover:border-ember hover:bg-ember hover:text-ink"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-ember/50 bg-ember/10 px-3.5 py-1.5 text-xs font-medium text-ember transition-colors hover:border-ember hover:bg-ember hover:text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember"
                 >
                   <IconSpark className="size-3.5" />
                   <span>{sampleJd.label}</span>
@@ -364,7 +365,7 @@ export function AgentConsole({
                     key={prompt}
                     type="button"
                     onClick={() => void runPrompt(prompt)}
-                    className="rounded-full border border-line bg-ink-soft/60 px-3.5 py-1.5 text-xs text-bone-dim transition-colors hover:border-bone/35 hover:text-bone"
+                    className="rounded-full border border-line bg-ink-soft/60 px-3.5 py-1.5 text-xs text-bone-dim transition-colors hover:border-bone/35 hover:text-bone focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember"
                   >
                     {prompt}
                   </button>
