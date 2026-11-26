@@ -1,29 +1,18 @@
-import { Suspense, lazy } from 'react'
-
+import { CodeField } from '@/components/canvas/CodeField'
 import { useSiteContent } from '@/content/SiteContentContext'
-import { useDeferredActivation } from '@/hooks/useDeferredActivation'
-import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { useScrollReveal, useGsapScope } from '@/hooks/useScrollReveal'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { gsap } from '@/animations/gsap'
 import { shouldSkipIntro } from '@/lib/defer'
 
-const InkFieldScene = lazy(() =>
-  import('@/components/canvas/InkFieldScene').then((module) => ({
-    default: module.InkFieldScene,
-  })),
-)
-
 /**
- * Full-viewport hero: WebGL ink field behind a massive typographic lockup.
+ * Full-viewport hero: the source field behind a massive typographic lockup.
  * The name splits into characters and pours in; metadata fades after.
  */
 export function Hero() {
   const { t } = useLanguage()
   const { content } = useSiteContent()
   const { profile } = content
-  const reduced = usePrefersReducedMotion()
-  const showCanvas = useDeferredActivation() && !reduced
   const firstNameRef = useScrollReveal<HTMLSpanElement>({
     mode: 'chars',
     stagger: 0.035,
@@ -68,35 +57,36 @@ export function Hero() {
       className="relative flex h-svh flex-col justify-end overflow-hidden"
       aria-label={t.sections.hero}
     >
-      {/* static backdrop, painted immediately — the WebGL canvas mounts over
-          it only after the first user interaction so it never blocks load */}
+      {/* static backdrop, painted immediately; the source field prints over it */}
       <div aria-hidden className="hero-backdrop absolute inset-0" />
-      {showCanvas && (
-        <Suspense fallback={null}>
-          <InkFieldScene />
-        </Suspense>
-      )}
+      <CodeField />
 
       {/* metadata strip pinned near the top */}
       <div
         data-hero-meta
         className="pointer-events-none absolute top-24 right-5 left-5 flex justify-between font-mono text-[10px] tracking-[0.25em] text-bone-dim uppercase md:top-28 md:right-8 md:left-24 lg-short:top-14"
       >
-        <span data-hero-fade>
+        <span data-hero-fade data-field-quiet>
           {t.hero.portfolio} — {new Date().getFullYear()}
         </span>
-        {profile.available && <span data-hero-fade>{t.hero.available}</span>}
+        {profile.available && (
+          <span data-hero-fade data-field-quiet>
+            {t.hero.available}
+          </span>
+        )}
       </div>
 
       <div className="relative z-10 px-5 pb-10 md:px-8 md:pb-14 lg:pl-24 lg-short:pb-6">
+        {/* `data-field-quiet`: the source field steps back around these */}
         <p
           data-hero-fade
+          data-field-quiet
           className="mb-4 max-w-md font-mono text-[11px] leading-relaxed tracking-[0.18em] text-bone-dim uppercase md:mb-6 lg-short:mb-2"
         >
           {t.hero.intro}
         </p>
 
-        <h1 className="flex flex-col" aria-label={profile.name}>
+        <h1 className="flex flex-col" aria-label={profile.name} data-field-quiet="veins">
           <span
             ref={firstNameRef}
             data-reveal
@@ -114,6 +104,7 @@ export function Hero() {
             </span>
             <span
               data-hero-fade
+              data-field-quiet
               className="hidden font-mono text-xs tracking-[0.2em] text-smoke sm:inline"
             >
               ©{new Date().getFullYear()}
@@ -125,10 +116,16 @@ export function Hero() {
           data-hero-fade
           className="mt-8 flex items-end justify-between border-t border-line pt-5 lg-short:mt-4 lg-short:pt-3"
         >
-          <p className="max-w-xs font-sans text-sm leading-relaxed text-bone-dim md:max-w-sm md:text-base">
+          <p
+            data-field-quiet
+            className="max-w-xs font-sans text-sm leading-relaxed text-bone-dim md:max-w-sm md:text-base"
+          >
             {t.hero.tagline}
           </p>
-          <div className="flex flex-col items-end gap-1 font-mono text-[10px] tracking-[0.25em] text-smoke uppercase">
+          <div
+            data-field-quiet
+            className="flex flex-col items-end gap-1 font-mono text-[10px] tracking-[0.25em] text-smoke uppercase"
+          >
             <span>{t.hero.scrollLine1}</span>
             <span className="flex items-center gap-3">
               {t.hero.scrollLine2}

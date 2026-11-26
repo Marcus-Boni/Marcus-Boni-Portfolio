@@ -1,6 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
-import { createCodePortrait, PORTRAIT_DURATION } from '@/animations/codePortrait'
+import {
+  createCodePortrait,
+  PORTRAIT_ASSEMBLE_MS,
+} from '@/animations/codePortrait'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { currentTheme, useTheme } from '@/lib/theme'
@@ -11,6 +14,15 @@ interface CodePortraitProps {
   caption: string
 }
 
+/**
+ * Permanent ASCII portrait drawn in Canvas 2D from the author's image.
+ *
+ * Assembles row-by-row once on entry with an ember leading edge, then stays
+ * rendered in crisp ASCII with a calm continuous chrome reflection sweep while
+ * visible on screen and in an active tab. Under `prefers-reduced-motion`, it
+ * paints the settled static ASCII portrait once with no animation loop.
+ * The underlying `<img>` remains for accessibility, crawlers and CORS fallback.
+ */
 export function CodePortrait({ src, alt, caption }: CodePortraitProps) {
   const imageRef = useRef<HTMLImageElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -28,10 +40,10 @@ export function CodePortrait({ src, alt, caption }: CodePortraitProps) {
   useEffect(() => {
     const image = imageRef.current
     const canvas = canvasRef.current
-    if (!image || !canvas || reduced) return
+    if (!image || !canvas) return
     let disposed = false
     let visible = false
-    let elapsed = 0
+    let elapsed = reduced ? PORTRAIT_ASSEMBLE_MS : 0
     let previous = 0
     let frame = 0
     let needsPaint = true
@@ -48,14 +60,14 @@ export function CodePortrait({ src, alt, caption }: CodePortraitProps) {
     }
     const tick = (now: number) => {
       frame = 0
-      if (!visible || document.hidden || !render || disposed) return
-      if (previous) elapsed += now - previous
+      if (!visible || document.hidden || !render || disposed || reduced) return
+      if (previous) elapsed += Math.min(now - previous, 100)
       previous = now
       render(elapsed)
-      if (elapsed < PORTRAIT_DURATION) frame = requestAnimationFrame(tick)
+      frame = requestAnimationFrame(tick)
     }
     const resume = () => {
-      if (visible && !document.hidden && render && !frame && elapsed < PORTRAIT_DURATION) {
+      if (visible && !document.hidden && render && !frame && !reduced) {
         frame = requestAnimationFrame(tick)
       }
     }
@@ -69,11 +81,12 @@ export function CodePortrait({ src, alt, caption }: CodePortraitProps) {
         return
       }
       needsPaint = false
-      render(elapsed)
+      render(elapsed, { reduced })
       setPreparedSrc(src)
       resume()
     }
     replayRef.current = () => {
+      if (reduced) return
       stop()
       elapsed = 0
       if (needsPaint) prepare()
@@ -82,25 +95,37 @@ export function CodePortrait({ src, alt, caption }: CodePortraitProps) {
     }
     const repaint = () => {
       needsPaint = true
-      if (render && elapsed < PORTRAIT_DURATION) prepare()
+      if (visible && sample.complete && sample.naturalWidth) prepare()
     }
     repaintRef.current = repaint
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting
-      if (visible) {
-        if (needsPaint && elapsed < PORTRAIT_DURATION) prepare()
-        else resume()
-      } else stop()
-    }, { threshold: 0.15 })
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        visible = entry.isIntersecting
+        if (visible) {
+          if (needsPaint) prepare()
+          else resume()
+        } else {
+          stop()
+        }
+      },
+      { threshold: 0.1 },
+    )
     observer.observe(canvas)
     const resize = new ResizeObserver(repaint)
     resize.observe(canvas)
-    const onVisibility = () => { if (document.hidden) stop(); else resume() }
+    const onVisibility = () => {
+      if (document.hidden) stop()
+      else resume()
+    }
     const onLoad = () => {
       if (image.naturalWidth) sample.src = image.currentSrc || image.src
     }
-    sample.onload = () => { void document.fonts.ready.then(prepare) }
-    sample.onerror = () => { if (!disposed) setPreparedSrc(null) }
+    sample.onload = () => {
+      void document.fonts.ready.then(prepare)
+    }
+    sample.onerror = () => {
+      if (!disposed) setPreparedSrc(null)
+    }
     document.addEventListener('visibilitychange', onVisibility)
     image.addEventListener('load', onLoad)
     onLoad()
@@ -121,13 +146,16 @@ export function CodePortrait({ src, alt, caption }: CodePortraitProps) {
   }, [src, reduced])
 
   return (
-    <figure className="relative ml-auto aspect-[3/4] max-w-xs overflow-hidden bg-ink lg:-mt-10">
+    <figure className="relative ml-auto aspect-[3/4] max-w-xs overflow-hidden border border-line bg-ink lg:-mt-10">
       <div data-portrait className="absolute inset-x-0 top-0 h-[116%]">
         <img
           ref={imageRef}
           src={src}
-          srcSet={src === '/portrait-640.webp'
-            ? '/portrait-320.webp 320w, /portrait-640.webp 640w' : undefined}
+          srcSet={
+            src === '/portrait-640.webp'
+              ? '/portrait-320.webp 320w, /portrait-640.webp 640w'
+              : undefined
+          }
           sizes="(min-width: 640px) 320px, 80vw"
           alt={alt}
           loading="lazy"
@@ -136,18 +164,34 @@ export function CodePortrait({ src, alt, caption }: CodePortraitProps) {
           height={640}
           className="h-full w-full object-cover grayscale"
         />
-        <canvas ref={canvasRef} aria-hidden="true"
-          className="pointer-events-none absolute inset-0 h-full w-full opacity-0" />
+        <canvas
+          ref={canvasRef}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 h-full w-full opacity-0"
+        />
       </div>
       <figcaption className="pointer-events-none absolute bottom-3 left-3 bg-ink px-3 py-1 font-mono text-[10px] tracking-[0.25em] text-ember uppercase">
         {caption}
       </figcaption>
       {preparedSrc === src && !reduced && (
-        <button type="button" onClick={() => replayRef.current?.()}
+        <button
+          type="button"
+          onClick={() => replayRef.current?.()}
           aria-label={t.about.replayPortrait}
           title={t.about.replayPortrait}
-          className="absolute top-3 right-3 flex min-h-11 min-w-11 items-center justify-center border border-smoke bg-ink text-bone transition-colors hover:border-ember hover:text-ember focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember">
-          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          className="absolute top-3 right-3 flex min-h-11 min-w-11 items-center justify-center border border-smoke bg-ink text-bone transition-colors hover:border-ember hover:text-ember focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember"
+        >
+          <svg
+            aria-hidden="true"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6" />
           </svg>
         </button>

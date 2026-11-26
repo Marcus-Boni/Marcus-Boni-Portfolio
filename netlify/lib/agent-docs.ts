@@ -12,12 +12,23 @@
  * `src/i18n/translations.tsx`. When the site's story changes, this changes too.
  */
 
+import {
+  availableLangs,
+  collapseLegacyPairs,
+  isBilingual,
+  localizedMeta,
+  type BlogLocale,
+  type PostLocales,
+} from './blog-locale.ts'
+import { postCanonicalUrl, postUrl } from './blog-seo.ts'
+
 const SITE_URL = 'https://marcusboni.com.br'
 
 /** The subset of post metadata these documents render. */
 export interface DocPost {
   slug: string
   lang: 'pt' | 'en'
+  status?: string
   title: string
   subtitle: string
   excerpt: string
@@ -26,6 +37,7 @@ export interface DocPost {
   publishedAt: string | null
   updatedAt: string
   translationOf: string | null
+  locales?: PostLocales
 }
 
 /** Body images, keyed by the id the Markdown references as `media:{id}`. */
@@ -63,40 +75,45 @@ function footer(): string {
 export function homeMarkdown(): string {
   return `# Marcus Boni — Software Engineer
 
-> Brazilian software engineer building robust, modern web applications.
-> React, TypeScript, Next.js, and backend work in Node.js and C#.
+> Brazilian software engineer building full-stack software, native desktop
+> systems (Rust/Tauri) and applied AI workflows (MCP servers, pgvector RAG),
+> comfortable aligning directly with clients from discovery to production.
 > Based in Espírito Santo, Brazil. Software Developer at Optsolv since June 2024.
 
 - **Name:** Marcus Boni (Marcus Evandro Galvão Boni)
 - **Role:** Software Engineer — Software Developer at Optsolv (Jun 2024 — present)
 - **Location:** Espírito Santo, Brazil
 - **Email:** mgalvaoboni@gmail.com
-- **GitHub:** https://github.com/Marcus-Boni (67 public repositories)
+- **GitHub:** https://github.com/Marcus-Boni (75 public repositories)
 - **LinkedIn:** https://www.linkedin.com/in/marcus-boni-729a52243
 - **Résumé:** [Portuguese](${SITE_URL}/marcus-boni-cv-pt.pdf) · [English](${SITE_URL}/marcus-boni-resume-en.pdf)
 - **Languages:** Portuguese (native), English (professional)
 
 ## About
 
-A Brazilian web developer who cares about building robust, modern
-applications. Clean code, honest interfaces, and engineering measured by what
-it simplifies for the people who use it. The public GitHub account carries 67
-repositories — studies, tools and products, kept in the open.
+A Brazilian software engineer focused on turning real operational problems into
+resilient software — from native Rust tools to full-stack web apps and applied
+AI in production. Uses AI deliberately as an engineering multiplier grounded in
+fundamentals and industry best practices, while staying comfortable aligning
+directly with clients through production deployment. The public GitHub account
+carries 75 repositories of native tools, MCP servers, RAG pipelines and shipped
+products.
 
 ## Selected projects
 
 | Project | Year | Stack | What it is |
 | --- | --- | --- | --- |
-| [OptTime](https://github.com/Marcus-Boni/OptTime) | 2026 | TypeScript, React, AI Agents | Hackathon-born product exploring software development workflows orchestrated by AI agents — built under pressure, shipped in days. |
-| [Estimativa de Horas](https://github.com/Marcus-Boni/Ferramenta-Estimativa-Horas) | 2026 | TypeScript, Azure DevOps, React | A web tool that replaced fragile Excel spreadsheets for task-hour estimation, pulling work items straight from Azure DevOps. |
-| [Vault Chatbot](https://github.com/Marcus-Boni/chatbot-template) | 2026 | TypeScript, LLM, RAG | A chatbot grounded in Obsidian vaults, answering questions over company meeting transcriptions instead of letting them rot in folders. |
-| [Jarvis](https://github.com/Marcus-Boni/Jarvis) | 2026 | Python, Automation | A personal assistant system automating the daily rituals of a working software developer — one routine at a time. |
-| [Opt Gestão](https://github.com/Marcus-Boni/Opt-Gestao-Projetos) | 2026 | TypeScript, React, PostgreSQL | Project administration application built for real company use — planning, tracking and shipping without ceremony. |
+| [ISPer](https://github.com/Marcus-Boni/ISPer) | 2026 | Rust, Tauri 2, whisper.cpp, CUDA, MCP | Offline Windows voice dictation and Teams meeting transcription built on a 12-crate Rust workspace with Tauri 2 and whisper.cpp (CPU/CUDA), across 25 releases. |
+| [OptTime](https://github.com/Marcus-Boni/OptTime) | 2026 | TypeScript, Next.js, PostgreSQL, Drizzle, MCP | Full-stack time-tracking platform synced bi-directionally with Azure DevOps, featuring a native extension and a 16-tool MCP server for AI agents. |
+| [Meeting Copilot](https://github.com/Marcus-Boni/chatbot-template) | 2026 | TypeScript, Next.js, CopilotKit, pgvector, RAG | Config-driven RAG architecture for searching Teams meeting transcripts over pgvector, with mandatory source citations, workspace isolation and a retrieval evaluation harness. |
+| [Auto Daily](https://github.com/Marcus-Boni/Auto-Daily-App) | 2026 | TypeScript, Next.js, Azure DevOps, AI | Web app that synthesizes AI-assisted daily standup drafts from Azure DevOps commits and OptTime hour logs. |
+| [Estimativa de Horas](https://github.com/Marcus-Boni/Ferramenta-Estimativa-Horas) | 2026 | TypeScript, Next.js, Azure DevOps, Firebase | A web tool that replaced fragile Excel spreadsheets for task-hour estimation, pulling work items straight from Azure DevOps with dashboards and export. |
 
 ## Professional experience
 
 **Software Developer — Optsolv** (June 2024 — present). Client work delivered
-end to end, across seven sectors:
+end to end — combining software engineering with direct stakeholder alignment
+through production deployment — across seven sectors:
 
 - **Unimed Sul Capixaba** — Healthcare. Medical-guide management platform:
   AD-authenticated service integration, CORS tuning on IIS, and full
@@ -122,23 +139,23 @@ end to end, across seven sectors:
 
 ## Technical stack
 
-- **Interface:** React, Next.js, TypeScript, Tailwind CSS, React Native, Astro, Flutter
-- **Services:** C#, Java, Python, Node.js
-- **Data:** PostgreSQL, SQL Server, Supabase, Firebase, SQLite, Neon, Turso
-- **Infrastructure:** Docker, Azure, Azure DevOps, Portainer, IIS, Netlify
+- **Interface:** React, Next.js, TypeScript, Tailwind CSS, React Native, Astro, Flutter, WebGL
+- **Services:** C#, Java, Python, Node.js, Rust, Tauri, MCP
+- **Data:** PostgreSQL, SQL Server, Supabase, Firebase, SQLite, Neon, Turso, Drizzle, pgvector
+- **Infrastructure:** Docker, Azure, Azure DevOps, Portainer, IIS, Netlify, GitHub Actions
 
 ## Writing
 
-Technical notes, market studies and project write-ups live at
+Technical notes, architecture write-ups and applied AI articles live at
 [${SITE_URL}/blog](${SITE_URL}/blog), with a feed at
 [${SITE_URL}/rss.xml](${SITE_URL}/rss.xml).
 
 ## Contact
 
 Email **mgalvaoboni@gmail.com** for freelance or full-time work, technical
-consulting, or a second opinion on a front-end or integration problem.
-GitHub and LinkedIn are the other two public channels. There is no phone
-number, calendar link or chat widget on this site — email is the front door.
+consulting, or a second opinion on architecture, applied AI or integrations. GitHub and LinkedIn are the other two public
+channels. There is no phone number, calendar link or chat widget on this site —
+email is the front door.
 
 ${footer()}`
 }
@@ -343,16 +360,21 @@ export function aboutMarkdown(): string {
   return `# Sobre — Marcus Boni
 
 > Engenheiro de software brasileiro, no Espírito Santo. Desenvolvedor de
-> Software na Optsolv desde junho de 2024, construindo aplicações web
-> corporativas de ponta a ponta.
+> Software na Optsolv desde junho de 2024, construindo software full-stack,
+> sistemas nativos e IA aplicada com autonomia para atuar do discovery ao
+> deploy em produção.
 
 ## O que eu faço
 
-Trabalho no ciclo inteiro: levantar o problema com quem vai usar, desenhar a
-tela, escrever o serviço, integrar com o sistema legado que ninguém quer tocar,
-e acompanhar em produção. Na prática: React e TypeScript na frente, Node.js e
-C# atrás, PostgreSQL e SQL Server nos dados, e o que o cliente já usa no meio —
-de ERP Sankhya a Azure DevOps.
+Atuo no ciclo completo de engenharia: entender o problema direto com quem vai
+usar, traduzir requisitos de negócio em decisões técnicas claras, construir a
+interface e o serviço, integrar com sistemas existentes e acompanhar o deploy
+em produção.
+
+Na prática: TypeScript, React e Next.js na frente; Rust/Tauri, Node.js, Python e
+C# atrás; PostgreSQL, Drizzle e pgvector nos dados; servidores MCP e pipelines
+RAG em IA aplicada — sempre usando IA como multiplicador de engenharia ancorado
+em fundamentos e boas práticas de mercado.
 
 A parte que costuma decidir o projeto raramente é a tecnologia. É entender por
 que a planilha que a ferramenta vai substituir existe há seis anos.
@@ -378,17 +400,18 @@ Escopo e stack de cada um em \`GET ${SITE_URL}/api/v1/experience\`.
 
 ## Fora do trabalho
 
-67 repositórios públicos em https://github.com/Marcus-Boni. Alguns viraram
-projetos selecionados: ferramenta de estimativa de horas que aposentou
-planilhas, chatbot ancorado em vaults do Obsidian, produto de hackathon
-explorando fluxos orquestrados por agentes de IA. Escrevo no blog quando um
-problema rende nota. Este site é código aberto, incluindo o painel
-administrativo e a API.
+75 repositórios públicos em https://github.com/Marcus-Boni. Entre os projetos
+em destaque: ISPer (motor local de voz em Rust com 12 crates, Tauri 2 e
+whisper.cpp CPU/CUDA), OptTime (apontamento integrado ao Azure DevOps com
+servidor MCP de 16 ferramentas), Meeting Copilot (RAG com pgvector e avaliação
+de busca) e Auto Daily. Escrevo com frequência no blog sobre engenharia de
+software, arquitetura e IA aplicada. Este site é código aberto, incluindo o
+painel administrativo e a API.
 
 ## Trabalhar comigo
 
 Aberto a trabalho freelance ou efetivo, consultoria técnica e segunda opinião
-em problema de front-end ou integração. E-mail: mgalvaoboni@gmail.com.
+em arquitetura, IA aplicada ou integração. E-mail: mgalvaoboni@gmail.com.
 Detalhes em [${SITE_URL}/contact](${SITE_URL}/contact).
 
 ${footer()}`
@@ -534,33 +557,46 @@ were probing for an endpoint, \`/sitemap.xml\` is the complete answer.
 
 /* ─── /blog ─────────────────────────────────────────────────────────────── */
 
-function postLine(post: DocPost): string {
+function postLine(post: DocPost, lang: BlogLocale, langs: BlogLocale[]): string {
+  const view = localizedMeta({ ...post, status: post.status ?? 'published' }, lang)
+  const href = postCanonicalUrl({ ...post, status: post.status ?? 'published' }, lang)
   const date = (post.publishedAt ?? post.updatedAt).slice(0, 10)
-  const tags = post.tags.length > 0 ? ` · ${post.tags.join(', ')}` : ''
-  const dek = post.excerpt || post.subtitle
+  const tags = view.tags.length > 0 ? ` · ${view.tags.join(', ')}` : ''
+  const dek = view.excerpt || view.subtitle
+  const langLabel = langs.length > 1 ? langs.join('/') : view.lang
   return [
-    `### [${post.title}](${SITE_URL}/blog/${post.slug})`,
+    `### [${view.title}](${href})`,
     '',
-    `${date} · ${post.lang} · ${post.readingMinutes} min read${tags}`,
+    `${date} · ${langLabel} · ${view.readingMinutes} min read${tags}`,
     ...(dek ? ['', dek] : []),
     '',
   ].join('\n')
 }
 
 /** The blog index as Markdown. An empty list is a valid answer, not an error. */
-export function blogIndexMarkdown(posts: readonly DocPost[]): string {
+export function blogIndexMarkdown(posts: readonly DocPost[], lang: BlogLocale = 'pt'): string {
+  const entries = collapseLegacyPairs(
+    posts.map((post) => ({ ...post, status: post.status ?? 'published' })),
+    lang,
+  )
   const body =
-    posts.length > 0
-      ? posts.map(postLine).join('\n')
+    entries.length > 0
+      ? entries.map(({ post, availableLangs: langs }) => postLine(post, lang, langs)).join('\n')
       : 'No posts published yet.\n'
 
-  return `# Notas de campo — Marcus Boni
+  const heading = lang === 'en' ? '# Field notes — Marcus Boni' : '# Notas de campo — Marcus Boni'
+  const otherIndex =
+    lang === 'en'
+      ? `Portuguese index: [${SITE_URL}/blog](${SITE_URL}/blog)`
+      : `English index: [${SITE_URL}/en/blog](${SITE_URL}/en/blog)`
+
+  return `${heading}
 
 > Technical journal: market studies, project write-ups, and notes worth
-> sharing in a meeting. Written in Portuguese and English; each post declares
-> its own language.
+> sharing in a meeting. Bilingual entries can be read in Portuguese (\`/blog/{slug}\`)
+> or English (\`/en/blog/{slug}\`) from a single publication.
 
-Feed: [${SITE_URL}/rss.xml](${SITE_URL}/rss.xml)
+Feed: [${SITE_URL}/rss.xml](${SITE_URL}/rss.xml) · ${otherIndex}
 
 ## Posts
 
@@ -598,21 +634,40 @@ export function resolveMedia(body: string, media: DocMedia = {}): string {
  * recommends — posts are *written* in Markdown and stored that way, so the
  * Markdown representation is the original, not a conversion of the HTML.
  */
-export function postMarkdown(post: DocPost, body: string, media: DocMedia = {}): string {
+export function postMarkdown(
+  post: DocPost,
+  body: string,
+  media: DocMedia = {},
+  lang: BlogLocale = post.lang,
+): string {
+  const normalized = { ...post, status: post.status ?? 'published' }
+  const view = localizedMeta(normalized, lang)
+  const activeLang = view.lang
+  const url = postCanonicalUrl(normalized, activeLang)
+  const langs = availableLangs(normalized)
+  const bilingual = isBilingual(normalized)
+  const otherLang: BlogLocale = activeLang === 'pt' ? 'en' : 'pt'
+
   const front = [
     '---',
-    `title: ${yaml(post.title)}`,
-    ...(post.subtitle ? [`subtitle: ${yaml(post.subtitle)}`] : []),
-    ...(post.excerpt ? [`description: ${yaml(post.excerpt)}`] : []),
-    `url: ${yaml(`${SITE_URL}/blog/${post.slug}`)}`,
-    `lang: ${yaml(post.lang === 'pt' ? 'pt-BR' : 'en')}`,
+    `title: ${yaml(view.title)}`,
+    ...(view.subtitle ? [`subtitle: ${yaml(view.subtitle)}`] : []),
+    ...(view.excerpt ? [`description: ${yaml(view.excerpt)}`] : []),
+    `url: ${yaml(url)}`,
+    `lang: ${yaml(activeLang === 'pt' ? 'pt-BR' : 'en')}`,
+    ...(bilingual
+      ? [
+          `available_languages: [${langs.map((l) => yaml(l === 'pt' ? 'pt-BR' : 'en')).join(', ')}]`,
+          `alternate_${otherLang}: ${yaml(postUrl(post.slug, otherLang))}`,
+        ]
+      : []),
     ...(post.publishedAt ? [`date_published: ${yaml(post.publishedAt)}`] : []),
     ...(post.updatedAt ? [`date_modified: ${yaml(post.updatedAt)}`] : []),
-    `reading_minutes: ${post.readingMinutes}`,
-    ...(post.tags.length > 0
-      ? [`tags: [${post.tags.map(yaml).join(', ')}]`]
+    `reading_minutes: ${view.readingMinutes}`,
+    ...(view.tags.length > 0
+      ? [`tags: [${view.tags.map(yaml).join(', ')}]`]
       : []),
-    ...(post.translationOf
+    ...(!bilingual && post.translationOf
       ? [`translation_of: ${yaml(`${SITE_URL}/blog/${post.translationOf}`)}`]
       : []),
     'author: "Marcus Boni"',
@@ -621,13 +676,14 @@ export function postMarkdown(post: DocPost, body: string, media: DocMedia = {}):
   ].join('\n')
 
   const content = resolveMedia(body, media).trim()
+  const indexHref = bilingual && activeLang === 'en' ? `${SITE_URL}/en/blog` : `${SITE_URL}/blog`
 
-  return `${front}# ${post.title}
-${post.subtitle ? `\n_${post.subtitle}_\n` : ''}
+  return `${front}# ${view.title}
+${view.subtitle ? `\n_${view.subtitle}_\n` : ''}
 ${content}
 
 ---
 
-Source: ${SITE_URL}/blog/${post.slug} · More posts: ${SITE_URL}/blog · Feed: ${SITE_URL}/rss.xml
+Source: ${url} · More posts: ${indexHref} · Feed: ${SITE_URL}/rss.xml
 `
 }

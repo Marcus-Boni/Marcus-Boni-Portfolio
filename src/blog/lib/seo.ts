@@ -3,9 +3,10 @@ import { useEffect } from 'react'
 import type { PostMeta } from '@/blog/types'
 import { profile, socials } from '@/data/profile'
 import type { Locale } from '@/i18n/translations'
+import { blogIndexPath, localizedMeta } from '../../../netlify/lib/blog-locale'
 import {
-  articleSchema, BLOG_DESCRIPTION, BLOG_TITLE, blogSchema, breadcrumbSchema,
-  DEFAULT_OG, DEFAULT_OG_META, postDescription, postUrl, reciprocalTranslation, safeImage,
+  articleSchema, blogDescription, blogIndexUrl, blogSchema, blogTitle, breadcrumbSchema,
+  DEFAULT_OG, DEFAULT_OG_META, postAlternates, postCanonicalUrl, postDescription, safeImage,
   SITE_NAME, SITE_URL, validDate,
 } from '../../../netlify/lib/blog-seo'
 
@@ -101,40 +102,59 @@ function applyHead({ title, description, path, image = DEFAULT_OG, imageAlt = SI
 /** Shared values keep a direct visit and SPA navigation consistent. */
 export function applyBlogIndexHead(posts: PostMeta[] = [], locale: Locale = 'pt') {
   applyHead({
-    title: BLOG_TITLE, description: BLOG_DESCRIPTION, path: '/blog', locale,
-    jsonLd: { '@context': 'https://schema.org', ...blogSchema(posts) },
+    title: blogTitle(locale),
+    description: blogDescription(locale),
+    path: blogIndexPath(locale),
+    locale,
+    jsonLd: { '@context': 'https://schema.org', ...blogSchema(posts, locale) },
   })
+  const ptHref = blogIndexUrl('pt')
+  const enHref = blogIndexUrl('en')
+  setLink('alternate', ptHref, { hreflang: 'pt-BR' })
+  setLink('alternate', enHref, { hreflang: 'en' })
+  setLink('alternate', ptHref, { hreflang: 'x-default' })
+  setMeta('property', 'og:locale:alternate', locale === 'pt' ? 'en_US' : 'pt_BR')
 }
 
 export function useBlogIndexHead(posts: PostMeta[], locale: Locale) {
   useEffect(() => applyBlogIndexHead(posts, locale), [posts, locale])
 }
 
-export function applyPostHead(post: PostMeta, translation?: PostMeta | null) {
-  const url = postUrl(post.slug)
+export function applyPostHead(post: PostMeta, translation?: PostMeta | null, lang?: Locale) {
+  const view = localizedMeta(post, lang ?? post.lang)
+  const activeLang = view.lang
+  const url = postCanonicalUrl(post, activeLang)
   applyHead({
-    title: `${post.title} — ${SITE_NAME}`, description: postDescription(post),
-    path: new URL(url).pathname, image: safeImage(post.cover?.src) ?? DEFAULT_OG,
-    imageAlt: post.cover?.alt || post.title, type: 'article', locale: post.lang,
+    title: `${view.title} — ${SITE_NAME}`,
+    description: postDescription(post, activeLang),
+    path: new URL(url).pathname,
+    image: safeImage(post.cover?.src) ?? DEFAULT_OG,
+    imageAlt: view.coverAlt || view.title,
+    type: 'article',
+    locale: activeLang,
     noindex: post.status !== 'published',
-    jsonLd: { '@context': 'https://schema.org', '@graph': [articleSchema(post), breadcrumbSchema(post)] },
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@graph': [articleSchema(post, activeLang), breadcrumbSchema(post, activeLang)],
+    },
   })
   const published = validDate(post.publishedAt)
   const modified = validDate(post.updatedAt)
   if (published) setMeta('property', 'article:published_time', published)
   if (modified) setMeta('property', 'article:modified_time', modified)
   setMeta('property', 'article:author', `${SITE_URL}/about`)
-  for (const tag of post.tags) {
+  for (const tag of view.tags) {
     const meta = document.createElement('meta')
     meta.setAttribute('property', 'article:tag')
     meta.setAttribute('content', tag)
     document.head.appendChild(meta)
   }
-  if (reciprocalTranslation(post, translation) && translation) {
-    setLink('alternate', url, { hreflang: post.lang === 'pt' ? 'pt-BR' : 'en' })
-    setLink('alternate', postUrl(translation.slug), { hreflang: translation.lang === 'pt' ? 'pt-BR' : 'en' })
-    setLink('alternate', post.lang === 'pt' ? url : postUrl(translation.slug), { hreflang: 'x-default' })
-    setMeta('property', 'og:locale:alternate', translation.lang === 'pt' ? 'pt_BR' : 'en_US')
+  const alternates = postAlternates(post, translation)
+  if (alternates.length > 0) {
+    for (const entry of alternates) {
+      setLink('alternate', entry.href, { hreflang: entry.hreflang })
+    }
+    setMeta('property', 'og:locale:alternate', activeLang === 'pt' ? 'en_US' : 'pt_BR')
   }
 }
 
@@ -146,20 +166,26 @@ export function applyMissingPostHead(locale: Locale = 'pt', path = '/blog') {
   })
 }
 
-export function usePostHead(post: PostMeta | null, status: 'loading' | 'ready' | 'error',
-  translation: PostMeta | null, locale: Locale, path: string) {
+export function usePostHead(
+  post: PostMeta | null,
+  status: 'loading' | 'ready' | 'error',
+  translation: PostMeta | null,
+  locale: Locale,
+  path: string,
+  activeLang?: Locale,
+) {
   useEffect(() => {
-    if (post) applyPostHead(post, translation)
+    if (post) applyPostHead(post, translation, activeLang)
     else if (status === 'ready') applyMissingPostHead(locale, path)
-  }, [post, status, translation, locale, path])
+  }, [post, status, translation, locale, path, activeLang])
 }
 
 /** Restores the portfolio metadata after client-side navigation. */
 export function restoreSiteHead(locale: Locale = 'pt') {
   const title = locale === 'pt' ? 'Marcus Boni — Engenheiro de Software' : 'Marcus Boni — Software Engineer'
   const description = locale === 'pt'
-    ? 'Marcus Boni, engenheiro de software no Espírito Santo. Projetos com React, TypeScript e Node.js, integrações e artigos sobre desenvolvimento web.'
-    : 'Marcus Boni — Brazilian software engineer crafting robust, modern web applications. React, TypeScript, Next.js, and backend solutions.'
+    ? 'Marcus Boni, engenheiro de software no Espírito Santo. Software full-stack, sistemas nativos em Rust, IA aplicada (MCP e RAG) e artigos técnicos.'
+    : 'Marcus Boni — Brazilian software engineer building full-stack software, native Rust tools, applied AI (MCP and RAG) and production systems.'
   applyHead({
     title, description,
     path: '/', locale,

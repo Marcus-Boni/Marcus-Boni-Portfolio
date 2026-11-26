@@ -1,5 +1,5 @@
 /**
- * The front-end kit: the sixteen tools of the journal entry "Minha caixa de
+ * The front-end kit: the seventeen tools of the journal entry "Minha caixa de
  * ferramentas de front-end", as one page and three downloads.
  *
  * This list is the single source. `tests/kit.test.ts` renders it into the
@@ -34,7 +34,7 @@ const MIT = { pt: 'MIT', en: 'MIT' }
 export const KIT_PATH: Record<KitLocale, string> = { pt: '/kit/front-end', en: '/en/kit/front-end' }
 export const KIT_ENTRY: Record<KitLocale, string> = {
   pt: '/blog/caixa-de-ferramentas-front-end',
-  en: '/blog/my-front-end-toolbox',
+  en: '/en/blog/caixa-de-ferramentas-front-end',
 }
 export const KIT_DOWNLOADS: Record<KitLocale, { bookmarks: string; markdown: string }> = {
   pt: {
@@ -47,7 +47,7 @@ export const KIT_DOWNLOADS: Record<KitLocale, { bookmarks: string; markdown: str
   },
 }
 /** When the links and licenses were last checked against their own pages. */
-export const KIT_CHECKED = '2026-11-18'
+export const KIT_CHECKED = '2026-11-25'
 
 export const KIT_SHELVES: KitShelf[] = [
   {
@@ -204,6 +204,15 @@ export const KIT_SHELVES: KitShelf[] = [
         },
         license: MIT,
       },
+      {
+        name: 'UI Skills',
+        url: 'https://www.ui-skills.com/',
+        description: {
+          pt: 'Skills para engenheiros de design: baseline de UI, acessibilidade, metadados e performance de movimento, com CLI e MCP.',
+          en: 'Skills for design engineers: baseline UI, accessibility, metadata and motion performance, with CLI and MCP.',
+        },
+        license: MIT,
+      },
     ],
   },
   {
@@ -240,6 +249,7 @@ export const KIT_SKILLS_COMMAND = [
   'npx skills@latest add pbakaus/impeccable',
   'npx skills@latest add Leonxlnx/taste-skill',
   'npx skills@latest add emilkowalski/skills',
+  'npx skills@latest add ibelick/ui-skills',
   'npx skills@latest add mattpocock/skills --skill research',
   'npx skills@latest add firecrawl/skills',
 ].join('\n')
@@ -273,11 +283,11 @@ const COPY = {
     ogLocale: 'pt_BR',
     title: 'Kit de front-end — Marcus Boni',
     description:
-      'Dezesseis ferramentas para construir interfaces em um link só: componentes, movimento, 3D, skills para agentes e pesquisa de marca. Com favoritos para importar e Markdown para baixar.',
+      'Dezessete ferramentas para construir interfaces em um link só: componentes, movimento, 3D, skills para agentes e pesquisa de marca. Com favoritos para importar e Markdown para baixar.',
     label: 'Kit 01 · Front-end',
     h1: ['Caixa de', 'ferramentas'],
     lead:
-      'Os dezesseis endereços que eu abro antes de desenhar uma interface, em seis prateleiras. Todos podem ser usados de graça; a licença está ao lado de cada um.',
+      'Os dezessete endereços que eu abro antes de desenhar uma interface, em seis prateleiras. Todos podem ser usados de graça; a licença está ao lado de cada um.',
     stats: (tools: number, shelves: number) => [`${tools} ferramentas`, `${shelves} prateleiras`, 'Conferido em nov. 2026'],
     bookmarks: 'Baixar favoritos',
     markdown: 'Baixar Markdown',
@@ -288,7 +298,7 @@ const COPY = {
     shelvesNav: 'Prateleiras',
     skillsTitle: 'Instalar as skills',
     skillsText:
-      'Uma colagem no terminal instala as cinco skills da lista no seu agente de código. Cada linha pergunta em qual agente instalar.',
+      'Uma colagem no terminal instala as seis skills da lista no seu agente de código. Cada linha pergunta em qual agente instalar.',
     copyCommand: 'Copiar comando',
     importTitle: 'Importar os favoritos',
     importSteps: [
@@ -301,7 +311,7 @@ const COPY = {
     entryText: 'O registro do Diário explica cada ferramenta, com exemplos tirados deste site e o que conferir antes de copiar.',
     entryLink: 'Ler o registro completo',
     licenseNote:
-      'Licenças conferidas nas páginas de cada projeto em 18 de novembro de 2026. Antes de levar um componente para um projeto de cliente, confira a licença dele.',
+      'Licenças conferidas nas páginas de cada projeto em 25 de novembro de 2026. Antes de levar um componente para um projeto de cliente, confira a licença dele.',
     otherLang: 'English',
     otherLangLabel: 'Read this kit in English',
     home: 'Início',
@@ -315,7 +325,7 @@ const COPY = {
     folder: 'Kit de front-end — Marcus Boni',
     kitPage: 'Página do kit',
     mdIntro:
-      'Dezesseis ferramentas que eu abro antes de desenhar uma interface, em seis prateleiras. Todas podem ser usadas de graça; a licença está ao lado de cada uma.',
+      'Dezessete ferramentas que eu abro antes de desenhar uma interface, em seis prateleiras. Todas podem ser usadas de graça; a licença está ao lado de cada uma.',
     mdPage: 'Página do kit',
     mdEntry: 'Registro completo',
     mdChecked: 'Licenças conferidas em',
@@ -326,11 +336,11 @@ const COPY = {
     ogLocale: 'en_US',
     title: 'Front-end kit — Marcus Boni',
     description:
-      'Sixteen tools for building interfaces in one link: components, motion, 3D, skills for agents and brand research. With bookmarks to import and Markdown to download.',
+      'Seventeen tools for building interfaces in one link: components, motion, 3D, skills for agents and brand research. With bookmarks to import and Markdown to download.',
     label: 'Kit 01 · Front-end',
     h1: ['Front-end', 'toolbox'],
     lead:
-      'The sixteen addresses I open before designing an interface, on six shelves. All of them can be used for free; the license sits next to each one.',
+      'The seventeen addresses I open before designing an interface, on six shelves. All of them can be used for free; the license sits next to each one.',
     stats: (tools: number, shelves: number) => [`${tools} tools`, `${shelves} shelves`, 'Checked Nov 2026'],
     bookmarks: 'Download bookmarks',
     markdown: 'Download Markdown',
@@ -341,7 +351,7 @@ const COPY = {
     shelvesNav: 'Shelves',
     skillsTitle: 'Install the skills',
     skillsText:
-      'One paste in a terminal installs the five skills on the list into your coding agent. Each line asks which agent to install into.',
+      'One paste in a terminal installs the six skills on the list into your coding agent. Each line asks which agent to install into.',
     copyCommand: 'Copy command',
     importTitle: 'Import the bookmarks',
     importSteps: [
@@ -354,7 +364,7 @@ const COPY = {
     entryText: 'The Journal entry explains every tool, with examples taken from this site and what to check before copying.',
     entryLink: 'Read the full entry',
     licenseNote:
-      "Licenses checked on each project's own pages on 18 November 2026. Before taking a component into a client project, check its license.",
+      "Licenses checked on each project's own pages on 25 November 2026. Before taking a component into a client project, check its license.",
     otherLang: 'Português',
     otherLangLabel: 'Ler este kit em português',
     home: 'Home',
@@ -368,7 +378,7 @@ const COPY = {
     folder: 'Front-end kit — Marcus Boni',
     kitPage: 'Kit page',
     mdIntro:
-      'Sixteen tools I open before designing an interface, on six shelves. All of them can be used for free; the license sits next to each one.',
+      'Seventeen tools I open before designing an interface, on six shelves. All of them can be used for free; the license sits next to each one.',
     mdPage: 'Kit page',
     mdEntry: 'Full entry',
     mdChecked: 'Licenses checked on',

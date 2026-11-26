@@ -12,25 +12,45 @@ Uma seleção do que construo, dos problemas que resolvo e do que aprendo no cam
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/portfolio-dark.webp">
     <source media="(prefers-color-scheme: light)" srcset="./docs/readme/portfolio-light.webp">
-    <img src="./docs/readme/portfolio-dark.webp" alt="Página inicial do portfólio. O nome Marcus Boni aparece em tipografia editorial sobre um campo de tinta.">
+    <img src="./docs/readme/portfolio-dark.webp" alt="Página inicial do portfólio. O nome Marcus Boni aparece em tipografia editorial sobre uma parede com o código-fonte do próprio site, com trechos acesos em laranja.">
   </picture>
 </a>
 
 ## A experiência
 
-Signal & Ink combina tipografia editorial com gráficos desenhados em código. Na abertura, um campo de tinta reage ao movimento. A galeria reúne projetos como **OptTime**, **Estimativa de Horas** e **Opt Gestão**, ao lado de casos que documentam meu trabalho em aplicações web, integrações e ferramentas internas.
+Signal & Ink combina tipografia editorial com gráficos desenhados em código, em tema escuro e claro. A galeria reúne projetos como **ISPer**, **OptTime**, **Meeting Copilot** e **Auto Daily**, ao lado de entregas ponta a ponta junto a clientes em aplicações web, sistemas locais e IA aplicada.
 
-Na seção [Sobre](https://marcusboni.com.br/#about), linhas de código formam o retrato e se dissolvem na fotografia. A animação pode ser repetida, acompanha o tema claro ou escuro e respeita a preferência por movimento reduzido.
+### A abertura imprime o próprio código
 
-![O mesmo retrato em dois estados: caracteres no tema claro à esquerda e fotografia em preto e branco à direita.](./docs/readme/retrato-codigo.webp)
+O texto atrás do nome é o arquivo que desenha a abertura, [`src/animations/codeField.ts`](./src/animations/codeField.ts). Ele é impresso linha a linha na entrada e aceso por uma corrente de ruído que reage ao cursor e à rolagem. A parede recua em volta dos textos pequenos para não disputar com eles.
 
-*Quadro em código → fotografia revelada.*
+### O retrato em ASCII
+
+Na seção [Sobre](https://marcusboni.com.br/#about), o busto cromado é desenhado em caracteres. Ele monta linha por linha e mantém um reflexo suave enquanto está visível.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/retrato-codigo-dark.webp">
+  <source media="(prefers-color-scheme: light)" srcset="./docs/readme/retrato-codigo-light.webp">
+  <img src="./docs/readme/retrato-codigo-dark.webp" alt="Seção Sobre. À esquerda, a frase de apresentação em serifa; à direita, o busto desenhado em caracteres ASCII.">
+</picture>
+
+### As margens mostram o código de cada seção
+
+Em telas largas, as margens carregam fragmentos do componente da seção em vista, e a borda direita indica o arquivo. Nada ali se move sozinho.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/margens-codigo-dark.webp">
+  <source media="(prefers-color-scheme: light)" srcset="./docs/readme/margens-codigo-light.webp">
+  <img src="./docs/readme/margens-codigo-dark.webp" alt="Seção Stack. Nas duas margens aparecem fragmentos de código em tom discreto, e na borda direita o caminho src/components/sections/Stack.tsx.">
+</picture>
+
+Tudo isso é Canvas 2D e CSS, sem WebGL, acompanha o tema e respeita `prefers-reduced-motion`.
 
 ## Por trás do site
 
 | Área | Implementação |
 | --- | --- |
-| **Interface e movimento** | React, TypeScript e Tailwind CSS. GSAP e Lenis coordenam a navegação e as transições. Three.js e Canvas 2D desenham o campo de tinta e o retrato. |
+| **Interface e movimento** | React, TypeScript e Tailwind CSS. GSAP e Lenis coordenam a navegação e as transições. Canvas 2D desenha o campo de código da abertura e o retrato. |
 | **Publicação** | O diário usa Markdown e realce com Shiki. Um painel autenticado com Firebase centraliza edição de conteúdo, publicação e mensagens. |
 | **Entrega e leitura por máquinas** | Vite gera o site. Netlify Edge Functions entregam o HTML público do diário, os metadados e a API de leitura descrita em OpenAPI. |
 

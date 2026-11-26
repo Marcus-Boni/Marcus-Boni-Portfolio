@@ -31,6 +31,8 @@ Lenis e Canvas 2D, do padrão que as bibliotecas demonstram.
 
 | Onde | Padrão de referência | Implementação |
 | --- | --- | --- |
+| Fundo do hero (campo-fonte) | ASCII Effect (Componentry), Letter Glitch e Faulty Terminal (React Bits, fundos), a parede de código de <https://ponytail.dev> | `src/animations/codeField.ts`, `src/components/canvas/CodeField.tsx` |
+| Textura das margens | Dot Grid (React Bits, fundos), com fragmentos do próprio código no lugar dos pontos | `src/components/layout/CodeTooth.tsx`, utilitário `code-tooth` |
 | Letreiros da home | Scroll Velocity (React Bits), Velocity Scroll (Componentry) | `src/components/ui/Marquee.tsx` |
 | Frase do Sobre | Scroll Reveal (React Bits), Text Scroll animation (Skiper `skiper31`) | `useScrollReveal({ mode: 'ink' })` |
 | Ferramentas, fig. 02 | Layered Stack (Componentry), Svg follow scroll (Skiper `skiper19`) | `src/components/sections/Stack.tsx` |

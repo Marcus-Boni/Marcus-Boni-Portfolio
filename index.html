@@ -38,7 +38,7 @@
     <meta name="title" content="Marcus Boni — Engenheiro de Software" />
     <meta
       name="description"
-      content="Marcus Boni, engenheiro de software no Espírito Santo. Projetos com React, TypeScript e Node.js, integrações e artigos sobre desenvolvimento web."
+      content="Marcus Boni, engenheiro de software no Espírito Santo. Software full-stack, sistemas nativos em Rust, IA aplicada (MCP e RAG) e artigos técnicos."
     />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <link rel="canonical" href="https://marcusboni.com.br/" />
@@ -52,7 +52,7 @@
     <meta property="og:title" content="Marcus Boni — Engenheiro de Software" />
     <meta
       property="og:description"
-      content="Projetos, experiência e artigos sobre desenvolvimento web, React, TypeScript e integrações."
+      content="Projetos, entregas em clientes e artigos técnicos sobre engenharia de software, sistemas nativos em Rust e IA aplicada."
     />
     <meta property="og:image" content="https://marcusboni.com.br/og-image.jpg" />
     <meta property="og:image:type" content="image/jpeg" />
@@ -60,7 +60,7 @@
     <meta property="og:image:height" content="630" />
     <meta property="og:site_name" content="Marcus Boni" />
     <meta property="og:locale" content="pt_BR" />
-    <meta property="og:image:alt" content="Marcus Boni — engenharia de software e desenvolvimento web" />
+    <meta property="og:image:alt" content="Marcus Boni — engenharia de software, sistemas e IA aplicada" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -68,10 +68,10 @@
     <meta name="twitter:title" content="Marcus Boni — Engenheiro de Software" />
     <meta
       name="twitter:description"
-      content="Projetos, experiência e artigos sobre desenvolvimento web, React, TypeScript e integrações."
+      content="Projetos, entregas em clientes e artigos técnicos sobre engenharia de software, sistemas nativos em Rust e IA aplicada."
     />
     <meta name="twitter:image" content="https://marcusboni.com.br/og-image.jpg" />
-    <meta name="twitter:image:alt" content="Marcus Boni — engenharia de software e desenvolvimento web" />
+    <meta name="twitter:image:alt" content="Marcus Boni — engenharia de software, sistemas e IA aplicada" />
     <!-- SEO:END -->
 
     <!-- Structured Data (JSON-LD) -->
@@ -83,7 +83,7 @@
         "@id": "https://marcusboni.com.br/about#person",
         "name": "Marcus Boni",
         "alternateName": "Marcus Evandro Galvão Boni",
-        "description": "Brazilian software engineer based in Espírito Santo, Brazil. Software Developer at Optsolv since June 2024, building corporate web applications end to end with React, TypeScript, Next.js, Node.js and C# — delivered for clients in healthcare, industry, logistics, supply, environmental services, customer care and real estate.",
+        "description": "Brazilian software engineer based in Espírito Santo, Brazil. Software Developer at Optsolv since June 2024, building full-stack web applications, native desktop systems (Rust/Tauri) and applied AI workflows (MCP servers, pgvector RAG), with direct client alignment from discovery to production deployment across healthcare, industry, logistics, supply, environmental services, customer care and real estate.",
         "url": "https://marcusboni.com.br/about",
         "image": "https://marcusboni.com.br/portrait-640.webp",
         "jobTitle": "Software Engineer",
@@ -99,15 +99,24 @@
         "knowsAbout": [
           "Software Engineering",
           "Web Development",
+          "Applied AI",
+          "Model Context Protocol",
+          "Retrieval-Augmented Generation",
           "React",
           "TypeScript",
           "Next.js",
+          "Rust",
+          "Tauri",
           "Node.js",
+          "Python",
           "C#",
           "PostgreSQL",
+          "Drizzle",
+          "pgvector",
           "Docker",
           "Azure",
-          "Azure DevOps"
+          "Azure DevOps",
+          "GitHub Actions"
         ],
         "sameAs": [
           "https://github.com/Marcus-Boni",
@@ -156,8 +165,8 @@
           <p
             class="mb-4 max-w-md font-mono text-[11px] leading-relaxed tracking-[0.18em] text-bone-dim uppercase md:mb-6"
           >
-            Engenheiro de software construindo aplicações web robustas e
-            modernas
+            Engenheiro de software construindo aplicações full-stack, sistemas
+            locais e IA aplicada
           </p>
           <h1 class="flex flex-col" aria-label="Marcus Boni">
             <span
@@ -177,8 +186,8 @@
             <p
               class="max-w-xs font-sans text-sm leading-relaxed text-bone-dim md:max-w-sm md:text-base"
             >
-              React · TypeScript · Next.js — e a disciplina de quem trata cada
-              projeto como produto.
+              TypeScript · Rust · IA aplicada — e a disciplina de transformar
+              problemas reais em produto sólido.
             </p>
           </div>
         </div>
@@ -187,26 +196,10 @@
         Static page content: the portfolio's substance in plain HTML, below the
         fold.
 
-        The hero shell above is one headline and two lines of dek — about 200
-        characters, which is what a crawler that does not execute JavaScript
-        used to see of this entire site. Everything else (projects, seven client
-        engagements, the stack, contact) lived only in the React tree.
-
-        This block fixes that without changing what anyone sees. `#hero-shell`
-        is `h-svh`, so this sits a full viewport below the top: React replaces
-        the whole `#root` subtree on mount, long before a visitor could scroll
-        to it. Without JavaScript it simply stays — which is a better answer
-        than a blank page.
-
         Keep the copy true to src/i18n/translations.tsx and src/data/profile.ts.
         The Markdown twin of it is `homeMarkdown()` in
-        netlify/edge-functions/_agent-docs.ts, and tests/agent-docs.test.ts
+        netlify/lib/agent-docs.ts, and tests/agent-docs.test.ts
         checks both against profile.ts.
-      -->
-      <!--
-        Tailwind's preflight strips link styling, and a no-JS visitor still has
-        to be able to see what is clickable — hence the one-place `[&_a]`
-        rules rather than a class on every anchor.
       -->
       <div
         id="static-content"
@@ -220,11 +213,12 @@
         <p class="mt-5 max-w-2xl text-base leading-relaxed text-bone-dim">
           Marcus Boni é engenheiro de software brasileiro, baseado no Espírito
           Santo, e Desenvolvedor de Software na Optsolv desde junho de 2024.
-          Constrói aplicações web corporativas de ponta a ponta — interface,
-          serviços e integração — com React, TypeScript, Next.js, Node.js e C#.
-          Acredita em código limpo, interfaces honestas e engenharia medida pelo
-          que simplifica na vida de quem usa. Mantém 67 repositórios públicos no
-          GitHub.
+          Constrói software full-stack, ferramentas nativas em Rust/Tauri e
+          fluxos de IA aplicada com TypeScript, Next.js, Node.js, C# e
+          PostgreSQL, com facilidade para alinhar diretamente com clientes até o
+          deploy em produção. Utiliza IA de forma deliberada ancorada em
+          fundamentos e boas práticas de mercado. Mantém 75 repositórios
+          públicos no GitHub.
         </p>
 
         <h2
@@ -234,35 +228,41 @@
         </h2>
         <ul class="mt-5 max-w-2xl space-y-4 text-base leading-relaxed text-bone-dim">
           <li>
+            <a href="https://github.com/Marcus-Boni/ISPer">ISPer</a> (2026,
+            Rust · Tauri 2 · whisper.cpp · CUDA · MCP) — ditado por voz offline
+            no Windows e transcrição de reuniões do Teams em um workspace Rust
+            de 12 crates com 25 releases publicadas.
+          </li>
+          <li>
             <a href="https://github.com/Marcus-Boni/OptTime">OptTime</a> (2026,
-            TypeScript · React · AI Agents) — produto nascido em hackathon
-            explorando fluxos de desenvolvimento orquestrados por agentes de IA.
+            TypeScript · Next.js · PostgreSQL · Drizzle · MCP) — plataforma
+            full-stack de apontamento de horas integrada bidirecionalmente ao
+            Azure DevOps, com extensão nativa e servidor MCP (16 ferramentas).
+          </li>
+          <li>
+            <a href="https://github.com/Marcus-Boni/chatbot-template"
+              >Meeting Copilot</a
+            >
+            (2026, TypeScript · Next.js · CopilotKit · pgvector · RAG) —
+            arquitetura RAG para consultar transcrições do Teams sobre pgvector,
+            com citações obrigatórias das fontes, isolamento por workspace e
+            avaliação de busca.
+          </li>
+          <li>
+            <a href="https://github.com/Marcus-Boni/Auto-Daily-App"
+              >Auto Daily</a
+            >
+            (2026, TypeScript · Next.js · Azure DevOps · AI) — aplicação web que
+            sintetiza rascunhos de daily com IA a partir de commits no Azure
+            DevOps e apontamentos de horas do OptTime.
           </li>
           <li>
             <a href="https://github.com/Marcus-Boni/Ferramenta-Estimativa-Horas"
               >Estimativa de Horas</a
             >
-            (2026, TypeScript · Azure DevOps · React) — ferramenta web que
-            substituiu planilhas frágeis de Excel na estimativa de horas.
-          </li>
-          <li>
-            <a href="https://github.com/Marcus-Boni/chatbot-template"
-              >Vault Chatbot</a
-            >
-            (2026, TypeScript · LLM · RAG) — chatbot ancorado em vaults do
-            Obsidian, respondendo perguntas sobre transcrições de reuniões.
-          </li>
-          <li>
-            <a href="https://github.com/Marcus-Boni/Jarvis">Jarvis</a> (2026,
-            Python · Automation) — assistente pessoal que automatiza as rotinas
-            diárias de um desenvolvedor.
-          </li>
-          <li>
-            <a href="https://github.com/Marcus-Boni/Opt-Gestao-Projetos"
-              >Opt Gestão</a
-            >
-            (2026, TypeScript · React · PostgreSQL) — aplicação de gestão de
-            projetos para uso real em empresa.
+            (2026, TypeScript · Next.js · Azure DevOps · Firebase) — ferramenta
+            web que substituiu planilhas frágeis de Excel na estimativa de
+            horas, puxando work items direto do Azure DevOps.
           </li>
         </ul>
 
@@ -272,11 +272,11 @@
           Trajetória
         </h2>
         <p class="mt-5 max-w-2xl text-base leading-relaxed text-bone-dim">
-          Na Optsolv, entregas para clientes em sete setores: Unimed Sul
-          Capixaba (saúde — plataforma de gestão de guias médicas), Hidrauvit
-          (indústria — gestão da produção), EAV — Escola Americana de Vitória
-          (atendimento — assistente virtual), Cedisa (suprimentos — gestão de
-          materiais sobre PostgreSQL legado), GAB — Grupo Águia Branca
+          Na Optsolv, entregas ponta a ponta junto a clientes em sete setores:
+          Unimed Sul Capixaba (saúde — plataforma de gestão de guias médicas),
+          Hidrauvit (indústria — gestão da produção), EAV — Escola Americana de
+          Vitória (atendimento — assistente virtual), Cedisa (suprimentos —
+          gestão de materiais sobre PostgreSQL legado), GAB — Grupo Águia Branca
           (logística — plataforma de embarque B2B), Marca Ambiental (meio
           ambiente — portal do cliente web/PWA integrado ao ERP Sankhya) e
           Galwan (imobiliário — motor de plano de pagamento com simulações
@@ -290,9 +290,10 @@
         </h2>
         <p class="mt-5 max-w-2xl text-base leading-relaxed text-bone-dim">
           Interface: React, Next.js, TypeScript, Tailwind CSS, React Native,
-          Astro, Flutter. Serviços: C#, Java, Python, Node.js. Dados:
-          PostgreSQL, SQL Server, Supabase, Firebase, SQLite, Neon, Turso.
-          Infraestrutura: Docker, Azure, Azure DevOps, Portainer, IIS, Netlify.
+          Astro, Flutter, WebGL. Serviços: C#, Java, Python, Node.js, Rust,
+          Tauri, MCP. Dados: PostgreSQL, SQL Server, Supabase, Firebase, SQLite,
+          Neon, Turso, Drizzle, pgvector. Infraestrutura: Docker, Azure, Azure
+          DevOps, Portainer, IIS, Netlify, GitHub Actions.
         </p>
 
         <h2
@@ -303,8 +304,8 @@
         <p class="mt-5 max-w-2xl text-base leading-relaxed text-bone-dim">
           E-mail
           <a href="mailto:mgalvaoboni@gmail.com">mgalvaoboni@gmail.com</a> para
-          trabalho freelance ou efetivo, consultoria técnica ou uma segunda
-          opinião sobre um problema de front-end ou integração. Também no
+          trabalho freelance ou efetivo, consultoria técnica ou segunda opinião
+          sobre arquitetura, IA aplicada e integrações. Também no
           <a href="https://github.com/Marcus-Boni">GitHub</a> e no
           <a href="https://www.linkedin.com/in/marcus-boni-729a52243"
             >LinkedIn</a

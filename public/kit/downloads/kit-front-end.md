@@ -1,10 +1,10 @@
 # Kit de front-end — Marcus Boni
 
-Dezesseis ferramentas que eu abro antes de desenhar uma interface, em seis prateleiras. Todas podem ser usadas de graça; a licença está ao lado de cada uma.
+Dezessete ferramentas que eu abro antes de desenhar uma interface, em seis prateleiras. Todas podem ser usadas de graça; a licença está ao lado de cada uma.
 
 - Página do kit: https://marcusboni.com.br/kit/front-end
 - Registro completo: https://marcusboni.com.br/blog/caixa-de-ferramentas-front-end
-- Licenças conferidas em: 2026-11-18
+- Licenças conferidas em: 2026-11-25
 
 ## A base
 
@@ -34,6 +34,7 @@ Dezesseis ferramentas que eu abro antes de desenhar uma interface, em seis prate
 - [Impeccable](https://impeccable.style/docs/impeccable/): Vocabulário de design para o agente, com revisão, polimento e um detector de interface genérica. Licença: Apache 2.0.
 - [Taste Skill](https://www.tasteskill.dev/): Direção de arte para o agente que cria um site do zero, com referências e conferência no navegador. Licença: MIT.
 - [emilkowalski/skills](https://github.com/emilkowalski/skills): Dezenove skills de animação de interface: criar, revisar, remover e otimizar movimento. Licença: MIT.
+- [UI Skills](https://www.ui-skills.com/): Skills para engenheiros de design: baseline de UI, acessibilidade, metadados e performance de movimento, com CLI e MCP. Licença: MIT.
 
 ## Pesquisa da marca
 
@@ -42,12 +43,13 @@ Dezesseis ferramentas que eu abro antes de desenhar uma interface, em seis prate
 
 ## Instalar as skills
 
-Uma colagem no terminal instala as cinco skills da lista no seu agente de código. Cada linha pergunta em qual agente instalar.
+Uma colagem no terminal instala as seis skills da lista no seu agente de código. Cada linha pergunta em qual agente instalar.
 
 ```bash
 npx skills@latest add pbakaus/impeccable
 npx skills@latest add Leonxlnx/taste-skill
 npx skills@latest add emilkowalski/skills
+npx skills@latest add ibelick/ui-skills
 npx skills@latest add mattpocock/skills --skill research
 npx skills@latest add firecrawl/skills
 ```

@@ -1,8 +1,17 @@
 import type { Config, Context } from '@netlify/edge-functions'
 
 import { negotiate } from '../lib/accept.ts'
-import { deprecationHeaders } from '../lib/deprecation.ts'
 import { resolveMedia } from '../lib/agent-docs.ts'
+import {
+  availableLangs,
+  collapseLegacyPairs,
+  isBilingual,
+  localizedBody,
+  localizedMeta,
+  type BlogLocale,
+} from '../lib/blog-locale.ts'
+import { postCanonicalUrl, postUrl } from '../lib/blog-seo.ts'
+import { deprecationHeaders } from '../lib/deprecation.ts'
 import {
   getPostBody,
   isConfigured,
@@ -36,13 +45,14 @@ import {
  * catalogue that can drift.
  */
 
-const SITE_URL = 'https://marcusboni.com.br'
 const JSON_TYPE = 'application/json; charset=utf-8'
 const POSTS = '/api/v1/posts'
 
 export default async function handler(request: Request, context: Context) {
-  const path = new URL(request.url).pathname.replace(/\/+$/, '') || '/'
-  const response = await route(request, context, path)
+  const url = new URL(request.url)
+  const path = url.pathname.replace(/\/+$/, '') || '/'
+  const requestedLang = parseLangParam(url.searchParams.get('lang'))
+  const response = await route(request, context, path, requestedLang)
 
   // Applied once, to whatever the route produced, so a deprecated path
   // announces itself on its errors as much as on its successes — including the
@@ -52,10 +62,19 @@ export default async function handler(request: Request, context: Context) {
   return withHeaders(response, headers)
 }
 
+function parseLangParam(raw: string | null): BlogLocale | undefined {
+  if (!raw) return undefined
+  const lower = raw.toLowerCase()
+  if (lower === 'en' || lower === 'en-us') return 'en'
+  if (lower === 'pt' || lower === 'pt-br') return 'pt'
+  return undefined
+}
+
 async function route(
   request: Request,
   context: Context,
   path: string,
+  requestedLang?: BlogLocale,
 ): Promise<Response> {
   const isHead = request.method === 'HEAD'
 
@@ -70,9 +89,9 @@ async function route(
     return problemResponse(notAcceptable(accept ?? '', path), isHead)
   }
 
-  if (path === POSTS) return await listPostsResponse(path, isHead)
+  if (path === POSTS) return await listPostsResponse(path, isHead, requestedLang)
   if (path.startsWith(`${POSTS}/`)) {
-    return await postResponse(path.slice(POSTS.length + 1), path, isHead)
+    return await postResponse(path.slice(POSTS.length + 1), path, isHead, requestedLang)
   }
 
   // A static payload, or nothing. The CDN knows which.
@@ -83,17 +102,31 @@ async function route(
 
 /* ─── Blog endpoints ────────────────────────────────────────────────────── */
 
-/** `EdgePost` in the shape the OpenAPI `PostSummary` schema describes. */
-function summary(post: EdgePost): Record<string, unknown> {
+/** `EdgePost` in the shape the OpenAPI `PostSummary` schema describes (plus additive bilingual fields). */
+function summary(post: EdgePost, preferred?: BlogLocale): Record<string, unknown> {
+  const view = localizedMeta(post, preferred ?? post.lang)
+  const langs = availableLangs(post)
+  const bilingual = isBilingual(post)
+
   return {
     slug: post.slug,
-    url: `${SITE_URL}/blog/${post.slug}`,
-    title: post.title,
-    subtitle: post.subtitle || undefined,
-    excerpt: post.excerpt || undefined,
-    language: post.lang === 'pt' ? 'pt-BR' : 'en',
-    tags: post.tags,
-    readingMinutes: post.readingMinutes,
+    url: postCanonicalUrl(post, view.lang),
+    title: view.title,
+    subtitle: view.subtitle || undefined,
+    excerpt: view.excerpt || undefined,
+    language: view.lang === 'pt' ? 'pt-BR' : 'en',
+    availableLanguages: langs.map((l) => (l === 'pt' ? 'pt-BR' : 'en')),
+    ...(bilingual
+      ? {
+          urls: {
+            pt: postUrl(post.slug, 'pt'),
+            en: postUrl(post.slug, 'en'),
+          },
+          locales: post.locales,
+        }
+      : {}),
+    tags: view.tags,
+    readingMinutes: view.readingMinutes,
     publishedAt: post.publishedAt,
     updatedAt: post.updatedAt,
     translationOf: post.translationOf,
@@ -101,16 +134,25 @@ function summary(post: EdgePost): Record<string, unknown> {
   }
 }
 
-async function listPostsResponse(path: string, isHead: boolean): Promise<Response> {
+async function listPostsResponse(
+  path: string,
+  isHead: boolean,
+  preferred?: BlogLocale,
+): Promise<Response> {
   if (!isConfigured) return problemResponse(upstreamUnavailable(path), isHead)
   const posts = await listPublished()
-  return json({ count: posts.length, items: posts.map(summary) }, isHead)
+  const entries = collapseLegacyPairs(posts, preferred ?? 'pt')
+  return json(
+    { count: entries.length, items: entries.map(({ post }) => summary(post, preferred)) },
+    isHead,
+  )
 }
 
 async function postResponse(
   rawSlug: string,
   path: string,
   isHead: boolean,
+  preferred?: BlogLocale,
 ): Promise<Response> {
   // A nested path is not a slug — `/api/v1/posts/a/b` has no meaning here.
   if (!rawSlug || rawSlug.includes('/')) {
@@ -131,12 +173,24 @@ async function postResponse(
   const content = await getPostBody(slug)
   if (!content) return problemResponse(upstreamUnavailable(path), isHead)
 
+  const post = lookup.post
+  const activeLang = preferred ?? post.lang
+  const resolvedBody = resolveMedia(localizedBody({ ...post, ...content }, activeLang), content.media)
+  const bilingual = isBilingual(post)
+  const bodies = bilingual
+    ? {
+        pt: resolveMedia(localizedBody({ ...post, ...content }, 'pt'), content.media),
+        en: resolveMedia(localizedBody({ ...post, ...content }, 'en'), content.media),
+      }
+    : undefined
+
   return json(
     {
-      ...summary(lookup.post),
+      ...summary(post, preferred),
       // `media:{id}` means nothing outside the React renderer; an API client
       // needs URLs it can fetch.
-      body: resolveMedia(content.body, content.media),
+      body: resolvedBody,
+      ...(bodies ? { bodies } : {}),
     },
     isHead,
   )

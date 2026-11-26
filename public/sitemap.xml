@@ -6,7 +6,7 @@
   database outage returns 503 with Retry-After, preserving previously known
   article URLs instead of replacing the catalog with this static subset.
 -->
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://marcusboni.com.br/</loc>
     <changefreq>monthly</changefreq>
@@ -16,6 +16,17 @@
     <loc>https://marcusboni.com.br/blog</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://marcusboni.com.br/blog"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://marcusboni.com.br/en/blog"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://marcusboni.com.br/blog"/>
+  </url>
+  <url>
+    <loc>https://marcusboni.com.br/en/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://marcusboni.com.br/blog"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://marcusboni.com.br/en/blog"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://marcusboni.com.br/blog"/>
   </url>
   <url>
     <loc>https://marcusboni.com.br/developers</loc>

@@ -1,3 +1,9 @@
+import {
+  BLOG_LOCALES,
+  type PostBodies,
+  type PostLocales,
+} from './blog-locale.ts'
+
 /**
  * Minimal Firestore REST client for the edge functions.
  *
@@ -35,6 +41,7 @@ export interface EdgePost {
   publishedAt: string | null
   updatedAt: string
   translationOf: string | null
+  locales?: PostLocales
 }
 
 /* ─── Firestore value decoding ──────────────────────────────────────────── */
@@ -65,9 +72,43 @@ function strArray(value: FsValue | undefined): string[] {
     .filter((entry): entry is string => typeof entry === 'string')
 }
 
+function decodeLocales(value: FsValue | undefined): PostLocales | undefined {
+  const fields = value?.mapValue?.fields
+  if (!fields) return undefined
+  const out: PostLocales = {}
+  for (const locale of BLOG_LOCALES) {
+    const entry = fields[locale]?.mapValue?.fields
+    if (!entry) continue
+    const title = str(entry.title)
+    if (!title.trim()) continue
+    out[locale] = {
+      title,
+      subtitle: str(entry.subtitle),
+      excerpt: str(entry.excerpt),
+      tags: strArray(entry.tags),
+      readingMinutes: num(entry.readingMinutes, 1),
+      ...(entry.coverAlt?.stringValue ? { coverAlt: entry.coverAlt.stringValue } : {}),
+      ...(entry.coverCaption?.stringValue ? { coverCaption: entry.coverCaption.stringValue } : {}),
+    }
+  }
+  return Object.keys(out).length > 0 ? out : undefined
+}
+
+function decodeBodies(value: FsValue | undefined): PostBodies | undefined {
+  const fields = value?.mapValue?.fields
+  if (!fields) return undefined
+  const out: PostBodies = {}
+  for (const locale of BLOG_LOCALES) {
+    const text = fields[locale]?.stringValue
+    if (typeof text === 'string') out[locale] = text
+  }
+  return Object.keys(out).length > 0 ? out : undefined
+}
+
 function decode(name: string, fields: Record<string, FsValue>): EdgePost {
   const slug = name.split('/').pop() ?? ''
   const lang = str(fields.lang) === 'en' ? 'en' : 'pt'
+  const locales = decodeLocales(fields.locales)
   return {
     slug,
     lang,
@@ -83,6 +124,7 @@ function decode(name: string, fields: Record<string, FsValue>): EdgePost {
     publishedAt: fields.publishedAt?.stringValue ?? null,
     updatedAt: str(fields.updatedAt),
     translationOf: fields.translationOf?.stringValue ?? null,
+    ...(locales ? { locales } : {}),
   }
 }
 
@@ -136,10 +178,10 @@ export async function lookupPost(slug: string): Promise<PostLookup> {
   }
 }
 
-/** A post's Markdown source and its body images, or `null` when unreadable. */
+/** A post's Markdown source (all languages) and its body images, or `null` when unreadable. */
 export async function getPostBody(
   slug: string,
-): Promise<{ body: string; media: Record<string, EdgeMedia> } | null> {
+): Promise<{ body: string; bodies?: PostBodies; media: Record<string, EdgeMedia> } | null> {
   if (!isConfigured || !slug) return null
   try {
     const response = await fetch(
@@ -149,8 +191,10 @@ export async function getPostBody(
     if (!response.ok) return null
     const data = (await response.json()) as { fields?: Record<string, FsValue> }
     if (!data.fields) return null
+    const bodies = decodeBodies(data.fields.bodies)
     return {
       body: str(data.fields.body),
+      ...(bodies ? { bodies } : {}),
       media: decodeMedia(data.fields.media),
     }
   } catch {

@@ -199,9 +199,9 @@ export const translations: Record<Locale, Translation> = {
       portfolio: 'Portfólio',
       available: 'Disponível para projetos',
       intro:
-        'Engenheiro de software construindo aplicações web robustas e modernas',
+        'Engenheiro de software construindo aplicações full-stack, sistemas locais e IA aplicada',
       tagline:
-        'React · TypeScript · Next.js — e a disciplina de quem trata cada projeto como produto.',
+        'TypeScript · Rust · IA aplicada — e a disciplina de transformar problemas reais em produto sólido.',
       scrollLine1: 'Role para',
       scrollLine2: 'explorar',
     },
@@ -209,20 +209,20 @@ export const translations: Record<Locale, Translation> = {
       label: 'Sobre',
       statement: (age) => (
         <>
-          Desenvolvedor brasileiro de <em className="text-ember">{age} anos</em>,
-          obcecado por transformar problemas reais em software <em>robusto</em>{' '}
-          — de planilhas que viram produtos a agentes de IA que viram rotina.
+          Engenheiro de software de <em className="text-ember">{age} anos</em>,
+          focado em transformar problemas reais em software <em>sólido</em>{' '}
+          — de sistemas nativos em Rust a aplicações full-stack e IA aplicada em produção.
         </>
       ),
       p1: (repoCount) =>
-        `Do primeiro projeto de pizzaria em HTML puro ao trabalho diário com React, TypeScript e Azure DevOps, o caminho foi o mesmo: aprender construindo. Hoje são mais de ${repoCount} repositórios públicos de experimentos, cursos e produtos reais.`,
-      p2: 'Acredito em código limpo, interfaces honestas e na ideia de que boa engenharia se mede pelo que ela simplifica na vida de quem usa.',
+        `Do primeiro projeto em HTML puro ao trabalho diário entre TypeScript, Rust, Azure DevOps e IA aplicada, o método continua o mesmo: aprender construindo. Hoje são ${repoCount}+ repositórios públicos de ferramentas nativas, servidores MCP, pipelines RAG e produtos reais.`,
+      p2: 'Utilizo IA de forma deliberada como multiplicador de engenharia — sempre ancorado em fundamentos e boas práticas de mercado — com facilidade para alinhar diretamente com clientes e levar soluções do entendimento do problema até produção.',
       figcaption: 'fig. 01 — o autor',
       portraitAlt: 'Retrato de Marcus Boni',
-      replayPortrait: 'Recriar retrato em código',
+      replayPortrait: 'Reanimar retrato em ASCII',
       facts: (repoCount) => [
         { label: 'Base', value: 'Espírito Santo, BR' },
-        { label: 'Foco', value: 'Web Engineering' },
+        { label: 'Foco', value: 'Software & IA' },
         { label: 'Repositórios', value: `${repoCount}+` },
         { label: 'Status', value: 'Construindo' },
       ],
@@ -243,10 +243,10 @@ export const translations: Record<Locale, Translation> = {
       period: 'Jun 2024 — Presente',
       lead: (
         <>
-          Construo aplicações web corporativas de ponta a ponta — do
-          entendimento do requisito ao <em className="text-ember">deploy</em> e à
-          evolução contínua — para clientes de saúde, indústria, logística, meio
-          ambiente e mercado imobiliário.
+          Construo aplicações corporativas de ponta a ponta — unindo engenharia
+          sólida ao alinhamento direto com clientes do discovery ao{' '}
+          <em className="text-ember">deploy</em> em produção — em saúde,
+          indústria, logística, meio ambiente e mercado imobiliário.
         </>
       ),
       scopeLabel: 'Escopo',
@@ -278,10 +278,10 @@ export const translations: Record<Locale, Translation> = {
       seeProjects: 'Ver nos projetos',
       figcaption: 'fig. 02 — a pilha',
       descriptions: {
-        frontend: 'Aplicações web e mobile, interfaces e interação.',
-        backend: 'Lógica de negócio, integrações e serviços.',
-        data: 'Persistência, consultas e plataformas de dados.',
-        ops: 'Ambientes, entrega e operação das aplicações.',
+        frontend: 'Aplicações web e mobile, interfaces autorais e WebGL.',
+        backend: 'Sistemas nativos, regras de negócio, integrações e servidores MCP.',
+        data: 'Persistência relacional, busca vetorial e plataformas de dados.',
+        ops: 'Ambientes, pipelines CI/CD, releases e operação em produção.',
       },
     },
     contact: {
@@ -293,7 +293,7 @@ export const translations: Record<Locale, Translation> = {
       ),
       cta: 'Escreva para mim',
       blurb:
-        'Aberto a projetos, colaborações e boas conversas sobre engenharia de software — em português ou inglês.',
+        'Aberto a projetos, colaborações e boas conversas sobre engenharia de software e IA aplicada — em português ou inglês.',
       form: {
         heading: 'Ou mande uma mensagem direto por aqui',
         name: 'Nome',
@@ -408,9 +408,9 @@ export const translations: Record<Locale, Translation> = {
       portfolio: 'Portfolio',
       available: 'Open to projects',
       intro:
-        'Software engineer building robust, modern web applications from Brazil',
+        'Software engineer building full-stack applications, native systems and applied AI',
       tagline:
-        'React · TypeScript · Next.js — and the discipline of treating every project as a product.',
+        'TypeScript · Rust · Applied AI — and the discipline of turning real problems into resilient products.',
       scrollLine1: 'Scroll to',
       scrollLine2: 'explore',
     },
@@ -418,21 +418,21 @@ export const translations: Record<Locale, Translation> = {
       label: 'About',
       statement: (age) => (
         <>
-          A <em className="text-ember">{age}-year-old</em> Brazilian developer
-          obsessed with turning real problems into <em>robust</em> software —
-          from spreadsheets that became products to AI agents that became
-          routine.
+          A <em className="text-ember">{age}-year-old</em> Brazilian software
+          engineer focused on turning real problems into <em>resilient</em>{' '}
+          software — from native Rust tools to full-stack apps and applied AI in
+          production.
         </>
       ),
       p1: (repoCount) =>
-        `From a first pizza-shop project in plain HTML to daily work with React, TypeScript and Azure DevOps, the path has been the same: learn by building. Today that adds up to ${repoCount}+ public repositories of experiments, coursework and real products.`,
-      p2: 'I believe in clean code, honest interfaces, and the idea that good engineering is measured by what it simplifies in the lives of the people who use it.',
+        `From a first plain-HTML project to daily work spanning TypeScript, Rust, Azure DevOps and applied AI, the method stays the same: learn by building. Today that adds up to ${repoCount}+ public repositories of native tools, MCP servers, RAG pipelines and shipped products.`,
+      p2: 'I use AI deliberately as an engineering multiplier — always grounded in fundamentals and industry best practices — while staying comfortable working directly with clients from discovery through production deployment.',
       figcaption: 'fig. 01 — the author',
       portraitAlt: 'Portrait of Marcus Boni',
-      replayPortrait: 'Rebuild portrait from code',
+      replayPortrait: 'Replay ASCII portrait',
       facts: (repoCount) => [
         { label: 'Based in', value: 'Espírito Santo, BR' },
-        { label: 'Focus', value: 'Web Engineering' },
+        { label: 'Focus', value: 'Software & AI' },
         { label: 'Repositories', value: `${repoCount}+` },
         { label: 'Status', value: 'Building' },
       ],
@@ -453,10 +453,10 @@ export const translations: Record<Locale, Translation> = {
       period: 'Jun 2024 — Present',
       lead: (
         <>
-          I build corporate web applications end to end — from requirement to{' '}
-          <em className="text-ember">deploy</em> and continuous evolution — for
-          clients across healthcare, industry, logistics, environment and real
-          estate.
+          I build corporate applications end to end — combining solid
+          engineering with direct client alignment from discovery to production{' '}
+          <em className="text-ember">deploy</em> — across healthcare, industry,
+          logistics, environment and real estate.
         </>
       ),
       scopeLabel: 'Scope',
@@ -488,10 +488,10 @@ export const translations: Record<Locale, Translation> = {
       seeProjects: 'See in projects',
       figcaption: 'fig. 02 — the stack',
       descriptions: {
-        frontend: 'Web and mobile applications, interfaces and interaction.',
-        backend: 'Business logic, integrations and services.',
-        data: 'Persistence, queries and data platforms.',
-        ops: 'Environments, delivery and application operations.',
+        frontend: 'Web and mobile applications, interfaces and WebGL craft.',
+        backend: 'Native systems, business logic, integrations and MCP servers.',
+        data: 'Relational persistence, vector retrieval and data platforms.',
+        ops: 'Environments, CI/CD pipelines, releases and production operations.',
       },
     },
     contact: {
@@ -503,7 +503,7 @@ export const translations: Record<Locale, Translation> = {
       ),
       cta: 'Write to me',
       blurb:
-        'Open to projects, collaborations and good conversations about software engineering — in Portuguese or English.',
+        'Open to projects, collaborations and sharp conversations on software engineering and applied AI — in Portuguese or English.',
       form: {
         heading: 'Or send a message right here',
         name: 'Name',

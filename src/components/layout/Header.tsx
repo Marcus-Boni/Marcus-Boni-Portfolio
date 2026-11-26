@@ -8,8 +8,8 @@ import { sectionIds } from '@/data/profile'
 import { useMagnetic } from '@/hooks/useMagnetic'
 import { useScrollHeader } from '@/hooks/useScrollHeader'
 import { useLanguage } from '@/i18n/LanguageContext'
-import type { Locale } from '@/i18n/translations'
 import { HoverItalic } from '@/components/ui/HoverItalic'
+import { LanguageToggle } from '@/components/ui/LanguageToggle'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { cn } from '@/lib/utils'
 
@@ -37,35 +37,6 @@ function LiveClock() {
   )
 }
 
-function LanguageToggle() {
-  const { locale, setLocale } = useLanguage()
-  const options: Locale[] = ['pt', 'en']
-
-  return (
-    <div
-      className="flex items-center gap-2 font-mono text-[11px] tracking-[0.18em]"
-      role="group"
-      aria-label="Language"
-    >
-      {options.map((option, index) => (
-        <span key={option} className="flex items-center gap-2">
-          {index > 0 && <span className="text-smoke">/</span>}
-          <button
-            onClick={() => setLocale(option)}
-            aria-pressed={locale === option}
-            className={cn(
-              'uppercase transition-colors duration-300',
-              locale === option ? 'text-ember' : 'text-smoke hover:text-bone',
-            )}
-          >
-            {option}
-          </button>
-        </span>
-      ))}
-    </div>
-  )
-}
-
 const overlayVariants = {
   closed: { clipPath: 'inset(0% 0% 100% 0%)' },
   open: { clipPath: 'inset(0% 0% 0% 0%)' },
@@ -74,7 +45,8 @@ const overlayVariants = {
 export function Header() {
   const [open, setOpen] = useState(false)
   const lenis = useLenis()
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
+  const blogTo = locale === 'en' ? '/en/blog' : '/blog'
   const { content } = useSiteContent()
   const { profile, socials } = content
   const { scrolled, hidden } = useScrollHeader(open)
@@ -102,7 +74,7 @@ export function Header() {
         initial={false}
         animate={{ y: hidden ? '-115%' : '0%' }}
         transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed inset-x-0 top-0 z-50"
+        className="vt-header fixed inset-x-0 top-0 z-50"
       >
         {/* glass layer — fades in once scrolled past the fold */}
         <div
@@ -129,7 +101,7 @@ export function Header() {
 
           <div className="flex items-center gap-6 md:gap-8">
             <Link
-              to="/blog"
+              to={blogTo}
               className="hidden font-mono text-[11px] tracking-[0.18em] text-bone-dim uppercase transition-colors hover:text-ember sm:block"
             >
               {t.blog.nav}
@@ -228,7 +200,7 @@ export function Header() {
                 className="mt-6 border-t border-line pt-6 lg-short:mt-3 lg-short:pt-3"
               >
                 <Link
-                  to="/blog"
+                  to={blogTo}
                   onClick={() => setOpen(false)}
                   data-cursor="link"
                   className="group flex items-baseline gap-4 py-1 text-left lg-short:py-0.5"

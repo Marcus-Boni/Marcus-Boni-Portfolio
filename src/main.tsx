@@ -36,11 +36,21 @@ createRoot(root).render(
           }
         />
         <Route
+          path="/en/blog/*"
+          element={
+            <LanguageProvider>
+              <Suspense fallback={<div className="min-h-svh bg-ink" />}>
+                <BlogApp routeLang="en" />
+              </Suspense>
+            </LanguageProvider>
+          }
+        />
+        <Route
           path="/blog/*"
           element={
             <LanguageProvider>
               <Suspense fallback={<div className="min-h-svh bg-ink" />}>
-                <BlogApp />
+                <BlogApp routeLang="pt" />
               </Suspense>
             </LanguageProvider>
           }

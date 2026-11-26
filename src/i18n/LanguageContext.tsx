@@ -32,7 +32,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, locale)
     // The article's language belongs to its content, even when the reader
     // chooses another language for navigation controls.
-    if (!/^\/blog\/[^/]+\/?$/.test(window.location.pathname)) {
+    if (!/^\/(?:en\/)?blog\/[^/]+\/?$/.test(window.location.pathname)) {
       document.documentElement.lang = locale === 'pt' ? 'pt-BR' : 'en'
     }
   }, [locale])

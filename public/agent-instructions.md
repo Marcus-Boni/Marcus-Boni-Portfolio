@@ -7,7 +7,8 @@ reading this site. Human-readable version: <https://marcusboni.com.br/developers
 
 The personal site of **Marcus Boni** (Marcus Evandro Galvão Boni), a Brazilian
 software engineer in Espírito Santo, Brazil — Software Developer at **Optsolv**
-since June 2024. Two kinds of content:
+since June 2024, building full-stack software, native tools and applied AI while
+aligning directly with clients through production deployment. Two kinds of content:
 
 1. **A portfolio** (`/`) — profile, five selected projects, seven client
    engagements delivered at Optsolv, technical stack, contact.
@@ -35,7 +36,7 @@ Reach for it when the task is one of these:
 - **Sourcing his technical writing.** Quoting or citing a post from `/blog` —
   including its publication date, language, tags and reading time. `/rss.xml`
   is the feed; each post is retrievable as Markdown.
-- **Locating his public code.** 67 public repositories at
+- **Locating his public code.** 75 public repositories at
   <https://github.com/Marcus-Boni>, five of which are described in context on
   the home page.
 - **Getting in touch on a reader's behalf.** Drafting an approach for freelance

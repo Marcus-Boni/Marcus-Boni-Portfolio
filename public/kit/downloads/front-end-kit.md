@@ -1,10 +1,10 @@
 # Front-end kit — Marcus Boni
 
-Sixteen tools I open before designing an interface, on six shelves. All of them can be used for free; the license sits next to each one.
+Seventeen tools I open before designing an interface, on six shelves. All of them can be used for free; the license sits next to each one.
 
 - Kit page: https://marcusboni.com.br/en/kit/front-end
-- Full entry: https://marcusboni.com.br/blog/my-front-end-toolbox
-- Licenses checked on: 2026-11-18
+- Full entry: https://marcusboni.com.br/en/blog/caixa-de-ferramentas-front-end
+- Licenses checked on: 2026-11-25
 
 ## The base
 
@@ -34,6 +34,7 @@ Sixteen tools I open before designing an interface, on six shelves. All of them 
 - [Impeccable](https://impeccable.style/docs/impeccable/): A design vocabulary for the agent, with review, polish and a detector for generic interfaces. License: Apache 2.0.
 - [Taste Skill](https://www.tasteskill.dev/): Art direction for an agent building a site from scratch, with references and an in-browser check. License: MIT.
 - [emilkowalski/skills](https://github.com/emilkowalski/skills): Nineteen interface animation skills: build, review, remove and optimise motion. License: MIT.
+- [UI Skills](https://www.ui-skills.com/): Skills for design engineers: baseline UI, accessibility, metadata and motion performance, with CLI and MCP. License: MIT.
 
 ## Brand research
 
@@ -42,12 +43,13 @@ Sixteen tools I open before designing an interface, on six shelves. All of them 
 
 ## Install the skills
 
-One paste in a terminal installs the five skills on the list into your coding agent. Each line asks which agent to install into.
+One paste in a terminal installs the six skills on the list into your coding agent. Each line asks which agent to install into.
 
 ```bash
 npx skills@latest add pbakaus/impeccable
 npx skills@latest add Leonxlnx/taste-skill
 npx skills@latest add emilkowalski/skills
+npx skills@latest add ibelick/ui-skills
 npx skills@latest add mattpocock/skills --skill research
 npx skills@latest add firecrawl/skills
 ```

@@ -54,65 +54,65 @@ export const profile = {
   // Self-hosted, WebP-optimized copy of the GitHub avatar (~22 KB vs the
   // 632 KB PNG GitHub serves) — no redirect chain, long-lived cache.
   avatar: '/portrait-640.webp',
-  bio: 'Desenvolvedor web brasileiro apaixonado por construir aplicações robustas e modernas.',
-  repoCount: 67,
+  bio: 'Engenheiro de software brasileiro construindo software full-stack, sistemas locais e IA aplicada — com facilidade para alinhar diretamente com clientes e levar soluções até produção.',
+  repoCount: 75,
 } as const
 
 export const projects: Project[] = [
   {
     index: '01',
+    title: 'ISPer',
+    description: {
+      pt: 'Ditado por voz offline no Windows e transcrição de reuniões do Teams em um workspace Rust de 12 crates com Tauri 2 e whisper.cpp (CPU/CUDA), ao longo de 25 releases.',
+      en: 'Offline Windows voice dictation and Teams meeting transcription built on a 12-crate Rust workspace with Tauri 2 and whisper.cpp (CPU/CUDA), across 25 releases.',
+    },
+    stack: ['Rust', 'Tauri 2', 'whisper.cpp', 'CUDA', 'MCP'],
+    year: '2026',
+    url: 'https://github.com/Marcus-Boni/ISPer',
+  },
+  {
+    index: '02',
     title: 'OptTime',
     description: {
-      pt: 'Produto nascido em um hackathon explorando fluxos de desenvolvimento orquestrados por agentes de IA — construído sob pressão, entregue em dias.',
-      en: 'Hackathon-born product exploring software development workflows orchestrated by AI agents — built under pressure, shipped in days.',
+      pt: 'Plataforma full-stack de apontamento de horas integrada bidirecionalmente ao Azure DevOps, com extensão nativa e servidor MCP (16 ferramentas) para agentes de IA.',
+      en: 'Full-stack time-tracking platform synced bi-directionally with Azure DevOps, featuring a native extension and a 16-tool MCP server for AI agents.',
     },
-    stack: ['TypeScript', 'React', 'AI Agents'],
+    stack: ['TypeScript', 'Next.js', 'PostgreSQL', 'Drizzle', 'MCP'],
     year: '2026',
     url: 'https://github.com/Marcus-Boni/OptTime',
   },
   {
-    index: '02',
-    title: 'Estimativa de Horas',
-    description: {
-      pt: 'Ferramenta web que substituiu planilhas frágeis de Excel na estimativa de horas, puxando work items direto do Azure DevOps.',
-      en: 'A web tool that replaced fragile Excel spreadsheets for task-hour estimation, pulling work items straight from Azure DevOps.',
-    },
-    stack: ['TypeScript', 'Azure DevOps', 'React'],
-    year: '2026',
-    url: 'https://github.com/Marcus-Boni/Ferramenta-Estimativa-Horas',
-  },
-  {
     index: '03',
-    title: 'Vault Chatbot',
+    title: 'Meeting Copilot',
     description: {
-      pt: 'Chatbot ancorado em vaults do Obsidian, respondendo perguntas sobre transcrições de reuniões em vez de deixá-las apodrecer em pastas.',
-      en: 'A chatbot grounded in Obsidian vaults, answering questions over company meeting transcriptions instead of letting them rot in folders.',
+      pt: 'Arquitetura RAG orientada por configuração para consultar transcrições do Teams sobre pgvector, com citações obrigatórias das fontes, isolamento por workspace e avaliação de busca.',
+      en: 'Config-driven RAG architecture for searching Teams meeting transcripts over pgvector, with mandatory source citations, workspace isolation and a retrieval evaluation harness.',
     },
-    stack: ['TypeScript', 'LLM', 'RAG'],
+    stack: ['TypeScript', 'Next.js', 'CopilotKit', 'pgvector', 'RAG'],
     year: '2026',
     url: 'https://github.com/Marcus-Boni/chatbot-template',
   },
   {
     index: '04',
-    title: 'Jarvis',
+    title: 'Auto Daily',
     description: {
-      pt: 'Sistema de assistente pessoal automatizando os rituais diários de um desenvolvedor — uma rotina de cada vez.',
-      en: 'A personal assistant system automating the daily rituals of a working software developer — one routine at a time.',
+      pt: 'Aplicação web que sintetiza rascunhos de daily com IA a partir de commits no Azure DevOps e apontamentos de horas do OptTime.',
+      en: 'Web app that synthesizes AI-assisted daily standup drafts from Azure DevOps commits and OptTime hour logs.',
     },
-    stack: ['Python', 'Automation'],
+    stack: ['TypeScript', 'Next.js', 'Azure DevOps', 'AI'],
     year: '2026',
-    url: 'https://github.com/Marcus-Boni/Jarvis',
+    url: 'https://github.com/Marcus-Boni/Auto-Daily-App',
   },
   {
     index: '05',
-    title: 'Opt Gestão',
+    title: 'Estimativa de Horas',
     description: {
-      pt: 'Aplicação de gestão de projetos construída para uso real em empresa — planejar, acompanhar e entregar sem cerimônia.',
-      en: 'Project administration application built for real company use — planning, tracking and shipping without ceremony.',
+      pt: 'Ferramenta web que substituiu planilhas frágeis de Excel na estimativa de horas, puxando work items direto do Azure DevOps com dashboards e exportação.',
+      en: 'A web tool that replaced fragile Excel spreadsheets for task-hour estimation, pulling work items straight from Azure DevOps with dashboards and export.',
     },
-    stack: ['TypeScript', 'React', 'PostgreSQL'],
+    stack: ['TypeScript', 'Next.js', 'Azure DevOps', 'Firebase'],
     year: '2026',
-    url: 'https://github.com/Marcus-Boni/Opt-Gestao-Projetos',
+    url: 'https://github.com/Marcus-Boni/Ferramenta-Estimativa-Horas',
   },
 ]
 
@@ -210,10 +210,14 @@ export const techStack: TechItem[] = [
   { name: 'React Native', category: 'frontend' },
   { name: 'Astro', category: 'frontend' },
   { name: 'Flutter', category: 'frontend' },
+  { name: 'WebGL', category: 'frontend' },
   { name: 'C#', category: 'backend' },
   { name: 'Java', category: 'backend' },
   { name: 'Python', category: 'backend' },
   { name: 'Node.js', category: 'backend' },
+  { name: 'Rust', category: 'backend' },
+  { name: 'Tauri', category: 'backend' },
+  { name: 'MCP', category: 'backend' },
   { name: 'PostgreSQL', category: 'data' },
   { name: 'SQL Server', category: 'data' },
   { name: 'Supabase', category: 'data' },
@@ -221,6 +225,8 @@ export const techStack: TechItem[] = [
   { name: 'SQLite', category: 'data' },
   { name: 'Neon', category: 'data' },
   { name: 'Turso', category: 'data' },
+  { name: 'Drizzle', category: 'data' },
+  { name: 'pgvector', category: 'data' },
   { name: 'Docker', category: 'ops' },
   { name: 'Azure', category: 'ops' },
   { name: 'Azure DevOps', category: 'ops' },
@@ -229,6 +235,7 @@ export const techStack: TechItem[] = [
   // above, Netlify from where this portfolio is deployed.
   { name: 'IIS', category: 'ops' },
   { name: 'Netlify', category: 'ops' },
+  { name: 'GitHub Actions', category: 'ops' },
 ]
 // New entries go at the end of their category. The published list lives in the
 // CMS; the admin's "add the missing defaults" appends, so this order is the one

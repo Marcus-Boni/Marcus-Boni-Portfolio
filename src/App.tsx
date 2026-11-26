@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 
 import { Cursor } from '@/components/cursor/Cursor'
 import { restoreSiteHead } from '@/blog/lib/seo'
+import { CodeTooth } from '@/components/layout/CodeTooth'
 import { Header } from '@/components/layout/Header'
 import { SectionRail } from '@/components/layout/SectionRail'
 import { SmoothScroll } from '@/components/layout/SmoothScroll'
@@ -13,15 +14,16 @@ import { Stack } from '@/components/sections/Stack'
 import { Work } from '@/components/sections/Work'
 import { Marquee } from '@/components/ui/Marquee'
 import { sectionIds } from '@/data/profile'
-import { usePointerTracking } from '@/hooks/usePointer'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { trackEvent } from '@/lib/analytics'
 import { onFirstInteraction } from '@/lib/defer'
 
 const techMarquee = [
-  'React',
   'TypeScript',
+  'React',
   'Next.js',
+  'Rust',
+  'MCP',
   'Node.js',
   'Python',
   'C#',
@@ -65,7 +67,6 @@ function usePageTracking() {
 }
 
 export default function App() {
-  usePointerTracking()
   usePageTracking()
   const { locale, t } = useLanguage()
 
@@ -79,8 +80,11 @@ export default function App() {
       <Header />
       <SectionRail />
 
+      {/* under the content: `main` is isolated so it paints over this layer */}
+      <CodeTooth />
+
       {/* keyed by locale: text reveals re-split and ScrollTriggers rebuild */}
-      <main key={locale}>
+      <main key={locale} data-locale-surface className="isolate">
         <Hero />
         <Marquee items={techMarquee} className="mt-px" repeat={2} />
         <About />
@@ -90,8 +94,6 @@ export default function App() {
         <Stack />
         <Contact />
       </main>
-
-      <div aria-hidden className="grain z-[90]" />
     </SmoothScroll>
   )
 }

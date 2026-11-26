@@ -34,6 +34,16 @@ interface FsValue {
   arrayValue?: { values?: FsValue[] }
 }
 
+interface AgentLocaleInput {
+  title?: string
+  subtitle?: string | null
+  excerpt?: string | null
+  body?: string
+  tags?: string[]
+  coverAlt?: string | null
+  coverCaption?: string | null
+}
+
 interface AgentPostInput {
   slug: string
   lang?: Lang
@@ -49,6 +59,7 @@ interface AgentPostInput {
   publishedAt?: string | null
   translationOf?: string
   featured?: boolean
+  locales?: Partial<Record<Lang, AgentLocaleInput | null>>
 }
 
 interface AgentRequest {
@@ -207,6 +218,7 @@ export async function handleAgentPublish(request: Request): Promise<Response> {
     {
       slug: payload.post.slug,
       url: `${SITE_URL}/blog/${payload.post.slug}`,
+      ...(writeState.urls ? { urls: writeState.urls } : {}),
       status: writeState.status,
       requestId: payload.requestId,
       created: request.method === 'POST',
@@ -275,33 +287,52 @@ function validatePayload(
     )
   }
 
-  if (method === 'POST' && (!isCleanText(post.title, 1, 160) || !isCleanText(post.body, 1, 120_000))) {
+  const hasLocales = hasOwn(post, 'locales') && isPlainObject(post.locales)
+  const localeKeys = hasLocales ? Object.keys(post.locales as Record<string, unknown>) : []
+  if (hasOwn(post, 'locales') && !isValidLocalesInput(post.locales, method)) {
+    return problemResponse(
+      'bad_request',
+      400,
+      'post.locales has an invalid shape.',
+      path,
+      'Send locales with "pt" and/or "en" objects containing title, body and optional subtitle, excerpt, tags.',
+      false,
+    )
+  }
+
+  if (
+    method === 'POST' &&
+    !(hasLocales && localeKeys.length > 0) &&
+    (!isCleanText(post.title, 1, 160) || !isCleanText(post.body, 1, 120_000))
+  ) {
     return problemResponse(
       'bad_request',
       400,
       'post.title and post.body are required.',
       path,
-      'Send the article title and Markdown body.',
+      'Send the article title and Markdown body, or populate post.locales.pt / post.locales.en.',
       false,
     )
   }
 
-  if (method === 'PATCH' && post.title !== undefined && !isCleanText(post.title, 1, 160)) {
+  // Whatever is sent is checked, on POST as on PATCH: with `locales` the
+  // top-level title and body are optional, but they are still written.
+  if (post.title !== undefined && !isCleanText(post.title, 1, 160)) {
     return problemResponse(
       'bad_request',
       400,
-      'post.title must be a non-empty string when it is revised.',
+      'post.title must be a non-empty string when it is sent.',
       path,
       'Omit post.title to keep the current title, or send a replacement title.',
       false,
     )
   }
 
-  if (method === 'PATCH' && post.body !== undefined && !isCleanText(post.body, 1, 120_000)) {
+  if (post.body !== undefined && !isCleanText(post.body, 1, 120_000)) {
     return problemResponse(
       'bad_request',
       400,
-      'post.body must be a non-empty Markdown string when it is revised.',
+      'post.body must be a non-empty Markdown string when it is sent.',
       path,
       'Omit post.body to keep the current Markdown body, or send a replacement body.',
       false,
@@ -416,6 +447,7 @@ interface MaterializedPost {
   status: Status
   publishedAt: string | null
   now: string
+  urls?: { pt: string; en: string }
 }
 
 function materializePost(
@@ -427,14 +459,149 @@ function materializePost(
   const post = payload.post
   const previousMeta = options.create ? {} : existing?.meta ?? {}
   const previousBody = options.create ? {} : existing?.body ?? {}
-  const bodyText = post.body ?? stringField(previousBody.body)
   const status = post.status ?? statusField(previousMeta.status)
   const publishedAt =
     status === 'published' || status === 'unlisted'
       ? (post.publishedAt ?? existing?.publishedAt ?? stringOrNull(previousMeta.publishedAt) ?? options.now)
       : null
 
-  if (!bodyText) {
+  const existingLocales = isPlainObject(previousMeta.locales)
+    ? (previousMeta.locales as Record<string, Record<string, unknown>>)
+    : {}
+  const existingBodies = isPlainObject(previousBody.bodies)
+    ? (previousBody.bodies as Record<string, unknown>)
+    : {}
+
+  const localesOut: Record<string, Record<string, unknown>> = {}
+  const bodiesOut: Record<string, string> = {}
+
+  // Seed from existing localized maps or top-level legacy fields on PATCH.
+  if (!options.create) {
+    const prevLang = langField(previousMeta.lang)
+    for (const loc of ['pt', 'en'] as const) {
+      const prevLoc = existingLocales[loc]
+      const prevBodyText = stringField(existingBodies[loc])
+      if (isPlainObject(prevLoc)) {
+        localesOut[loc] = { ...prevLoc }
+        if (prevBodyText) bodiesOut[loc] = prevBodyText
+      }
+    }
+    if (!localesOut[prevLang] && stringField(previousMeta.title)) {
+      localesOut[prevLang] = stripNullish({
+        title: stringField(previousMeta.title),
+        subtitle: optionalStringField(previousMeta.subtitle),
+        excerpt: optionalStringField(previousMeta.excerpt) ?? '',
+        tags: Array.isArray(previousMeta.tags) ? previousMeta.tags : [],
+        readingMinutes:
+          typeof previousMeta.readingMinutes === 'number' ? previousMeta.readingMinutes : 1,
+      })
+      if (stringField(previousBody.body)) bodiesOut[prevLang] = stringField(previousBody.body)
+    }
+  }
+
+  // Apply explicit `post.locales` entries when sent.
+  if (hasOwn(post, 'locales') && isPlainObject(post.locales)) {
+    const incoming = post.locales as Partial<Record<Lang, AgentLocaleInput | null>>
+    for (const loc of ['pt', 'en'] as const) {
+      if (!hasOwn(incoming, loc)) continue
+      const entry = incoming[loc]
+      if (entry === null) {
+        delete localesOut[loc]
+        delete bodiesOut[loc]
+        continue
+      }
+      if (!entry) continue
+      const prevLoc = localesOut[loc] ?? {}
+      const nextBody = entry.body ?? bodiesOut[loc] ?? ''
+      const nextTitle = entry.title?.trim() ?? stringField(prevLoc.title)
+      if (!nextTitle || !nextBody) {
+        return problemResponse(
+          'bad_request',
+          400,
+          `post.locales.${loc} requires both title and body.`,
+          path,
+          `Include title and body for "${loc}", or send null to remove it.`,
+          false,
+        )
+      }
+      localesOut[loc] = stripNullish({
+        ...prevLoc,
+        title: nextTitle,
+        subtitle: hasOwn(entry, 'subtitle')
+          ? cleanOptional(entry.subtitle)
+          : prevLoc.subtitle,
+        excerpt:
+          (hasOwn(entry, 'excerpt')
+            ? cleanOptional(entry.excerpt)
+            : optionalStringField(prevLoc.excerpt)) ?? autoExcerpt(nextBody),
+        tags: hasOwn(entry, 'tags') ? cleanTags(entry.tags) : (prevLoc.tags ?? []),
+        readingMinutes: readingMinutes(nextBody),
+        coverAlt: hasOwn(entry, 'coverAlt')
+          ? cleanOptional(entry.coverAlt)
+          : prevLoc.coverAlt,
+        coverCaption: hasOwn(entry, 'coverCaption')
+          ? cleanOptional(entry.coverCaption)
+          : prevLoc.coverCaption,
+      })
+      bodiesOut[loc] = nextBody
+    }
+  }
+
+  // Apply top-level single-language fields when sent (backward-compatible API).
+  const hasTopLevelContent =
+    post.title !== undefined ||
+    post.body !== undefined ||
+    hasOwn(post, 'subtitle') ||
+    hasOwn(post, 'excerpt') ||
+    hasOwn(post, 'tags') ||
+    post.lang !== undefined
+  if (hasTopLevelContent || Object.keys(localesOut).length === 0) {
+    const targetLang = post.lang ?? langField(previousMeta.lang)
+    const prevLoc = localesOut[targetLang] ?? {}
+    const bodyText =
+      post.body ??
+      bodiesOut[targetLang] ??
+      (targetLang === langField(previousMeta.lang) ? stringField(previousBody.body) : '')
+    const titleText =
+      post.title?.trim() ??
+      stringField(prevLoc.title) ??
+      (targetLang === langField(previousMeta.lang) ? stringField(previousMeta.title) : '')
+
+    if (titleText || bodyText) {
+      if (!bodyText) {
+        return problemResponse(
+          'upstream_unavailable',
+          503,
+          'The existing post body could not be read, so a partial revision would be unsafe.',
+          path,
+          'Retry, or send post.body explicitly so the body can be replaced deliberately.',
+          false,
+        )
+      }
+      localesOut[targetLang] = stripNullish({
+        ...prevLoc,
+        title: titleText,
+        subtitle: hasOwn(post, 'subtitle')
+          ? cleanOptional(post.subtitle)
+          : (prevLoc.subtitle ?? previousMeta.subtitle),
+        excerpt:
+          (hasOwn(post, 'excerpt')
+            ? cleanOptional(post.excerpt)
+            : optionalStringField(prevLoc.excerpt ?? previousMeta.excerpt)) ?? autoExcerpt(bodyText),
+        tags: hasOwn(post, 'tags')
+          ? cleanTags(post.tags)
+          : (prevLoc.tags ?? previousMeta.tags ?? []),
+        readingMinutes: readingMinutes(bodyText),
+      })
+      bodiesOut[targetLang] = bodyText
+    }
+  }
+
+  const primaryLang: Lang = localesOut.pt ? 'pt' : localesOut.en ? 'en' : langField(previousMeta.lang)
+  const primaryLoc = localesOut[primaryLang]
+  const primaryBody = bodiesOut[primaryLang] ?? stringField(previousBody.body)
+
+  if (!primaryLoc || !primaryBody) {
     return problemResponse(
       'upstream_unavailable',
       503,
@@ -445,40 +612,55 @@ function materializePost(
     )
   }
 
+  const bilingual = Boolean(localesOut.pt && localesOut.en)
+
   const meta = stripNullish({
     ...previousMeta,
     slug: post.slug,
-    lang: post.lang ?? langField(previousMeta.lang),
+    lang: primaryLang,
     status,
-    title: post.title?.trim() ?? stringField(previousMeta.title),
-    subtitle: hasOwn(post, 'subtitle')
-      ? cleanOptional(post.subtitle)
-      : previousMeta.subtitle,
-    excerpt:
-      (hasOwn(post, 'excerpt')
-        ? cleanOptional(post.excerpt)
-        : optionalStringField(previousMeta.excerpt)) ?? autoExcerpt(bodyText),
+    title: stringField(primaryLoc.title),
+    subtitle: optionalStringField(primaryLoc.subtitle),
+    excerpt: optionalStringField(primaryLoc.excerpt) ?? autoExcerpt(primaryBody),
     cover: hasOwn(post, 'cover') ? post.cover : previousMeta.cover,
-    tags: hasOwn(post, 'tags') ? cleanTags(post.tags) : (previousMeta.tags ?? []),
+    tags: Array.isArray(primaryLoc.tags) ? primaryLoc.tags : [],
     series: hasOwn(post, 'series') ? post.series : previousMeta.series,
-    readingMinutes: readingMinutes(bodyText),
+    readingMinutes: readingMinutes(primaryBody),
     publishedAt,
     updatedAt: options.now,
-    translationOf: hasOwn(post, 'translationOf')
-      ? cleanOptional(post.translationOf)
-      : previousMeta.translationOf,
+    locales: localesOut,
+    translationOf: bilingual
+      ? undefined
+      : hasOwn(post, 'translationOf')
+        ? cleanOptional(post.translationOf)
+        : previousMeta.translationOf,
     featured: hasOwn(post, 'featured') ? post.featured : (previousMeta.featured ?? false),
     agentRequestId: payload.requestId.trim(),
   })
 
   const body = stripNullish({
     ...previousBody,
-    body: bodyText,
+    body: primaryBody,
+    bodies: bodiesOut,
     status,
     media: hasOwn(post, 'media') ? (post.media ?? {}) : (previousBody.media ?? {}),
   })
 
-  return { meta, body, status, publishedAt, now: options.now }
+  return {
+    meta,
+    body,
+    status,
+    publishedAt,
+    now: options.now,
+    ...(bilingual
+      ? {
+          urls: {
+            pt: `${SITE_URL}/blog/${post.slug}`,
+            en: `${SITE_URL}/en/blog/${post.slug}`,
+          },
+        }
+      : {}),
+  }
 }
 
 function buildCommit(
@@ -830,6 +1012,31 @@ function isHttpUrl(value: unknown): boolean {
 
 function isPositiveFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value > 0
+}
+
+function isValidLocalesInput(value: unknown, method: string): boolean {
+  if (!isPlainObject(value)) return false
+  const entries = Object.entries(value)
+  if (entries.length === 0) return false
+  for (const [key, entry] of entries) {
+    if (key !== 'pt' && key !== 'en') return false
+    if (entry === null) {
+      if (method === 'POST') return false
+      continue
+    }
+    if (!isPlainObject(entry)) return false
+    if (method === 'POST' && (!isCleanText(entry.title, 1, 160) || !isCleanText(entry.body, 1, 120_000))) {
+      return false
+    }
+    if (entry.title !== undefined && !isCleanText(entry.title, 1, 160)) return false
+    if (entry.body !== undefined && !isCleanText(entry.body, 1, 120_000)) return false
+    if (hasOwn(entry, 'subtitle') && !isOptionalText(entry.subtitle, 160)) return false
+    if (hasOwn(entry, 'excerpt') && !isOptionalText(entry.excerpt, 200)) return false
+    if (entry.tags !== undefined && !isStringArray(entry.tags, 20, 40)) return false
+    if (hasOwn(entry, 'coverAlt') && !isOptionalText(entry.coverAlt, 300)) return false
+    if (hasOwn(entry, 'coverCaption') && !isOptionalText(entry.coverCaption, 500)) return false
+  }
+  return true
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

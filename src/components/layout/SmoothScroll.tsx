@@ -11,7 +11,7 @@ interface SmoothScrollProps {
 
 /**
  * Lenis smooth-scroll root, driven by the GSAP ticker so ScrollTrigger,
- * Lenis, and the WebGL loop all share one clock.
+ * Lenis, and the hero's canvas loop all share one clock.
  */
 export function SmoothScroll({ children }: SmoothScrollProps) {
   const lenisRef = useRef<LenisRef>(null)

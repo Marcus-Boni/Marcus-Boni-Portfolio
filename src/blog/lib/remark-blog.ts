@@ -41,7 +41,7 @@ import { visit } from 'unist-util-visit'
  * so a typo in the editor never blanks the whole post.
  */
 
-const CONTAINER_DIRECTIVES = new Set(['callout', 'quote', 'gallery', 'takeaways', 'steps', 'step'])
+const CONTAINER_DIRECTIVES = new Set(['callout', 'quote', 'gallery', 'takeaways', 'report-comparison', 'steps', 'step'])
 const LEAF_DIRECTIVES = new Set(['youtube', 'video', 'repo'])
 
 interface BlockNode {

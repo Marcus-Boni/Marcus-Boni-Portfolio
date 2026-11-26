@@ -1,5 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
+import { profile } from '@/data/profile'
+
 /**
  * Integration tests for `netlify/edge-functions/agents.ts`.
  *
@@ -60,7 +62,7 @@ describe('agents — static routes (no Firestore configured)', () => {
     expect(response.status).toBe(200)
     expect(response.headers.get('content-type')).toBe('text/markdown; charset=utf-8')
     expect(response.headers.get('vary')).toBe('Accept, Accept-Encoding')
-    expect(await response.text()).toContain('# Marcus Boni — Software Engineer')
+    expect(await response.text()).toContain(`# ${profile.name} — ${profile.role}`)
   })
 
   it('serves HTML by default, and declares that the URL varies by Accept', async () => {

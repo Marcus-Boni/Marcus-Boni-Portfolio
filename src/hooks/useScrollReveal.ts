@@ -4,6 +4,7 @@ import SplitType from 'split-type'
 import { gsap, ScrollTrigger } from '@/animations/gsap'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { shouldSkipIntro } from '@/lib/defer'
+import { isLocaleTransitioning } from '@/lib/locale-transition'
 
 /**
  * `ink` is the odd one out: instead of a one-shot entrance it ties the text to
@@ -46,10 +47,10 @@ export function useScrollReveal<T extends HTMLElement = HTMLHeadingElement>(
     const el = ref.current
     if (!el) return
 
-    if (reduced || (immediate && shouldSkipIntro())) {
-      // Reduced motion — or the page got interactive so late that hiding the
-      // already-painted static shell to replay the intro would hurt more
-      // than the animation is worth (and would push LCP to animation end).
+    if (reduced || (immediate && (shouldSkipIntro() || isLocaleTransitioning()))) {
+      // Reduced motion, late hydration, or an active language View Transition:
+      // keep the headline immediately visible so the View Transition captures
+      // the crisp new edition instead of a blank hidden frame.
       el.style.visibility = 'visible'
       return
     }

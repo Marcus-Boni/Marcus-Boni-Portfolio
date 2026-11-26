@@ -34,9 +34,17 @@ import { publishChecklist } from '@/admin/lib/health'
 import { clearDraft, readDraft, writeDraft } from '@/admin/lib/local-drafts'
 import { PostBody } from '@/blog/components/PostBody'
 import { autoExcerpt, readingMinutes, slugify } from '@/blog/lib/text'
-import { emptyPost, type MediaRef, type Post, type PostStatus } from '@/blog/types'
+import {
+  emptyPost,
+  type MediaRef,
+  type Post,
+  type PostLocaleMeta,
+  type PostStatus,
+} from '@/blog/types'
+import type { Locale } from '@/i18n/translations'
 import { isFirebaseConfigured } from '@/lib/firebase'
 import { cn } from '@/lib/utils'
+import { BLOG_LOCALES, postPath } from '../../../netlify/lib/blog-locale'
 
 type Pane = 'split' | 'write' | 'preview'
 
@@ -71,6 +79,14 @@ const ARTICLE_STARTERS = [
   },
 ] as const
 
+const EMPTY_LOCALE_META: PostLocaleMeta = {
+  title: '',
+  subtitle: '',
+  excerpt: '',
+  tags: [],
+  readingMinutes: 0,
+}
+
 /** `2026-09-12T14:30` — the shape `datetime-local` expects, in local time. */
 function toLocalInput(iso: string | null): string {
   if (!iso) return ''
@@ -82,6 +98,62 @@ function toLocalInput(iso: string | null): string {
   )}:${pad(date.getMinutes())}`
 }
 
+function getLocaleMeta(post: Post, lang: Locale): PostLocaleMeta {
+  const stored = post.locales?.[lang]
+  if (stored) return stored
+  if (lang === post.lang) {
+    return {
+      title: post.title,
+      subtitle: post.subtitle ?? '',
+      excerpt: post.excerpt,
+      tags: post.tags,
+      readingMinutes: post.readingMinutes,
+    }
+  }
+  return EMPTY_LOCALE_META
+}
+
+function getLocaleBody(post: Post, lang: Locale): string {
+  if (post.bodies?.[lang] !== undefined) return post.bodies[lang]!
+  return lang === post.lang ? post.body : ''
+}
+
+function localeFilled(post: Post, lang: Locale): boolean {
+  const meta = getLocaleMeta(post, lang)
+  const body = getLocaleBody(post, lang)
+  return Boolean(meta.title.trim() || body.trim())
+}
+
+function localeReady(post: Post, lang: Locale): boolean {
+  const meta = getLocaleMeta(post, lang)
+  const body = getLocaleBody(post, lang)
+  return Boolean(meta.title.trim() && body.trim())
+}
+
+/** Keeps top-level legacy mirror fields aligned with the primary populated language. */
+function syncPrimaryMirror(post: Post): Post {
+  const ptMeta = post.locales?.pt
+  const enMeta = post.locales?.en
+  const ptBody = post.bodies?.pt ?? ''
+  const enBody = post.bodies?.en ?? ''
+  const hasPt = Boolean(ptMeta?.title.trim() || ptBody.trim())
+  const hasEn = Boolean(enMeta?.title.trim() || enBody.trim())
+  const primary: Locale = hasPt ? 'pt' : hasEn ? 'en' : post.lang
+  const primaryMeta = post.locales?.[primary] ?? EMPTY_LOCALE_META
+  const primaryBody = post.bodies?.[primary] ?? ''
+
+  return {
+    ...post,
+    lang: primary,
+    title: primaryMeta.title,
+    subtitle: primaryMeta.subtitle ?? '',
+    excerpt: primaryMeta.excerpt,
+    tags: primaryMeta.tags,
+    readingMinutes: primaryBody.trim() ? readingMinutes(primaryBody) : 0,
+    body: primaryBody,
+  }
+}
+
 export function BlogEditor() {
   const { slug: routeSlug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
@@ -91,6 +163,7 @@ export function BlogEditor() {
   const isNew = !routeSlug || routeSlug === 'new'
 
   const [post, setPost] = useState<Post>(() => emptyPost('pt'))
+  const [activeLang, setActiveLang] = useState<Locale>('pt')
   const [loading, setLoading] = useState(!isNew && isFirebaseConfigured)
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
@@ -112,9 +185,12 @@ export function BlogEditor() {
     () => {
       if (!isNew) return null
       const local = readDraft('new')
-      return local && local.post.body.trim()
-        ? { post: local.post, savedAt: local.savedAt }
-        : null
+      const hasBody = Boolean(
+        local?.post.body.trim() ||
+          local?.post.bodies?.pt?.trim() ||
+          local?.post.bodies?.en?.trim(),
+      )
+      return local && hasBody ? { post: local.post, savedAt: local.savedAt } : null
     },
   )
   /** The slug the post is stored under, so a rename can clean up the old doc. */
@@ -131,11 +207,9 @@ export function BlogEditor() {
         if (cancelled) return
         if (result) {
           setPost(result)
+          setActiveLang(result.lang)
           originalSlug.current = result.slug
 
-          // The local copy is newer than what Firestore has when the tab died
-          // between an autosave and a save. That is exactly the case the crash
-          // guard exists for — and the case it never actually covered.
           const local = readDraft(routeSlug)
           if (local && local.savedAt > new Date(result.updatedAt).getTime() + 1000) {
             setRecovery({ post: local.post, savedAt: local.savedAt })
@@ -179,38 +253,106 @@ export function BlogEditor() {
     setDirty(true)
   }, [])
 
-  /* Slug follows the title until it is edited by hand — after that it is
-     yours, because changing it silently would break a published URL. */
-  const onTitleChange = (title: string) => {
-    patch(slugTouched ? { title } : { title, slug: slugify(title) })
+  const patchLocale = useCallback(
+    (
+      lang: Locale,
+      changes: Partial<PostLocaleMeta> & { body?: string; slug?: string },
+    ) => {
+      setPost((current) => {
+        const existingMeta = getLocaleMeta(current, lang)
+        const existingBody = getLocaleBody(current, lang)
+        const nextBody = changes.body !== undefined ? changes.body : existingBody
+        const nextMeta: PostLocaleMeta = {
+          ...existingMeta,
+          ...(changes.title !== undefined ? { title: changes.title } : {}),
+          ...(changes.subtitle !== undefined ? { subtitle: changes.subtitle } : {}),
+          ...(changes.excerpt !== undefined ? { excerpt: changes.excerpt } : {}),
+          ...(changes.tags !== undefined ? { tags: changes.tags } : {}),
+          ...(changes.coverAlt !== undefined ? { coverAlt: changes.coverAlt } : {}),
+          ...(changes.coverCaption !== undefined ? { coverCaption: changes.coverCaption } : {}),
+          readingMinutes: nextBody.trim() ? readingMinutes(nextBody) : 0,
+        }
+        const updated: Post = {
+          ...current,
+          ...(changes.slug !== undefined ? { slug: changes.slug } : {}),
+          locales: {
+            ...(current.locales ?? {}),
+            [lang]: nextMeta,
+          },
+          bodies: {
+            ...(current.bodies ?? {}),
+            [lang]: nextBody,
+          },
+        }
+        return syncPrimaryMirror(updated)
+      })
+      setDirty(true)
+    },
+    [],
+  )
+
+  const clearLocaleVersion = async (lang: Locale) => {
+    const label = lang === 'en' ? 'em inglês' : 'em português'
+    const yes = await confirm({
+      title: `Remover versão ${label}?`,
+      description:
+        'O título, resumo, tags e texto deste idioma serão removidos desta publicação ao salvar.',
+      confirmLabel: 'Remover versão',
+      tone: 'danger',
+    })
+    if (!yes) return
+    const other: Locale = lang === 'pt' ? 'en' : 'pt'
+    setPost((current) => {
+      const nextLocales = { ...(current.locales ?? {}) }
+      const nextBodies = { ...(current.bodies ?? {}) }
+      delete nextLocales[lang]
+      delete nextBodies[lang]
+      return syncPrimaryMirror({
+        ...current,
+        locales: nextLocales,
+        bodies: nextBodies,
+      })
+    })
+    setActiveLang(other)
+    setDirty(true)
   }
 
-  const minutes = useMemo(() => readingMinutes(post.body), [post.body])
-  const checklist = useMemo(() => publishChecklist(post), [post])
+  const currentMeta = getLocaleMeta(post, activeLang)
+  const currentBody = getLocaleBody(post, activeLang)
+  const ptFilled = localeFilled(post, 'pt')
+  const enFilled = localeFilled(post, 'en')
+  const bilingual = ptFilled && enFilled
+
+  /* Slug follows the primary title until edited by hand — after that it is
+     yours, because changing it silently would break a published URL. */
+  const onTitleChange = (title: string) => {
+    const shouldGenerateSlug =
+      !slugTouched && (activeLang === 'pt' || !ptFilled)
+    patchLocale(activeLang, shouldGenerateSlug ? { title, slug: slugify(title) } : { title })
+  }
+
+  const minutes = useMemo(() => readingMinutes(currentBody), [currentBody])
+  const checklist = useMemo(() => publishChecklist(post, activeLang), [post, activeLang])
   const pending = checklist.filter((check) => !check.ok).length
 
-  /** Tags already used across the blog, offered as one-click chips. */
+  /** Tags already used across the blog in this language, offered as one-click chips. */
   const tagSuggestions = useMemo(() => {
     const all = new Set<string>()
-    for (const item of posts) item.tags.forEach((tag) => all.add(tag))
-    for (const tag of post.tags) all.delete(tag)
+    for (const item of posts) {
+      const localeTags = item.locales?.[activeLang]?.tags ?? (item.lang === activeLang ? item.tags : [])
+      localeTags.forEach((tag) => all.add(tag))
+    }
+    for (const tag of currentMeta.tags) all.delete(tag)
     return [...all].sort()
-  }, [posts, post.tags])
-
-  /** Candidates for the hreflang pair: posts written in the other language. */
-  const translationCandidates = useMemo(
-    () => posts.filter((item) => item.lang !== post.lang && item.slug !== post.slug),
-    [posts, post.lang, post.slug],
-  )
+  }, [posts, activeLang, currentMeta.tags])
 
   const insertMedia = (media: MediaRef) => {
     const id = crypto.randomUUID().slice(0, 8)
-    patch({
-      media: { ...(post.media ?? {}), [id]: media },
-      body: `${post.body}${post.body.endsWith('\n') || !post.body ? '' : '\n'}\n![${
-        media.alt
-      }](media:${id})\n`,
-    })
+    const nextBody = `${currentBody}${currentBody.endsWith('\n') || !currentBody ? '' : '\n'}\n![${
+      media.alt
+    }](media:${id})\n`
+    patch({ media: { ...(post.media ?? {}), [id]: media } })
+    patchLocale(activeLang, { body: nextBody })
   }
 
   /** Upload path for an image pasted or dropped into the textarea. */
@@ -232,14 +374,47 @@ export function BlogEditor() {
 
   const save = useCallback(async () => {
     if (!isFirebaseConfigured || saving) return
-    const slug = post.slug || slugify(post.title)
+
+    const synced = syncPrimaryMirror(post)
+    const ptMeta = getLocaleMeta(synced, 'pt')
+    const enMeta = getLocaleMeta(synced, 'en')
+    const ptBody = getLocaleBody(synced, 'pt')
+    const enBody = getLocaleBody(synced, 'en')
+    const hasPt = Boolean(ptMeta.title.trim() || ptBody.trim())
+    const hasEn = Boolean(enMeta.title.trim() || enBody.trim())
+
+    const primaryTitle = ptMeta.title.trim() || enMeta.title.trim()
+    const slug = synced.slug || slugify(primaryTitle)
     if (!slug) {
       setMessage({ tone: 'error', text: 'Defina um título ou um slug antes de salvar.' })
       return
     }
-    if (!post.title.trim()) {
-      setMessage({ tone: 'error', text: 'O post precisa de um título.' })
+    if (!primaryTitle) {
+      setMessage({
+        tone: 'error',
+        text: 'A publicação precisa de título em pelo menos um idioma (Português ou English).',
+      })
       return
+    }
+
+    // Prevent half-finished translations from going live silently.
+    if (synced.status !== 'draft') {
+      if (hasPt && (!ptMeta.title.trim() || !ptBody.trim())) {
+        setActiveLang('pt')
+        setMessage({
+          tone: 'error',
+          text: 'A versão em português precisa de título e texto antes de publicar (ou remova a aba em português).',
+        })
+        return
+      }
+      if (hasEn && (!enMeta.title.trim() || !enBody.trim())) {
+        setActiveLang('en')
+        setMessage({
+          tone: 'error',
+          text: 'A versão em inglês precisa de título e texto antes de publicar (ou remova a aba em inglês).',
+        })
+        return
+      }
     }
 
     setSaving(true)
@@ -247,8 +422,6 @@ export function BlogEditor() {
     try {
       const service = await import('@/blog/service')
 
-      // A slug change on an existing post would otherwise leave the old
-      // document behind, still live at the old URL.
       const renaming = originalSlug.current !== null && originalSlug.current !== slug
       if ((renaming || isNew) && (await service.slugExists(slug))) {
         setMessage({ tone: 'error', text: `Já existe um post com o slug "${slug}".` })
@@ -256,11 +429,31 @@ export function BlogEditor() {
         return
       }
 
-      const payload: Post = {
-        ...post,
-        slug,
-        excerpt: post.excerpt.trim() || autoExcerpt(post.body),
+      const nextLocales: NonNullable<Post['locales']> = {}
+      const nextBodies: NonNullable<Post['bodies']> = {}
+      for (const loc of BLOG_LOCALES) {
+        const meta = getLocaleMeta(synced, loc)
+        const body = getLocaleBody(synced, loc)
+        if (!meta.title.trim() && !body.trim() && !meta.subtitle?.trim() && !meta.excerpt.trim() && meta.tags.length === 0) {
+          continue
+        }
+        nextLocales[loc] = {
+          ...meta,
+          title: meta.title.trim(),
+          subtitle: meta.subtitle?.trim() ?? '',
+          excerpt: meta.excerpt.trim() || (body.trim() ? autoExcerpt(body) : ''),
+          readingMinutes: body.trim() ? readingMinutes(body) : 1,
+        }
+        nextBodies[loc] = body
       }
+
+      const payload = syncPrimaryMirror({
+        ...synced,
+        slug,
+        locales: nextLocales,
+        bodies: nextBodies,
+      })
+
       await service.savePost(payload)
       if (renaming && originalSlug.current) {
         await service.deletePost(originalSlug.current)
@@ -274,7 +467,7 @@ export function BlogEditor() {
       setAutosavedAt(null)
       reload()
       toast.success(
-        payload.status === 'published' ? 'Post salvo e publicado.' : 'Post salvo.',
+        payload.status === 'published' ? 'Publicação salva e publicada.' : 'Publicação salva.',
       )
       if (isNew || renaming) navigate(`/admin/blog/${slug}`, { replace: true })
     } catch (cause) {
@@ -282,7 +475,7 @@ export function BlogEditor() {
         tone: 'error',
         text: cause instanceof Error ? cause.message : 'Falha ao salvar.',
       })
-      toast.error('Não foi possível salvar o post.')
+      toast.error('Não foi possível salvar a publicação.')
     } finally {
       setSaving(false)
     }
@@ -307,23 +500,43 @@ export function BlogEditor() {
   if (loading) return <Spinner label="Carregando post" />
 
   const statusHint = STATUS_OPTIONS.find((option) => option.value === post.status)?.hint
+  const activeCoverAlt =
+    activeLang === post.lang
+      ? (post.cover?.alt ?? '')
+      : (currentMeta.coverAlt ?? post.cover?.alt ?? '')
+  const activeCoverCaption =
+    activeLang === post.lang
+      ? (post.cover?.caption ?? '')
+      : (currentMeta.coverCaption ?? post.cover?.caption ?? '')
+  const viewOnSiteHref = post.slug ? postPath(post, activeLang) : ''
 
   return (
     <>
       <PageHeader
-        title={isNew ? 'Novo post' : 'Editar post'}
-        documentTitle={post.title || (isNew ? 'Novo post' : 'Editar post')}
+        title={isNew ? 'Nova publicação' : 'Editar publicação'}
+        documentTitle={currentMeta.title || post.title || (isNew ? 'Nova publicação' : 'Editar publicação')}
         subtitle={
           post.slug ? (
-            <span className="flex flex-wrap items-center gap-3">
-              <span className="font-mono text-xs">/blog/{post.slug}</span>
-              <CopyButton
-                value={`${window.location.origin}/blog/${post.slug}`}
-                label="copiar link"
-              />
+            <span className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <span className="flex items-center gap-2">
+                <span className="font-mono text-xs">/blog/{post.slug}</span>
+                <CopyButton
+                  value={`${window.location.origin}/blog/${post.slug}`}
+                  label={bilingual ? 'copiar PT' : 'copiar link'}
+                />
+              </span>
+              {bilingual && (
+                <span className="flex items-center gap-2">
+                  <span className="font-mono text-xs text-ember">/en/blog/{post.slug}</span>
+                  <CopyButton
+                    value={`${window.location.origin}/en/blog/${post.slug}`}
+                    label="copiar EN"
+                  />
+                </span>
+              )}
             </span>
           ) : (
-            'O slug é gerado a partir do título.'
+            'Uma única publicação — preencha Português, English ou ambos na mesma tela.'
           )
         }
         meta={
@@ -341,10 +554,13 @@ export function BlogEditor() {
                     : 'alterações não salvas'
                   : 'salvo'}
             </span>
+            <Badge tone={bilingual ? 'ember' : 'neutral'}>
+              {bilingual ? 'PT · EN' : ptFilled ? 'PT' : enFilled ? 'EN' : activeLang.toUpperCase()}
+            </Badge>
             <span className="font-mono text-[10px] tracking-[0.16em] text-smoke uppercase">
-              {minutes} min de leitura
+              {minutes} min ({activeLang.toUpperCase()})
             </span>
-            {pending > 0 && post.body.trim() && (
+            {pending > 0 && currentBody.trim() && (
               <Badge tone="warn" title="Itens do checklist de publicação">
                 {pending} item(ns) do checklist
               </Badge>
@@ -364,14 +580,14 @@ export function BlogEditor() {
                 { value: 'preview', label: 'Preview' },
               ]}
             />
-            {post.status !== 'draft' && post.slug && (
+            {post.status !== 'draft' && viewOnSiteHref && (
               <ButtonLink
-                href={`/blog/${post.slug}`}
+                href={viewOnSiteHref}
                 external
                 variant="subtle"
                 title="Abrir no site"
               >
-                ↗ Ver
+                ↗ Ver ({activeLang.toUpperCase()})
               </ButtonLink>
             )}
             <AdminButton variant="ghost" onClick={() => void leave()}>
@@ -439,19 +655,64 @@ export function BlogEditor() {
         </div>
       )}
 
-      {/* The article comes first; supporting fields can wait until writing is done. */}
+      {/* ─── Language tabs + Title + Visibility ────────────────── */}
       <Card className="mb-6 border-bone/20 bg-ink-soft/80">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <Segmented
+              size="sm"
+              label="Idioma da publicação"
+              value={activeLang}
+              onChange={setActiveLang}
+              options={[
+                { value: 'pt', label: ptFilled ? 'Português ✓' : 'Português' },
+                { value: 'en', label: enFilled ? 'English ✓' : 'English' },
+              ]}
+            />
+            <span className="text-xs text-smoke">
+              {bilingual
+                ? 'Publicação bilíngue: o leitor alterna entre PT e EN no mesmo artigo.'
+                : activeLang === 'en' && !enFilled
+                  ? 'Preencha esta aba para liberar a leitura em inglês na mesma publicação.'
+                  : activeLang === 'pt' && !ptFilled
+                    ? 'Preencha esta aba para liberar a leitura em português na mesma publicação.'
+                    : 'Você pode adicionar o outro idioma na aba ao lado sem criar outro post.'}
+            </span>
+          </div>
+
+          {bilingual && (
+            <button
+              type="button"
+              onClick={() => void clearLocaleVersion(activeLang)}
+              className={cn(
+                'font-mono text-[10px] tracking-[0.16em] text-smoke uppercase transition-colors hover:text-ember',
+                focusRing,
+              )}
+            >
+              Remover versão {activeLang.toUpperCase()}
+            </button>
+          )}
+        </div>
+
         <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_13rem] md:items-end">
           <div>
             <Field
-              label="Título"
-              required
-              hint="Claro, específico e no idioma do artigo. O Google pode ajustar a exibição na busca."
+              label={activeLang === 'en' ? 'Title (English)' : 'Título (Português)'}
+              required={!(activeLang === 'en' ? localeReady(post, 'pt') : localeReady(post, 'en'))}
+              hint={
+                activeLang === 'en'
+                  ? 'Claro, específico e em inglês. Compartilha o mesmo slug e capa da publicação.'
+                  : 'Claro, específico e em português. O Google pode ajustar a exibição na busca.'
+              }
             >
               <TextInput
-                value={post.title}
+                value={currentMeta.title}
                 onChange={(event) => onTitleChange(event.target.value)}
-                placeholder="Dê um título ao seu próximo artigo"
+                placeholder={
+                  activeLang === 'en'
+                    ? 'Give the English version a clear title'
+                    : 'Dê um título à sua publicação'
+                }
               />
             </Field>
           </div>
@@ -472,11 +733,14 @@ export function BlogEditor() {
       </Card>
 
       {/* ─── Write / preview ───────────────────────────────────── */}
-      {!post.body.trim() && pane !== 'preview' && (
+      {!currentBody.trim() && pane !== 'preview' && (
         <div className="mb-4 border-l-2 border-ember bg-ink-soft/50 px-5 py-4">
-          <p className="font-display text-xl text-bone">Comece do seu jeito</p>
+          <p className="font-display text-xl text-bone">
+            {activeLang === 'en' ? 'Start the English version' : 'Comece do seu jeito'}
+          </p>
           <p className="mt-1 text-xs leading-relaxed text-bone-dim">
-            Escreva livremente ou insira uma estrutura. Os trechos entre colchetes são
+            Escreva livremente ou insira uma estrutura em{' '}
+            {activeLang === 'en' ? 'inglês' : 'português'}. Os trechos entre colchetes são
             sugestões para substituir antes de publicar.
           </p>
           <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -484,7 +748,7 @@ export function BlogEditor() {
               <button
                 key={starter.label}
                 type="button"
-                onClick={() => patch({ body: starter[post.lang] })}
+                onClick={() => patchLocale(activeLang, { body: starter[activeLang] })}
                 className={cn(
                   'border border-line px-3 py-3 text-left transition-colors hover:border-ember hover:bg-ink-soft',
                   focusRing,
@@ -504,8 +768,9 @@ export function BlogEditor() {
       <div className={cn('grid gap-6', pane === 'split' && 'lg:grid-cols-2')}>
         {pane !== 'preview' && (
           <MarkdownEditor
-            value={post.body}
-            onChange={(body) => patch({ body })}
+            key={`editor:${activeLang}`}
+            value={currentBody}
+            onChange={(body) => patchLocale(activeLang, { body })}
             onRequestImage={() => setShowBodyUploader(true)}
             onDropImage={(file) => void uploadInline(file)}
           />
@@ -514,9 +779,9 @@ export function BlogEditor() {
         {pane !== 'write' && (
           <div className="min-w-0 border border-line bg-ink px-5 py-6 md:px-8">
             <p className="mb-6 border-b border-line pb-3 font-mono text-[10px] tracking-[0.2em] text-smoke uppercase">
-              Preview — mesmo CSS do post publicado
+              Preview ({activeLang.toUpperCase()}) — mesmo CSS do post publicado
             </p>
-            <PostBody markdown={post.body} media={post.media} lang={post.lang} />
+            <PostBody markdown={currentBody} media={post.media} lang={activeLang} />
           </div>
         )}
       </div>
@@ -525,7 +790,7 @@ export function BlogEditor() {
         <Card className="mt-6">
           <SectionHeader
             label="Inserir imagem no corpo"
-            hint="Entra no Markdown como ![alt](media:id), com srcset e blur-up."
+            hint="Entra no Markdown como ![alt](media:id), com srcset e blur-up — a mesma imagem pode ser reutilizada em PT e EN."
             action={
               <button
                 type="button"
@@ -551,233 +816,210 @@ export function BlogEditor() {
       )}
 
       {/* ─── Metadata ──────────────────────────────────────────── */}
-      <details className="mb-6 border border-line bg-ink-soft/60">
+      <details className="mt-6 mb-6 border border-line bg-ink-soft/60">
         <summary className={cn('cursor-pointer px-5 py-4 md:px-6', focusRing)}>
           <span className="flex flex-wrap items-center justify-between gap-2">
             <span className="font-mono text-[11px] tracking-[0.16em] text-bone uppercase">
-              Detalhes do artigo
+              Detalhes da publicação ({activeLang.toUpperCase()} + compartilhados)
             </span>
-            <span className="text-xs text-smoke">Resumo, tags, capa, URL e tradução</span>
+            <span className="text-xs text-smoke">Resumo, tags, capa, URL e data</span>
           </span>
         </summary>
         <div className="border-t border-line p-5 md:p-6">
-        <div className="grid gap-5 md:grid-cols-2">
-
-          <Field label="Subtítulo" hint="A linha editorial sob o título. Opcional.">
-            <TextInput
-              value={post.subtitle ?? ''}
-              onChange={(event) => patch({ subtitle: event.target.value })}
-            />
-          </Field>
-
-          <Field
-            label="Slug"
-            hint="Define a URL. Mudar depois de publicar quebra links."
-            error={
-              post.status === 'published' && slugTouched && !isNew
-                ? 'Este post já está publicado — renomear cria um redirecionamento quebrado.'
-                : null
-            }
-          >
-            <TextInput
-              value={post.slug}
-              onChange={(event) => {
-                setSlugTouched(true)
-                patch({ slug: slugify(event.target.value) })
-              }}
-            />
-          </Field>
-
-          <div className="md:col-span-2">
+          <div className="grid gap-5 md:grid-cols-2">
             <Field
-              label="Resumo"
-              counter={[post.excerpt.length, 200]}
-              hint="Cards, meta description e RSS. Cerca de 150–160 caracteres é uma referência, sem garantir a exibição. Vazio usa o corpo."
+              label={`Subtítulo (${activeLang.toUpperCase()})`}
+              hint="A linha editorial sob o título neste idioma. Opcional."
             >
-              <TextArea
-                value={post.excerpt}
-                maxLength={200}
-                onChange={(event) => patch({ excerpt: event.target.value })}
-              />
-            </Field>
-          </div>
-
-          <Field label="Idioma">
-            <Select
-              value={post.lang}
-              onChange={(event) => patch({ lang: event.target.value as 'pt' | 'en' })}
-            >
-              <option value="pt">Português</option>
-              <option value="en">English</option>
-            </Select>
-          </Field>
-
-          <div className="md:col-span-2">
-            <Field label="Tags" hint="Enter ou vírgula para adicionar.">
-              <TagInput
-                values={post.tags}
-                suggestions={tagSuggestions}
-                transform={(value) => value.toLowerCase()}
-                onChange={(tags) => patch({ tags })}
-                placeholder="react, performance…"
-              />
-            </Field>
-          </div>
-
-          <Field
-            label="Tradução"
-            hint="O post equivalente no outro idioma. Só então o site gera hreflang."
-          >
-            {translationCandidates.length > 0 ? (
-              <Select
-                value={post.translationOf ?? ''}
-                onChange={(event) =>
-                  patch({ translationOf: event.target.value || undefined })
-                }
-              >
-                <option value="">— sem par —</option>
-                {/* A stored slug outside the candidate list (a pair in the same
-                    language, a post since renamed) still has to appear, or
-                    saving from this screen would quietly erase it. */}
-                {post.translationOf &&
-                  !translationCandidates.some(
-                    (candidate) => candidate.slug === post.translationOf,
-                  ) && (
-                    <option value={post.translationOf}>{post.translationOf}</option>
-                  )}
-                {translationCandidates.map((candidate) => (
-                  <option key={candidate.slug} value={candidate.slug}>
-                    [{candidate.lang.toUpperCase()}] {candidate.title || candidate.slug}
-                  </option>
-                ))}
-              </Select>
-            ) : (
               <TextInput
-                value={post.translationOf ?? ''}
-                onChange={(event) => patch({ translationOf: slugify(event.target.value) })}
-                placeholder="slug-do-par"
+                value={currentMeta.subtitle ?? ''}
+                onChange={(event) => patchLocale(activeLang, { subtitle: event.target.value })}
               />
-            )}
-          </Field>
+            </Field>
 
-          <Field
-            label="Data de publicação"
-            hint={
-              post.publishedAt
-                ? 'Ordena o índice e o RSS. Ajuste para antedatar um estudo antigo.'
-                : 'Preenchida automaticamente no primeiro publish.'
-            }
-          >
-            <TextInput
-              type="datetime-local"
-              value={toLocalInput(post.publishedAt)}
-              onChange={(event) =>
-                patch({
-                  publishedAt: event.target.value
-                    ? new Date(event.target.value).toISOString()
-                    : null,
-                })
+            <Field
+              label="Slug (único para PT e EN)"
+              hint={
+                bilingual
+                  ? 'Define /blog/{slug} (PT) e /en/blog/{slug} (EN). Mudar depois de publicar quebra links.'
+                  : 'Define /blog/{slug}. Mudar depois de publicar quebra links.'
+              }
+              error={
+                post.status === 'published' && slugTouched && !isNew
+                  ? 'Este post já está publicado — renomear cria um endereço quebrado.'
+                  : null
+              }
+            >
+              <TextInput
+                value={post.slug}
+                onChange={(event) => {
+                  setSlugTouched(true)
+                  patch({ slug: slugify(event.target.value) })
+                }}
+              />
+            </Field>
+
+            <div className="md:col-span-2">
+              <Field
+                label={`Resumo (${activeLang.toUpperCase()})`}
+                counter={[currentMeta.excerpt.length, 200]}
+                hint="Cards, meta description e RSS neste idioma. Cerca de 150–160 caracteres é uma referência. Vazio usa o corpo."
+              >
+                <TextArea
+                  value={currentMeta.excerpt}
+                  maxLength={200}
+                  onChange={(event) => patchLocale(activeLang, { excerpt: event.target.value })}
+                />
+              </Field>
+            </div>
+
+            <div className="md:col-span-2">
+              <Field
+                label={`Tags (${activeLang.toUpperCase()})`}
+                hint="Enter ou vírgula para adicionar."
+              >
+                <TagInput
+                  values={currentMeta.tags}
+                  suggestions={tagSuggestions}
+                  transform={(value) => value.toLowerCase()}
+                  onChange={(tags) => patchLocale(activeLang, { tags })}
+                  placeholder={activeLang === 'en' ? 'react, performance…' : 'react, arquitetura…'}
+                />
+              </Field>
+            </div>
+
+            <Field
+              label="Data de publicação (compartilhada)"
+              hint={
+                post.publishedAt
+                  ? 'Ordena o índice e o RSS. Ajuste para antedatar um estudo antigo.'
+                  : 'Preenchida automaticamente no primeiro publish.'
+              }
+            >
+              <TextInput
+                type="datetime-local"
+                value={toLocalInput(post.publishedAt)}
+                onChange={(event) =>
+                  patch({
+                    publishedAt: event.target.value
+                      ? new Date(event.target.value).toISOString()
+                      : null,
+                  })
+                }
+              />
+            </Field>
+
+            <div className="flex items-end gap-6">
+              <Toggle
+                checked={post.featured ?? false}
+                onChange={(next) => patch({ featured: next })}
+                label="Destaque"
+                hint="Fixa a publicação no topo do índice do diário."
+              />
+            </div>
+          </div>
+
+          {/* ─── Cover ───────────────────────────────────────────── */}
+          <div className="mt-6 border-t border-line pt-5">
+            <SectionHeader
+              label="Capa (compartilhada)"
+              hint="Vira a imagem do card social nos dois idiomas. Você pode adaptar o texto alternativo na aba ativa."
+              action={
+                <div className="flex items-center gap-3">
+                  {post.cover && (
+                    <Badge tone={activeCoverAlt.trim() ? 'ember' : 'warn'}>
+                      {activeCoverAlt.trim() ? 'definida' : 'sem alt'}
+                    </Badge>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowCover((value) => !value)}
+                    className={cn(
+                      'font-mono text-[10px] tracking-[0.16em] text-bone-dim uppercase hover:text-ember',
+                      focusRing,
+                    )}
+                  >
+                    {showCover ? 'Fechar' : post.cover ? 'Trocar' : 'Enviar'}
+                  </button>
+                  {post.cover && (
+                    <IconButton
+                      size="sm"
+                      label="Remover capa"
+                      variant="danger"
+                      onClick={() => patch({ cover: undefined })}
+                    >
+                      ✕
+                    </IconButton>
+                  )}
+                </div>
               }
             />
-          </Field>
 
-          <div className="flex items-end gap-6 md:col-span-2">
-            <Toggle
-              checked={post.featured ?? false}
-              onChange={(next) => patch({ featured: next })}
-              label="Destaque"
-              hint="Fixa o post no topo do índice do blog."
-            />
-          </div>
-        </div>
-
-        {/* ─── Cover ───────────────────────────────────────────── */}
-        <div className="mt-6 border-t border-line pt-5">
-          <SectionHeader
-            label="Capa"
-            hint="Vira a imagem do card social. Sem capa própria, é usada a imagem padrão do site."
-            action={
-              <div className="flex items-center gap-3">
-                {post.cover && (
-                  <Badge tone={post.cover.alt.trim() ? 'ember' : 'warn'}>
-                    {post.cover.alt.trim() ? 'definida' : 'sem alt'}
-                  </Badge>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setShowCover((value) => !value)}
-                  className={cn(
-                    'font-mono text-[10px] tracking-[0.16em] text-bone-dim uppercase hover:text-ember',
-                    focusRing,
-                  )}
-                >
-                  {showCover ? 'Fechar' : post.cover ? 'Trocar' : 'Enviar'}
-                </button>
-                {post.cover && (
-                  <IconButton
-                    size="sm"
-                    label="Remover capa"
-                    variant="danger"
-                    onClick={() => patch({ cover: undefined })}
+            {post.cover && (
+              <div className="grid gap-4 md:grid-cols-[12rem_1fr] md:items-start">
+                <img
+                  src={post.cover.variants[0]?.url ?? post.cover.src}
+                  alt=""
+                  className="w-full border border-line"
+                />
+                <div>
+                  <Field
+                    label={`Texto alternativo (${activeLang.toUpperCase()})`}
+                    required
+                    error={activeCoverAlt.trim() ? null : 'Descreva a imagem'}
+                    hint="Leitores de tela e o card social usam este texto."
                   >
-                    ✕
-                  </IconButton>
-                )}
+                    <TextInput
+                      value={activeCoverAlt}
+                      invalid={!activeCoverAlt.trim()}
+                      onChange={(event) => {
+                        const value = event.target.value
+                        if (activeLang === post.lang) {
+                          patch({ cover: { ...post.cover!, alt: value } })
+                        } else {
+                          patchLocale(activeLang, { coverAlt: value })
+                        }
+                      }}
+                    />
+                  </Field>
+                  <Field
+                    label={`Legenda (${activeLang.toUpperCase()})`}
+                    className="mt-4"
+                    hint="Opcional, exibida sob a imagem."
+                  >
+                    <TextInput
+                      value={activeCoverCaption}
+                      onChange={(event) => {
+                        const value = event.target.value
+                        if (activeLang === post.lang) {
+                          patch({ cover: { ...post.cover!, caption: value } })
+                        } else {
+                          patchLocale(activeLang, { coverCaption: value })
+                        }
+                      }}
+                    />
+                  </Field>
+                  <p className="mt-3 font-mono text-[10px] text-smoke">
+                    {post.cover.width}×{post.cover.height}px ·{' '}
+                    {post.cover.variants.map((variant) => variant.width).join('/')}px em WebP
+                  </p>
+                </div>
               </div>
-            }
-          />
+            )}
 
-          {post.cover && (
-            <div className="grid gap-4 md:grid-cols-[12rem_1fr] md:items-start">
-              <img
-                src={post.cover.variants[0]?.url ?? post.cover.src}
-                alt=""
-                className="w-full border border-line"
+            {showCover && (
+              <MediaUploader
+                className="mt-4"
+                folder={post.slug || 'library'}
+                label="Imagem de capa"
+                onUploaded={(media) => {
+                  patch({ cover: media })
+                  setShowCover(false)
+                }}
               />
-              <div>
-                <Field
-                  label="Texto alternativo"
-                  required
-                  error={post.cover.alt.trim() ? null : 'Descreva a imagem'}
-                  hint="Leitores de tela e o card social usam este texto."
-                >
-                  <TextInput
-                    value={post.cover.alt}
-                    invalid={!post.cover.alt.trim()}
-                    onChange={(event) =>
-                      patch({ cover: { ...post.cover!, alt: event.target.value } })
-                    }
-                  />
-                </Field>
-                <Field label="Legenda" className="mt-4" hint="Opcional, exibida sob a imagem.">
-                  <TextInput
-                    value={post.cover.caption ?? ''}
-                    onChange={(event) =>
-                      patch({ cover: { ...post.cover!, caption: event.target.value } })
-                    }
-                  />
-                </Field>
-                <p className="mt-3 font-mono text-[10px] text-smoke">
-                  {post.cover.width}×{post.cover.height}px ·{' '}
-                  {post.cover.variants.map((variant) => variant.width).join('/')}px em WebP
-                </p>
-              </div>
-            </div>
-          )}
-
-          {showCover && (
-            <MediaUploader
-              className="mt-4"
-              folder={post.slug || 'library'}
-              label="Imagem de capa"
-              onUploaded={(media) => {
-                patch({ cover: media })
-                setShowCover(false)
-              }}
-            />
-          )}
-        </div>
-        <SeoPreview post={post} />
+            )}
+          </div>
+          <SeoPreview post={post} lang={activeLang} />
         </div>
       </details>
 
@@ -786,8 +1028,8 @@ export function BlogEditor() {
         <SectionHeader
           label={
             pending === 0
-              ? 'Checklist de publicação sem pontos pendentes'
-              : `Checklist de publicação — ${pending} ponto(s) para revisar`
+              ? `Checklist (${activeLang.toUpperCase()}) sem pontos pendentes`
+              : `Checklist (${activeLang.toUpperCase()}) — ${pending} ponto(s) para revisar`
           }
           hint="Recomendações editoriais; não bloqueiam salvar e não garantem posição na busca. Revise clareza, fontes e utilidade antes de publicar."
           action={

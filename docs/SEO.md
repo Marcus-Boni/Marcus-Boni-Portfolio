@@ -52,9 +52,15 @@ publicado exige planejar o redirecionamento da URL antiga; o editor não cria um
 histórico automático de aliases. Preserve `publishedAt` nas revisões e altere
 `updatedAt` quando o conteúdo mudar.
 
-Para pares traduzidos, publique ambos e selecione a tradução equivalente nos
-dois editores. Um link unilateral, para rascunho ou não listado continua sem
-hreflang até o par cumprir o contrato.
+Para publicações bilíngues, preencha as abas **Português** e **English** dentro
+do mesmo registro no editor: o português responde em `/blog/{slug}` e o inglês
+em `/en/blog/{slug}`, com canonical próprio em cada URL e `hreflang` recíproco
+(`pt-BR`, `en`, `x-default`) gerado automaticamente tanto no HTML quanto no
+sitemap. O índice segue o mesmo padrão (`/blog` e `/en/blog`), listando cada
+publicação uma única vez. Publicações de um único idioma permanecem em
+`/blog/{slug}` sem `hreflang` (e `/en/blog/{slug}` redireciona com 301 para a
+URL canônica). Pares legados ligados por `translationOf` continuam suportados
+até serem unificados em `/admin/blog`.
 
 ## Preparar cada artigo
 
@@ -92,7 +98,7 @@ Console nem comprovação de desempenho real em produção nesta auditoria.
    LCP, INP e CLS quando houver amostra suficiente. Um score de laboratório
    não equivale a desempenho medido dos leitores.
 
-Os filtros `?tag=` e `?lang=` mantêm o canonical `/blog`. O idioma dos controles
+Os filtros `?tag=` mantêm o canonical `/blog` (ou `/en/blog`). O idioma dos controles
 do portfólio pode mudar na mesma URL; isso não cria uma página traduzida
 independente nem justifica hreflang fictício para a home.
 

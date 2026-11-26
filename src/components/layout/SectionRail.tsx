@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react'
 import { useLenis } from 'lenis/react'
 
-import { sectionIds, type SectionId } from '@/data/profile'
+import { sectionIds } from '@/data/profile'
+import { useActiveSection } from '@/hooks/useActiveSection'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { cn } from '@/lib/utils'
 
 /**
  * Fixed vertical index on the left edge — the site's primary wayfinding.
- * Tracks the active section with an IntersectionObserver.
+ * Follows the active section (`useActiveSection`).
  *
  * Everything stays inside the page gutter. The active section's name runs
  * vertically up the page edge like a running head, so it is always readable
@@ -17,34 +17,17 @@ import { cn } from '@/lib/utils'
  */
 export function SectionRail() {
   const isDesktop = useIsDesktop()
-  const [active, setActive] = useState<SectionId>('hero')
+  const active = useActiveSection()
   const lenis = useLenis()
-  const { t, locale } = useLanguage()
-
-  useEffect(() => {
-    if (!isDesktop) return
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) setActive(entry.target.id as SectionId)
-        }
-      },
-      { rootMargin: '-45% 0px -45% 0px' },
-    )
-    for (const id of sectionIds) {
-      const el = document.getElementById(id)
-      if (el) observer.observe(el)
-    }
-    return () => observer.disconnect()
-    // `locale` re-keys <main>, which remounts every section: observe the new
-    // nodes or the rail goes on watching elements that left the document.
-  }, [isDesktop, locale])
+  const { t } = useLanguage()
 
   if (!isDesktop) return null
 
   return (
     <nav
       aria-label={t.sections.rail}
+      // over the hero the source field steps back for the rail (see `CodeField`)
+      data-field-quiet
       className="fixed left-3 top-1/2 z-30 flex -translate-y-1/2 items-center gap-2.5"
     >
       <span

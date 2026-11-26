@@ -247,7 +247,7 @@ describe('publication feeds', () => {
     })
     const xml = await (await feeds(request('/sitemap.xml'), context())).text()
     expect(xml).toContain('/blog/post-1000')
-    expect((xml.match(/<loc>/g) ?? []).length).toBe(1009) // 1001 posts + 8 static routes
+    expect((xml.match(/<loc>/g) ?? []).length).toBe(1010) // 1001 posts + 9 static routes
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
@@ -256,7 +256,8 @@ describe('publication feeds', () => {
       translationOf: { stringValue: 'missing' }, publishedAt: { stringValue: 'invalid' }, updatedAt: { stringValue: 'invalid' },
     }) }]))
     const xml = await (await feeds(request('/sitemap.xml'), context())).text()
-    expect(xml).not.toContain('hreflang=')
+    const postBlock = xml.match(/<url>\s*<loc>https:\/\/marcusboni\.com\.br\/blog\/metodo<\/loc>(.*?)<\/url>/s)![1]
+    expect(postBlock).not.toContain('hreflang=')
     expect(xml).not.toContain('<lastmod>')
     const rss = await (await feeds(request('/rss.xml'), context())).text()
     expect(rss).not.toContain('<pubDate>')

@@ -44,6 +44,10 @@ pnpm test     # vitest run
 
    Os comentários de `vite.config.ts` explicam por que cada regra existe; não
    crie regra para o pipeline remark/rehype nem inclua `@shikijs/langs`.
+   Um componente em `lazy()` que importa `@/animations/gsap` também quebra a
+   conta: o Rolldown tira módulos compartilhados da entrada e a home passa a
+   pré-carregar 7 chunks. Deixe o componente estático e ponha em `import()` só
+   o módulo pesado, como `CodeField` faz com `animations/codeField`.
 2. **Hooks de animação e montagem.** `useScrollReveal` e `useGsapScope` ligam a
    animação no efeito de montagem do componente que os chama. Se o elemento só
    aparece depois (dados assíncronos), o efeito já rodou, não achou o nó e um
@@ -54,8 +58,16 @@ pnpm test     # vitest run
    seções para o SplitType e os ScrollTriggers refazerem o trabalho. Qualquer
    coisa fora do `<main>` que observe seções (o `SectionRail`, por exemplo)
    precisa reagir a `locale`.
-4. **`three` está em `^0.182.0`.** O React Three Fiber 9 usa `THREE.Clock`,
-   descontinuado na r183. Não suba a versão sem conferir o R3F.
+4. **O fundo do hero imprime o próprio código.** O texto atrás do nome é
+   `src/animations/codeField.ts` lido com `?raw`: o comentário de abertura do
+   arquivo aparece na tela, então escreva-o para ser lido. Os glifos são
+   rasterizados uma vez numa máscara e cada quadro só sombreia um buffer
+   pequeno; não desenhe texto por quadro. A textura das margens (`CodeTooth`)
+   fica sob o `<main>`, que por isso é `isolate` na home e no Diário: sem isso
+   ela passa por cima do conteúdo. Na home ela imprime o componente da seção
+   em vista (`import.meta.glob` com `?raw` sobre `src/components/sections`):
+   seção nova entra no mapa `COMPONENT` de `CodeTooth.tsx`, e quem precisar
+   da seção ativa usa `useActiveSection`, como o `SectionRail`.
 5. **Testes que fixam contrato de interface.** `tests/stack-content.test.ts`
    (todas as tecnologias visíveis, uma vez, sem painel fechado),
    `tests/work-accessibility.test.ts` (galeria sem motion) e
@@ -81,7 +93,7 @@ pnpm test     # vitest run
 8. **Tema claro e escuro.** Cada token é um par `light-dark()` em "Colour
    scheme" de `src/styles/index.css`; `ink` é sempre a página e `bone` o texto,
    nos dois temas. Não escreva hex em componente. O que pinta fora do CSS
-   (canvas, WebGL) não pode ler o token cru, que em script ainda é o par
+   (canvas) não pode ler o token cru, que em script ainda é o par
    inteiro: use `paintColor(el, '--color-…')` e redesenhe com `useTheme()`
    (`src/lib/theme.ts`). Valor que não é cor (`--dim`) não cabe em
    `light-dark()` e se ramifica por `:has(meta)` mais `@media`. Os valores

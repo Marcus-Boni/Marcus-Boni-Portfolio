@@ -104,7 +104,7 @@ export function apiProfile(): ApiProfile {
     email: profile.email,
     bio: {
       pt: profile.bio,
-      en: 'Brazilian web developer focused on building robust, modern applications.',
+      en: 'Brazilian software engineer building full-stack software, native tools and applied AI — comfortable working directly with clients from discovery to production.',
     },
     repositoryCount: profile.repoCount,
     languages: ['pt-BR', 'en'],

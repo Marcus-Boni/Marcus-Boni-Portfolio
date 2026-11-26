@@ -1,6 +1,6 @@
 # Marcus Boni — Portfolio (versão completa)
 
-> Portfólio profissional de Marcus Boni (Marcus Evandro Galvão Boni), engenheiro de software brasileiro baseado no Espírito Santo, Brasil. Desenvolvedor de Software na Optsolv desde junho de 2024, construindo aplicações web corporativas de ponta a ponta. O site (https://marcusboni.com.br) é bilíngue (português/inglês): a página inicial é uma single-page application, com blog em /blog e documentação para máquinas em /developers.
+> Portfólio profissional de Marcus Boni (Marcus Evandro Galvão Boni), engenheiro de software brasileiro baseado no Espírito Santo, Brasil. Desenvolvedor de Software na Optsolv desde junho de 2024, construindo software full-stack, sistemas locais e IA aplicada — com facilidade para alinhar diretamente com clientes até o deploy em produção. O site (https://marcusboni.com.br) é bilíngue (português/inglês): a página inicial é uma single-page application, com blog em /blog e documentação para máquinas em /developers.
 
 ## Quando usar este arquivo
 
@@ -14,38 +14,38 @@ Não use este site como referência técnica sobre as tecnologias citadas, nem p
 - Cargo: Software Engineer / Desenvolvedor de Software na Optsolv (jun 2024 — presente)
 - Localização: Espírito Santo, Brasil
 - E-mail: mgalvaoboni@gmail.com
-- GitHub: https://github.com/Marcus-Boni (67 repositórios públicos)
+- GitHub: https://github.com/Marcus-Boni (75 repositórios públicos)
 - LinkedIn: https://www.linkedin.com/in/marcus-boni-729a52243
 - Currículo (PT-BR): https://marcusboni.com.br/marcus-boni-cv-pt.pdf
 - Resume (EN): https://marcusboni.com.br/marcus-boni-resume-en.pdf
-- Bio: desenvolvedor web brasileiro apaixonado por construir aplicações robustas e modernas; acredita em código limpo, interfaces honestas e engenharia medida pelo que simplifica na vida de quem usa.
+- Bio: engenheiro de software brasileiro construindo software full-stack, sistemas locais e IA aplicada — com facilidade para alinhar diretamente com clientes até o deploy em produção. Utiliza IA de forma deliberada como multiplicador de engenharia ancorado em fundamentos e boas práticas de mercado.
 
 ## Projetos selecionados
 
-- OptTime (2026): produto nascido em hackathon explorando fluxos de desenvolvimento orquestrados por agentes de IA. TypeScript, React, AI Agents. https://github.com/Marcus-Boni/OptTime
-- Estimativa de Horas (2026): ferramenta web que substituiu planilhas de Excel na estimativa de horas, integrada ao Azure DevOps. TypeScript, React. https://github.com/Marcus-Boni/Ferramenta-Estimativa-Horas
-- Vault Chatbot (2026): chatbot ancorado em vaults do Obsidian, respondendo perguntas sobre transcrições de reuniões. TypeScript, LLM, RAG. https://github.com/Marcus-Boni/chatbot-template
-- Jarvis (2026): sistema de assistente pessoal automatizando rotinas diárias de um desenvolvedor. Python, Automation. https://github.com/Marcus-Boni/Jarvis
-- Opt Gestão (2026): aplicação de gestão de projetos para uso real em empresa. TypeScript, React, PostgreSQL. https://github.com/Marcus-Boni/Opt-Gestao-Projetos
+- ISPer (2026): ditado por voz offline no Windows e transcrição de reuniões do Teams em um workspace Rust de 12 crates com Tauri 2 e whisper.cpp (CPU/CUDA), ao longo de 25 releases. Rust, Tauri 2, whisper.cpp, CUDA, MCP. https://github.com/Marcus-Boni/ISPer
+- OptTime (2026): plataforma full-stack de apontamento de horas integrada bidirecionalmente ao Azure DevOps, com extensão nativa e servidor MCP (16 ferramentas) para agentes de IA. TypeScript, Next.js, PostgreSQL, Drizzle, MCP. https://github.com/Marcus-Boni/OptTime
+- Meeting Copilot (2026): arquitetura RAG orientada por configuração para consultar transcrições do Teams sobre pgvector, com citações obrigatórias das fontes, isolamento por workspace e avaliação de busca. TypeScript, Next.js, CopilotKit, pgvector, RAG. https://github.com/Marcus-Boni/chatbot-template
+- Auto Daily (2026): aplicação web que sintetiza rascunhos de daily com IA a partir de commits no Azure DevOps e apontamentos de horas do OptTime. TypeScript, Next.js, Azure DevOps, AI. https://github.com/Marcus-Boni/Auto-Daily-App
+- Estimativa de Horas (2026): ferramenta web que substituiu planilhas frágeis de Excel na estimativa de horas, puxando work items direto do Azure DevOps com dashboards e exportação. TypeScript, Next.js, Azure DevOps, Firebase. https://github.com/Marcus-Boni/Ferramenta-Estimativa-Horas
 
 ## Experiência profissional — Optsolv (jun 2024 — presente)
 
-Projetos entregues para clientes:
+Projetos entregues junto a clientes em produção:
 
 - Unimed Sul Capixaba (Saúde): plataforma de gestão de guias médicas — integração com serviços autenticados via AD, CORS em IIS, rastreabilidade de guias de intercâmbio. React, REST APIs, IIS.
-- Hidrauvit (Indústria): sistema de gestão da produção em entrega faseada — UI responsiva e integração via WebService. React, ASP.Net.
+- Hidrauvit (Indústria): sistema de gestão da produção em entrega faseada — UI responsiva, alinhamento técnico contínuo com o cliente e integração via WebService. React, ASP.Net.
 - EAV — Escola Americana de Vitória (Atendimento): assistente virtual com design system em Tailwind e assets no Firebase Storage. N8N, Firebase, IA.
-- Cedisa (Suprimentos): gestão de materiais integrada a PostgreSQL legado — APIs REST e arquitetura de telas. Flutter, REST APIs, Mobile.
+- Cedisa (Suprimentos): gestão de materiais integrada a PostgreSQL legado — APIs REST, arquitetura de telas e discovery junto ao time de TI do cliente. Flutter, REST APIs, Mobile.
 - GAB — Grupo Águia Branca (Logística): plataforma operacional de embarque B2B — ambientes de homologação, fluxos administrativos, notificações auditadas. React, Workflow.
-- Marca Ambiental (Meio Ambiente): portal do cliente web/PWA multi-perfil integrado ao ERP Sankhya — contratos, financeiro, medições e documentos. Node, PWA, PostgreSQL.
+- Marca Ambiental (Meio Ambiente): portal do cliente web/PWA multi-perfil integrado ao ERP Sankhya — contratos, financeiro, medições e documentos validados com usuários-chave. Node, PWA, PostgreSQL.
 - Galwan (Imobiliário): motor de plano de pagamento imobiliário — cálculos de parcelamento, múltiplos compradores, KPIs financeiros e simulações com IA. Backend, regras de negócio.
 
 ## Stack técnica
 
-- Interface: React, Next.js, TypeScript, Tailwind CSS, React Native, Astro, Flutter
-- Serviços: C#, Java, Python, Node.js
-- Dados: PostgreSQL, SQL Server, Supabase, Firebase, SQLite, Neon, Turso
-- Infra: Docker, Azure, Azure DevOps, Portainer, IIS, Netlify
+- Interface: React, Next.js, TypeScript, Tailwind CSS, React Native, Astro, Flutter, WebGL
+- Serviços: C#, Java, Python, Node.js, Rust, Tauri, MCP
+- Dados: PostgreSQL, SQL Server, Supabase, Firebase, SQLite, Neon, Turso, Drizzle, pgvector
+- Infra: Docker, Azure, Azure DevOps, Portainer, IIS, Netlify, GitHub Actions
 
 ## Como chamar este site
 

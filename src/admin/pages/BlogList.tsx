@@ -24,6 +24,7 @@ import { formatPostDate } from '@/blog/lib/text'
 import type { PostMeta, PostStatus } from '@/blog/types'
 import { isFirebaseConfigured } from '@/lib/firebase'
 import { cn } from '@/lib/utils'
+import { availableLangs, findLegacyPairs, isBilingual } from '../../../netlify/lib/blog-locale'
 
 const STATUS_LABEL: Record<PostStatus, string> = {
   draft: 'Rascunho',
@@ -40,20 +41,18 @@ const STATUS_TONE: Record<PostStatus, 'neutral' | 'ember' | 'muted'> = {
 type Sort = 'recent' | 'title' | 'oldest'
 
 /**
- * Every post, drafts included — the editor's front door.
+ * Every publication, drafts included — the editor's front door.
  *
- * Two additions carry the page. Publishing no longer requires opening the
- * editor: the status button writes the batch directly, which is what you want
- * when a draft is finished and you are looking at the list. And local drafts
- * (the editor's `localStorage` crash guard) finally surface — they used to be
- * written and never read, so a tab closed before the first save was gone with
- * no way to know it had ever existed.
+ * One row per publication (whether Portuguese, English, or bilingual PT · EN).
+ * If older separate PT/EN posts linked via `translationOf` still exist in
+ * Firestore, a banner offers one-click unification into a single bilingual post.
  */
 export function BlogList() {
   const navigate = useNavigate()
   const confirm = useConfirm()
   const toast = useToast()
-  const { posts, counts, loading, error, reload, setStatus, duplicate, remove } = usePosts()
+  const { posts, counts, loading, error, reload, setStatus, duplicate, mergePair, remove } =
+    usePosts()
 
   const [rawQuery, setQuery] = useState('')
   const query = useDebounced(rawQuery)
@@ -61,6 +60,8 @@ export function BlogList() {
   const [sort, setSort] = useState<Sort>('recent')
   const [busy, setBusy] = useState<string | null>(null)
   const [drafts, setDrafts] = useState(() => listDrafts())
+
+  const legacyPairs = useMemo(() => findLegacyPairs(posts), [posts])
 
   /** Local drafts with no matching post: a session that never reached save. */
   const orphanDrafts = useMemo(
@@ -73,14 +74,22 @@ export function BlogList() {
 
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase()
-    const filtered = posts.filter(
-      (post) =>
-        (statusFilter === 'all' || post.status === statusFilter) &&
-        (!needle ||
-          post.title.toLowerCase().includes(needle) ||
-          post.slug.includes(needle) ||
-          post.tags.some((tag) => tag.toLowerCase().includes(needle))),
-    )
+    const filtered = posts.filter((post) => {
+      if (statusFilter !== 'all' && post.status !== statusFilter) return false
+      if (!needle) return true
+      const titles = [post.title, post.locales?.pt?.title, post.locales?.en?.title]
+        .filter((value): value is string => Boolean(value))
+      const tags = [
+        ...post.tags,
+        ...(post.locales?.pt?.tags ?? []),
+        ...(post.locales?.en?.tags ?? []),
+      ]
+      return (
+        titles.some((title) => title.toLowerCase().includes(needle)) ||
+        post.slug.includes(needle) ||
+        tags.some((tag) => tag.toLowerCase().includes(needle))
+      )
+    })
     return [...filtered].sort((a, b) => {
       if (sort === 'title') return a.title.localeCompare(b.title, 'pt-BR')
       const left = a.publishedAt ?? a.updatedAt
@@ -93,7 +102,7 @@ export function BlogList() {
     const yes = await confirm({
       title: `Excluir “${post.title}”?`,
       description:
-        'O post e o corpo em Markdown são apagados. As imagens continuam no Storage — limpe a pasta em Mídia depois.',
+        'A publicação e os textos em Markdown são apagados. As imagens continuam no Storage — limpe a pasta em Mídia depois.',
       confirmLabel: 'Excluir post',
       tone: 'danger',
     })
@@ -146,11 +155,30 @@ export function BlogList() {
     }
   }
 
+  const onMergePair = async (pt: PostMeta, en: PostMeta) => {
+    const yes = await confirm({
+      title: `Unificar “${pt.title}” + “${en.title}”?`,
+      description: `A versão em inglês será movida para dentro de /blog/${pt.slug} (acessível em /en/blog/${pt.slug}) e o registro duplicado /blog/${en.slug} será removido.`,
+      confirmLabel: 'Unificar em uma publicação',
+      tone: 'neutral',
+    })
+    if (!yes) return
+    setBusy(pt.slug)
+    try {
+      await mergePair(pt.slug, en.slug)
+      toast.success('Publicações unificadas em um único registro PT · EN.')
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : 'Falha ao unificar o par.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
   return (
     <>
       <PageHeader
         title="Blog"
-        subtitle="Estudos, bastidores de projeto e notas técnicas. Rascunhos ficam invisíveis no site; “não listado” abre por link direto, mas fica fora do índice, do RSS e do sitemap."
+        subtitle="Uma publicação pode conter Português, English ou ambos — sem duplicar registros. Rascunhos ficam invisíveis; “não listado” abre só por link direto."
         meta={
           <span className="font-mono text-[10px] tracking-[0.16em] text-smoke uppercase">
             {counts.published} publicado(s) · {counts.unlisted} não listado(s) ·{' '}
@@ -163,7 +191,7 @@ export function BlogList() {
               ↻ Recarregar
             </AdminButton>
             <AdminButton variant="solid" onClick={() => navigate('/admin/blog/new')}>
-              Novo post
+              Nova publicação
             </AdminButton>
           </>
         }
@@ -190,6 +218,38 @@ export function BlogList() {
             }
           >
             {error}
+          </Banner>
+        </div>
+      )}
+
+      {legacyPairs.length > 0 && (
+        <div className="mb-6">
+          <Banner tone="warn" title="Publicações antigas separadas por idioma">
+            <p className="text-xs leading-relaxed">
+              Estes pares ainda estão gravados como dois documentos separados. Unifique cada par em
+              uma única publicação bilíngue (PT em <code>/blog/slug</code> e EN em{' '}
+              <code>/en/blog/slug</code>).
+            </p>
+            <ul className="mt-3 flex flex-col gap-2">
+              {legacyPairs.map(({ pt, en }) => (
+                <li
+                  key={pt.slug}
+                  className="flex flex-wrap items-center justify-between gap-3 border-t border-line/60 pt-2"
+                >
+                  <span className="min-w-0 flex-1 truncate text-sm">
+                    {pt.title} <span className="text-smoke">↔</span> {en.title}
+                  </span>
+                  <AdminButton
+                    size="sm"
+                    variant="solid"
+                    disabled={busy !== null}
+                    onClick={() => void onMergePair(pt, en)}
+                  >
+                    Unificar PT · EN
+                  </AdminButton>
+                </li>
+              ))}
+            </ul>
           </Banner>
         </div>
       )}
@@ -243,7 +303,7 @@ export function BlogList() {
           <SearchInput
             value={rawQuery}
             onChange={setQuery}
-            placeholder="Buscar por título, slug ou tag…"
+            placeholder="Buscar por título (PT ou EN), slug ou tag…"
             className="lg:max-w-xs lg:flex-1"
           />
           <Segmented
@@ -290,104 +350,116 @@ export function BlogList() {
         />
       ) : (
         <ul className="border-t border-line">
-          {visible.map((post) => (
-            <li
-              key={post.slug}
-              className={cn(
-                'flex flex-col gap-3 border-b border-line py-4 md:flex-row md:items-center md:gap-5',
-                busy === post.slug && 'opacity-50',
-              )}
-            >
-              <div className="hidden size-14 shrink-0 overflow-hidden border border-line bg-ink-soft md:block">
-                {post.cover ? (
-                  <img
-                    src={post.cover.variants[0]?.url ?? post.cover.src}
-                    alt=""
-                    loading="lazy"
-                    className="size-full object-cover"
-                  />
-                ) : (
-                  <span className="flex size-full items-center justify-center font-mono text-[9px] text-smoke uppercase">
-                    s/capa
-                  </span>
+          {visible.map((post) => {
+            const langs = availableLangs(post)
+            const bilingual = isBilingual(post)
+            const enTitle = bilingual ? post.locales?.en?.title : undefined
+
+            return (
+              <li
+                key={post.slug}
+                className={cn(
+                  'flex flex-col gap-3 border-b border-line py-4 md:flex-row md:items-center md:gap-5',
+                  busy === post.slug && 'opacity-50',
                 )}
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <Link
-                  to={`/admin/blog/${post.slug}`}
-                  className={cn(
-                    'block truncate font-display text-xl text-bone transition-colors hover:text-ember',
-                    focusRing,
+              >
+                <div className="hidden size-14 shrink-0 overflow-hidden border border-line bg-ink-soft md:block">
+                  {post.cover ? (
+                    <img
+                      src={post.cover.variants[0]?.url ?? post.cover.src}
+                      alt=""
+                      loading="lazy"
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex size-full items-center justify-center font-mono text-[9px] text-smoke uppercase">
+                      s/capa
+                    </span>
                   )}
-                >
-                  {post.title || '(sem título)'}
-                </Link>
-                <p className="mt-0.5 truncate font-mono text-[10px] tracking-[0.14em] text-smoke">
-                  /blog/{post.slug}
-                  {post.tags.length > 0 && ` · ${post.tags.join(' · ')}`}
-                </p>
-              </div>
+                </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge tone={STATUS_TONE[post.status]}>{STATUS_LABEL[post.status]}</Badge>
-                <Badge>{post.lang.toUpperCase()}</Badge>
-                <span
-                  className="font-mono text-[10px] tracking-[0.14em] text-smoke uppercase"
-                  title={`Atualizado em ${formatPostDate(post.updatedAt, 'pt')}`}
-                >
-                  {post.publishedAt
-                    ? formatPostDate(post.publishedAt, 'pt')
-                    : `ed. ${formatPostDate(post.updatedAt, 'pt')}`}
-                </span>
-                <span className="font-mono text-[10px] text-smoke">
-                  {post.readingMinutes} min
-                </span>
-              </div>
+                <div className="min-w-0 flex-1">
+                  <Link
+                    to={`/admin/blog/${post.slug}`}
+                    className={cn(
+                      'block truncate font-display text-xl text-bone transition-colors hover:text-ember',
+                      focusRing,
+                    )}
+                  >
+                    {post.title || '(sem título)'}
+                  </Link>
+                  {enTitle && enTitle !== post.title && (
+                    <p className="truncate text-xs text-bone-dim">EN: {enTitle}</p>
+                  )}
+                  <p className="mt-0.5 truncate font-mono text-[10px] tracking-[0.14em] text-smoke">
+                    /blog/{post.slug}
+                    {bilingual && ` · /en/blog/${post.slug}`}
+                    {post.tags.length > 0 && ` · ${post.tags.join(' · ')}`}
+                  </p>
+                </div>
 
-              <div className="flex shrink-0 items-center gap-1">
-                <AdminButton
-                  size="sm"
-                  variant={post.status === 'published' ? 'subtle' : 'outline'}
-                  disabled={busy !== null}
-                  onClick={() => void onToggleStatus(post)}
-                  title={
-                    post.status === 'published'
-                      ? 'Volta para rascunho e sai do índice'
-                      : 'Publica e entra no índice, RSS e sitemap'
-                  }
-                >
-                  {post.status === 'published' ? 'Despublicar' : 'Publicar'}
-                </AdminButton>
-                {post.status !== 'draft' && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge tone={STATUS_TONE[post.status]}>{STATUS_LABEL[post.status]}</Badge>
+                  <Badge tone={bilingual ? 'ember' : 'neutral'}>
+                    {langs.map((l) => l.toUpperCase()).join(' · ')}
+                  </Badge>
+                  <span
+                    className="font-mono text-[10px] tracking-[0.14em] text-smoke uppercase"
+                    title={`Atualizado em ${formatPostDate(post.updatedAt, 'pt')}`}
+                  >
+                    {post.publishedAt
+                      ? formatPostDate(post.publishedAt, 'pt')
+                      : `ed. ${formatPostDate(post.updatedAt, 'pt')}`}
+                  </span>
+                  <span className="font-mono text-[10px] text-smoke">
+                    {post.readingMinutes} min
+                  </span>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-1">
+                  <AdminButton
+                    size="sm"
+                    variant={post.status === 'published' ? 'subtle' : 'outline'}
+                    disabled={busy !== null}
+                    onClick={() => void onToggleStatus(post)}
+                    title={
+                      post.status === 'published'
+                        ? 'Volta para rascunho e sai do índice'
+                        : 'Publica e entra no índice, RSS e sitemap'
+                    }
+                  >
+                    {post.status === 'published' ? 'Despublicar' : 'Publicar'}
+                  </AdminButton>
+                  {post.status !== 'draft' && (
+                    <IconButton
+                      size="sm"
+                      label="Abrir no site"
+                      onClick={() => window.open(`/blog/${post.slug}`, '_blank', 'noopener')}
+                    >
+                      ↗
+                    </IconButton>
+                  )}
                   <IconButton
                     size="sm"
-                    label="Abrir no site"
-                    onClick={() => window.open(`/blog/${post.slug}`, '_blank', 'noopener')}
+                    label="Duplicar"
+                    disabled={busy !== null}
+                    onClick={() => void onDuplicate(post)}
                   >
-                    ↗
+                    ⧉
                   </IconButton>
-                )}
-                <IconButton
-                  size="sm"
-                  label="Duplicar"
-                  disabled={busy !== null}
-                  onClick={() => void onDuplicate(post)}
-                >
-                  ⧉
-                </IconButton>
-                <IconButton
-                  size="sm"
-                  label="Excluir"
-                  variant="danger"
-                  disabled={busy !== null}
-                  onClick={() => void onRemove(post)}
-                >
-                  ✕
-                </IconButton>
-              </div>
-            </li>
-          ))}
+                  <IconButton
+                    size="sm"
+                    label="Excluir"
+                    variant="danger"
+                    disabled={busy !== null}
+                    onClick={() => void onRemove(post)}
+                  >
+                    ✕
+                  </IconButton>
+                </div>
+              </li>
+            )
+          })}
         </ul>
       )}
     </>

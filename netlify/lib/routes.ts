@@ -60,6 +60,8 @@ export const ROUTES: readonly Route[] = [
   { path: '/', kind: 'home', wildcard: 'none', served: 'spa' },
   { path: '/blog', kind: 'blog-index', wildcard: 'none', served: 'spa' },
   { path: '/blog', kind: 'blog-post', wildcard: 'segment', served: 'spa' },
+  { path: '/en/blog', kind: 'blog-index', wildcard: 'none', served: 'spa' },
+  { path: '/en/blog', kind: 'blog-post', wildcard: 'segment', served: 'spa' },
   // Documentation and trust pages, not app. Plain files carrying no bundle, so
   // an agent reading them pays for nothing but the HTML — and each keeps its
   // own <title> and canonical instead of inheriting the SPA shell's.
@@ -108,11 +110,24 @@ export function matchRoute(pathname: string): RouteKind | null {
   return null
 }
 
-/** The `:slug` of a `/blog/:slug` request, or `''` for anything else. */
+/** Language prefix carried by a `/blog` or `/en/blog` route. */
+export function blogRouteLang(pathname: string): 'pt' | 'en' {
+  const normalized = normalizePath(pathname)
+  return normalized === '/en/blog' || normalized.startsWith('/en/blog/') ? 'en' : 'pt'
+}
+
+/** The `:slug` of a `/blog/:slug` or `/en/blog/:slug` request, or `''` for anything else. */
 export function blogSlug(pathname: string): string {
   const normalized = normalizePath(pathname)
   if (matchRoute(normalized) !== 'blog-post') return ''
-  return decodeURIComponent(normalized.slice('/blog/'.length))
+  const raw = normalized.startsWith('/en/blog/')
+    ? normalized.slice('/en/blog/'.length)
+    : normalized.slice('/blog/'.length)
+  try {
+    return decodeURIComponent(raw)
+  } catch {
+    return ''
+  }
 }
 
 /**

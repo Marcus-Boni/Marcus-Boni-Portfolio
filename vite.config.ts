@@ -16,20 +16,16 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // React runtime deps shared by react-dom AND @react-three/fiber.
-          // Without this rule the bundler merges `scheduler` into the three
-          // chunk, making the 870 KB three.js bundle a *static* dependency of
-          // the entry (modulepreload + full parse during load). Keep them
-          // with the app code so the three chunk stays truly lazy.
+          // The React runtime and the small packages it shares with other
+          // dependencies (`scheduler`, `use-sync-external-store`). Named
+          // first, so none of them can be merged into a lazy chunk and drag
+          // that chunk into the entry as a static dependency.
           if (
             /node_modules[\\/](scheduler|use-sync-external-store|react|react-dom)[\\/]/.test(
               id,
             )
           ) {
             return 'react'
-          }
-          if (/node_modules[\\/](three|@react-three)[\\/]/.test(id)) {
-            return 'three'
           }
           if (
             /node_modules[\\/](gsap|framer-motion|motion-dom|motion-utils|lenis|split-type)[\\/]/.test(
@@ -59,7 +55,7 @@ export default defineConfig({
           // NOTE: do NOT add a manualChunks rule for the unified/remark/rehype
           // pipeline. Naming a chunk for it makes Rolldown treat it as a
           // *static* dependency and it lands as a modulepreload on the home
-          // page — the same failure mode as the `scheduler`-in-`three` bug.
+          // page — the failure the `react` rule above guards against.
           // The renderer is kept off the index by lazy-loading `BlogPost`
           // inside `BlogApp` instead, which is where the boundary belongs.
           if (/node_modules[\\/]react-router[\\/]/.test(id)) {

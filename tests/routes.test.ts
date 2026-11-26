@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
 import {
+  blogRouteLang,
   blogSlug,
   matchRoute,
   normalizePath,
@@ -48,6 +49,9 @@ describe('matchRoute', () => {
     ['/blog', 'blog-index'],
     ['/blog/', 'blog-index'],
     ['/blog/hello-world', 'blog-post'],
+    ['/en/blog', 'blog-index'],
+    ['/en/blog/', 'blog-index'],
+    ['/en/blog/hello-world', 'blog-post'],
     ['/developers', 'developers'],
     ['/developers/', 'developers'],
     ['/admin', 'admin'],
@@ -62,6 +66,7 @@ describe('matchRoute', () => {
     // The blog has no nested routes; `/blog/a/b` answering 200 would be the
     // same soft-404 in miniature.
     ['/blog/hello/world', null],
+    ['/en/blog/hello/world', null],
   ]
 
   for (const [pathname, expected] of cases) {
@@ -81,9 +86,15 @@ describe('normalizePath', () => {
 })
 
 describe('blogSlug', () => {
-  it('extracts the slug of a post URL', () => {
+  it('extracts the slug of a post URL in Portuguese or English', () => {
     expect(blogSlug('/blog/estudo-de-mercado')).toBe('estudo-de-mercado')
     expect(blogSlug('/blog/estudo-de-mercado/')).toBe('estudo-de-mercado')
+    expect(blogSlug('/en/blog/estudo-de-mercado')).toBe('estudo-de-mercado')
+    expect(blogSlug('/en/blog/estudo-de-mercado/')).toBe('estudo-de-mercado')
+    expect(blogRouteLang('/blog')).toBe('pt')
+    expect(blogRouteLang('/blog/estudo-de-mercado')).toBe('pt')
+    expect(blogRouteLang('/en/blog')).toBe('en')
+    expect(blogRouteLang('/en/blog/estudo-de-mercado')).toBe('en')
   })
 
   it('percent-decodes, so an accented slug reaches Firestore intact', () => {

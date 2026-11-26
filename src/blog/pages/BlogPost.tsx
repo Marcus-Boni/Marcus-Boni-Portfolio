@@ -13,7 +13,8 @@ import {
   ResumeReading,
   SectionIndex,
 } from '@/blog/components/reading'
-import { SITE_URL, usePostHead } from '@/blog/lib/seo'
+import { useBlogLocaleSwitch } from '@/blog/lib/locale-switch'
+import { usePostHead } from '@/blog/lib/seo'
 import { useReleaseServerDocument } from '@/blog/lib/server-document'
 import { entryNumber, extractToc, formatPostDate, formatPostDateCompact } from '@/blog/lib/text'
 import type { PostMeta } from '@/blog/types'
@@ -21,80 +22,169 @@ import { usePost, usePostList } from '@/blog/usePosts'
 import { HoverItalic } from '@/components/ui/HoverItalic'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 import { useLanguage } from '@/i18n/LanguageContext'
-import { translations } from '@/i18n/translations'
+import { translations, type Locale } from '@/i18n/translations'
 import { trackEvent } from '@/lib/analytics'
-import { reciprocalTranslation, validDate } from '../../../netlify/lib/blog-seo'
+import { isPlainLeftClick, transitionLocale } from '@/lib/locale-transition'
+import { cn } from '@/lib/utils'
+import {
+  blogIndexPath,
+  collapseLegacyPairs,
+  isBilingual,
+  localizedBody,
+  localizedMeta,
+  postPath,
+  type CollapsedEntry,
+} from '../../../netlify/lib/blog-locale'
+import { postCanonicalUrl, reciprocalTranslation, validDate } from '../../../netlify/lib/blog-seo'
 
 /**
  * A single post, laid out as a notebook page.
  *
- * The text keeps a reading measure near 68 characters. On a wide screen the
- * space to its right is the margin — the section index opens it, and notes sit
- * in it beside the sentence they comment on — while the page gutter on the
- * left carries the reading rail. Narrower screens fold the notes under their
- * paragraph and dock the rail to the bottom edge.
- *
- * A post without a cover wears its field plate in the masthead: the same
- * terrain it carries on the index, so the entry is recognisable on arrival.
+ * One publication can carry both Portuguese and English versions: PT lives at
+ * `/blog/{slug}` and EN at `/en/blog/{slug}` with instant switching between
+ * them (zero extra Firestore reads) and shared ordinal, terrain plate, and
+ * reading progress. Legacy paired posts linked via `translationOf` keep working
+ * seamlessly as well.
  */
-export function BlogPost() {
+export function BlogPost({ routeLang = 'pt' }: { routeLang?: Locale }) {
   const { slug } = useParams<{ slug: string }>()
-  const { locale, t } = useLanguage()
+  const { locale, setLocale, t } = useLanguage()
   const { post, status, retry } = usePost(slug)
   const { posts } = usePostList()
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const articleRef = useRef<HTMLDivElement>(null)
 
-  const translation = post
-    ? posts.find((candidate) => reciprocalTranslation(post, candidate)) ?? null
-    : null
-  usePostHead(post, status, translation, locale, pathname)
+  const bilingual = post ? isBilingual(post) : false
+
+  // `/en/blog/{slug}` is reserved for the English version of bilingual posts;
+  // single-language posts canonically live at `/blog/{slug}`.
+  useEffect(() => {
+    if (post && routeLang === 'en' && !bilingual) {
+      navigate(`/blog/${encodeURIComponent(post.slug)}`, { replace: true })
+    }
+  }, [post, routeLang, bilingual, navigate])
+
+  const activeLang: Locale = post ? (bilingual ? routeLang : post.lang) : routeLang
+  const view = useMemo(
+    () => (post ? localizedMeta(post, activeLang) : null),
+    [post, activeLang],
+  )
+  const body = useMemo(
+    () => (post ? localizedBody(post, activeLang) : ''),
+    [post, activeLang],
+  )
+
+  const legacyTranslation =
+    post && !bilingual
+      ? posts.find((candidate) => reciprocalTranslation(post, candidate)) ?? null
+      : null
+
+  const alternate = useMemo<{ lang: Locale; path: string } | null>(() => {
+    if (!post) return null
+    if (bilingual) {
+      const otherLang: Locale = activeLang === 'pt' ? 'en' : 'pt'
+      return { lang: otherLang, path: postPath(post, otherLang) }
+    }
+    if (legacyTranslation) {
+      return { lang: legacyTranslation.lang, path: `/blog/${legacyTranslation.slug}` }
+    }
+    return null
+  }, [post, bilingual, activeLang, legacyTranslation])
+
+  usePostHead(post, status, legacyTranslation, locale, pathname, activeLang)
   useReleaseServerDocument(status === 'ready')
 
-  // Picking a language in the header is also asking for the entry in that
-  // language, when its translation exists. Only a change counts, so a reader
-  // who followed a link to the other version stays on it.
-  const navigate = useNavigate()
+  const { setAlternate } = useBlogLocaleSwitch()
+  useEffect(() => {
+    setAlternate(alternate)
+    return () => setAlternate(null)
+  }, [alternate, setAlternate])
+
+  // Picking a language in the header switches this entry to that language when
+  // available. `BlogHeader` already commits both inside one View Transition;
+  // this effect stays as a safeguard for programmatic `setLocale` calls.
   const chosen = useRef(locale)
   useEffect(() => {
     const changed = chosen.current !== locale
     chosen.current = locale
-    if (changed && translation?.lang === locale) navigate(`/blog/${translation.slug}`)
-  }, [locale, translation, navigate])
+    if (changed && alternate && alternate.lang === locale) {
+      navigate(alternate.path)
+    }
+  }, [locale, alternate, navigate])
 
-  const toc = useMemo(() => (post ? extractToc(post.body) : []), [post])
+  const onSwitchEdition = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    target: { lang: Locale; path: string },
+  ) => {
+    if (!isPlainLeftClick(event)) return
+    event.preventDefault()
+    transitionLocale(target.lang, () => {
+      setLocale?.(target.lang)
+      navigate(target.path)
+    })
+  }
+
+  const toc = useMemo(() => (body ? extractToc(body) : []), [body])
+
+  // Collapse legacy pairs once so ordinals, neighbors, and related posts
+  // operate on unique publications rather than duplicate language copies.
+  const catalog = useMemo(
+    () => collapseLegacyPairs(posts, activeLang),
+    [posts, activeLang],
+  )
+
+  const canonicalSlug = useMemo(() => {
+    if (!post) return ''
+    if (legacyTranslation && post.lang === 'en') return legacyTranslation.slug
+    return post.slug
+  }, [post, legacyTranslation])
+
   // The entry's place in the journal, oldest first. Unlisted posts are not in
   // the published list, so they simply carry no number.
   const ordinals = useMemo(
-    () => new Map(posts.map((candidate, index) => [candidate.slug, posts.length - index])),
-    [posts],
+    () =>
+      new Map(
+        catalog.map((entry, index) => [entry.canonicalSlug, catalog.length - index]),
+      ),
+    [catalog],
   )
-  const ordinal = post ? ordinals.get(post.slug) : undefined
-  // The entries published just before and just after this one, same language.
-  const { older, newer } = useMemo((): { older?: PostMeta; newer?: PostMeta } => {
+  const ordinal = post ? ordinals.get(canonicalSlug) : undefined
+
+  // The entries published just before and just after this one (unique publications).
+  const { older, newer } = useMemo((): {
+    older?: CollapsedEntry<PostMeta>
+    newer?: CollapsedEntry<PostMeta>
+  } => {
     if (!post) return {}
-    const shelf = posts.filter((candidate) => candidate.lang === post.lang)
-    const at = shelf.findIndex((candidate) => candidate.slug === post.slug)
-    return at < 0 ? {} : { newer: shelf[at - 1], older: shelf[at + 1] }
-  }, [post, posts])
+    const at = catalog.findIndex((entry) => entry.canonicalSlug === canonicalSlug)
+    return at < 0 ? {} : { newer: catalog[at - 1], older: catalog[at + 1] }
+  }, [post, catalog, canonicalSlug])
+
   const related = useMemo(() => {
-    if (!post) return []
-    const taken = new Set([post.slug, translation?.slug, older?.slug, newer?.slug])
-    return posts
-      .filter((candidate) => !taken.has(candidate.slug) && candidate.lang === post.lang)
-      .map((candidate) => ({
-        post: candidate,
-        score: candidate.tags.filter((tag) => post.tags.includes(tag)).length +
-          (post.series && candidate.series?.id === post.series.id ? 10 : 0),
-      }))
+    if (!post || !view) return []
+    const taken = new Set([
+      canonicalSlug,
+      older?.canonicalSlug,
+      newer?.canonicalSlug,
+    ])
+    return catalog
+      .filter((entry) => !taken.has(entry.canonicalSlug))
+      .map((entry) => {
+        const candidateView = localizedMeta(entry.post, activeLang)
+        const tagMatches = candidateView.tags.filter((tag) => view.tags.includes(tag)).length
+        const seriesBoost =
+          post.series && entry.post.series?.id === post.series.id ? 10 : 0
+        return { entry, score: tagMatches + seriesBoost }
+      })
       .sort((a, b) => b.score - a.score)
       .slice(0, 3)
-      .map((candidate) => candidate.post)
-  }, [post, posts, translation, older, newer])
+      .map((item) => item.entry)
+  }, [post, view, catalog, canonicalSlug, activeLang, older, newer])
 
   useEffect(() => {
-    if (post) trackEvent('post_view', { slug: post.slug, lang: post.lang })
-  }, [post])
+    if (post) trackEvent('post_view', { slug: post.slug, lang: activeLang })
+  }, [post, activeLang])
 
   // "Read" is recorded once, at 75% depth — a proxy for actually finishing
   // rather than bouncing, and far more useful on the dashboard than a raw view.
@@ -115,6 +205,8 @@ export function BlogPost() {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [post])
+
+  const indexPath = bilingual ? blogIndexPath(activeLang) : blogIndexPath(locale)
 
   if (status === 'loading') {
     return (
@@ -141,7 +233,7 @@ export function BlogPost() {
     )
   }
 
-  if (!post) {
+  if (!post || !view) {
     return (
       <Centered>
         <p className="font-mono text-[11px] tracking-[0.3em] text-ember uppercase">
@@ -152,7 +244,7 @@ export function BlogPost() {
         </h1>
         <p className="max-w-md text-bone-dim">{t.blog.post.notFoundBody}</p>
         <Link
-          to="/blog"
+          to={indexPath}
           className="border border-bone/30 px-4 py-2 font-mono text-[11px] tracking-[0.18em] text-bone uppercase transition-colors hover:border-ember hover:text-ember"
         >
           {t.blog.post.backToIndex}
@@ -161,18 +253,25 @@ export function BlogPost() {
     )
   }
 
+  const shareUrl = postCanonicalUrl(post, activeLang)
+
   return (
     <>
       <ReadingProgress targetRef={articleRef} />
 
-      <article lang={post.lang === 'pt' ? 'pt-BR' : 'en'} aria-labelledby="post-title" className="mx-auto max-w-6xl px-5 pt-28 pb-24 md:px-8 md:pt-36">
+      <article
+        lang={activeLang === 'pt' ? 'pt-BR' : 'en'}
+        aria-labelledby="post-title"
+        data-locale-surface
+        className="mx-auto max-w-6xl px-5 pt-28 pb-24 md:px-8 md:pt-36"
+      >
         <nav aria-label={locale === 'pt' ? 'Caminho de navegação' : 'Breadcrumb'}>
           <ol className="flex flex-wrap items-center gap-2 font-mono text-[10px] tracking-[0.12em] text-smoke">
             <li><Link to="/" className="hover:text-ember">Marcus Boni</Link></li>
             <li aria-hidden>/</li>
-            <li><Link to="/blog" className="hover:text-ember">Blog</Link></li>
+            <li><Link to={indexPath} className="hover:text-ember">Blog</Link></li>
             <li aria-hidden>/</li>
-            <li aria-current="page" className="text-bone-dim">{post.title}</li>
+            <li aria-current="page" className="text-bone-dim">{view.title}</li>
           </ol>
         </nav>
 
@@ -185,65 +284,111 @@ export function BlogPost() {
         {/* ─── Masthead ──────────────────────────────────────────── */}
         <header className="mt-8 grid gap-10 border-b border-line pb-10 lg:grid-cols-12 lg:items-end lg:gap-12">
           <div className={post.cover ? 'lg:col-span-12' : 'lg:col-span-8'}>
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] tracking-[0.22em] text-smoke uppercase">
-            {validDate(post.publishedAt) && <time dateTime={validDate(post.publishedAt)}>{formatPostDateCompact(post.publishedAt, locale)}</time>}
-            <span aria-hidden className="text-line">/</span>
-            <span>{t.blog.readingTime(post.readingMinutes)}</span>
-            <span aria-hidden className="text-line">/</span>
-            <span>{post.lang.toUpperCase()}</span>
-            {post.series && (
-              <>
-                <span aria-hidden className="text-line">/</span>
-                <span className="text-ember">
-                  {post.series.title} · {post.series.order}
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] tracking-[0.22em] text-smoke uppercase">
+              {validDate(post.publishedAt) && (
+                <time dateTime={validDate(post.publishedAt)}>
+                  {formatPostDateCompact(post.publishedAt, locale)}
+                </time>
+              )}
+              <span aria-hidden className="text-line">/</span>
+              <span>{t.blog.readingTime(view.readingMinutes)}</span>
+              <span aria-hidden className="text-line">/</span>
+              {alternate ? (
+                <span
+                  className="relative inline-grid grid-cols-2 items-center border border-line"
+                  role="group"
+                  aria-label={t.blog.filters.language}
+                >
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'pointer-events-none absolute inset-y-0 left-0 w-1/2 border-b border-ember bg-ember/12 transition-transform duration-500 ease-out-expo',
+                      activeLang === 'en' ? 'translate-x-full' : 'translate-x-0',
+                    )}
+                  />
+                  {(['pt', 'en'] as const).map((code) =>
+                    code === activeLang ? (
+                      <span
+                        key={code}
+                        aria-current="true"
+                        className="relative px-2 py-0.5 text-center text-ember"
+                      >
+                        {code.toUpperCase()}
+                      </span>
+                    ) : (
+                      <Link
+                        key={code}
+                        to={alternate.path}
+                        hrefLang={alternate.lang === 'pt' ? 'pt-BR' : 'en'}
+                        onClick={(event) => onSwitchEdition(event, alternate)}
+                        className="relative px-2 py-0.5 text-center text-smoke transition-colors duration-300 hover:text-bone"
+                      >
+                        {code.toUpperCase()}
+                      </Link>
+                    ),
+                  )}
                 </span>
-              </>
-            )}
-          </p>
-
-          <PostTitle key={post.slug}>{post.title}</PostTitle>
-
-          {post.subtitle && (
-            <p className="mt-5 max-w-2xl font-display-italic text-[clamp(1.15rem,2.2vw,1.6rem)] leading-snug text-bone-dim">
-              {post.subtitle}
+              ) : (
+                <span>{activeLang.toUpperCase()}</span>
+              )}
+              {post.series && (
+                <>
+                  <span aria-hidden className="text-line">/</span>
+                  <span className="text-ember">
+                    {post.series.title} · {post.series.order}
+                  </span>
+                </>
+              )}
             </p>
-          )}
 
-          <p className="mt-5 text-sm text-bone-dim">
-            {locale === 'pt' ? 'Por ' : 'By '}
-            <a href="/about" rel="author" className="text-bone hover:text-ember">Marcus Boni</a>
-          </p>
+            <PostTitle key={`${post.slug}:${activeLang}`}>{view.title}</PostTitle>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            {post.tags.map((tag) => (
-              <Link
-                key={tag}
-                to={`/blog?tag=${encodeURIComponent(tag)}`}
-                className="border border-line px-2.5 py-1 font-mono text-[9px] tracking-[0.18em] text-smoke uppercase transition-colors hover:border-ember/60 hover:text-ember"
-              >
-                {tag}
-              </Link>
-            ))}
-            {translation && (
-              <Link
-                to={`/blog/${translation.slug}`}
-                hrefLang={translation.lang === 'pt' ? 'pt-BR' : 'en'}
-                className="border border-ember/50 px-2.5 py-1 font-mono text-[9px] tracking-[0.18em] text-ember uppercase transition-colors hover:bg-ember hover:text-ink"
-              >
-                {/* Named after the entry's language, not the reader's: on a
-                    Portuguese entry the other version is always the English one. */}
-                {translations[post.lang].blog.post.translationAvailable}
-              </Link>
+            {view.subtitle && (
+              <p className="mt-5 max-w-2xl font-display-italic text-[clamp(1.15rem,2.2vw,1.6rem)] leading-snug text-bone-dim">
+                {view.subtitle}
+              </p>
             )}
-          </div>
 
-          <ResumeReading key={`resume:${post.slug}`} slug={post.slug} targetRef={articleRef} />
+            <p className="mt-5 text-sm text-bone-dim">
+              {locale === 'pt' ? 'Por ' : 'By '}
+              <a href="/about" rel="author" className="text-bone hover:text-ember">Marcus Boni</a>
+            </p>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              {view.tags.map((tag) => (
+                <Link
+                  key={tag}
+                  to={`${indexPath}?tag=${encodeURIComponent(tag)}`}
+                  className="border border-line px-2.5 py-1 font-mono text-[9px] tracking-[0.18em] text-smoke uppercase transition-colors hover:border-ember/60 hover:text-ember"
+                >
+                  {tag}
+                </Link>
+              ))}
+              {alternate && (
+                <Link
+                  to={alternate.path}
+                  hrefLang={alternate.lang === 'pt' ? 'pt-BR' : 'en'}
+                  onClick={(event) => onSwitchEdition(event, alternate)}
+                  className="group/lang relative overflow-hidden border border-ember/50 px-3 py-1 font-mono text-[9px] tracking-[0.18em] text-ember uppercase transition-colors duration-300 ease-out-expo hover:border-ember hover:bg-ember hover:text-ink"
+                >
+                  {/* Named after the entry's active language, not the reader's UI:
+                      on a Portuguese entry the other version is always the English one. */}
+                  {translations[activeLang].blog.post.translationAvailable}
+                </Link>
+              )}
+            </div>
+
+            <ResumeReading
+              key={`resume:${canonicalSlug}:${activeLang}`}
+              slug={canonicalSlug}
+              targetRef={articleRef}
+            />
           </div>
 
           {!post.cover && (
-            <div className="relative lg:col-span-4">
+            <div className="vt-plate relative lg:col-span-4">
               <PostPlate
-                seed={post.slug}
+                seed={canonicalSlug}
                 motion="drift"
                 className="aspect-[16/10] border border-line lg:aspect-[4/3]"
               />
@@ -258,10 +403,14 @@ export function BlogPost() {
 
         {post.cover && (
           <BlogImage
-            media={post.cover}
+            media={{
+              ...post.cover,
+              alt: view.coverAlt || post.cover.alt,
+              caption: view.coverCaption ?? post.cover.caption,
+            }}
             priority
             sizes="(min-width: 1280px) 1152px, 100vw"
-            className="mt-10 border border-line"
+            className="vt-plate mt-10 border border-line"
           />
         )}
 
@@ -272,20 +421,34 @@ export function BlogPost() {
         <div className="has-margin mt-14">
           <div ref={articleRef} className="relative max-w-[68ch] min-w-0">
             <SectionIndex entries={toc} label={t.blog.post.toc} />
-            <PostBody markdown={post.body} media={post.media} lang={post.lang} margin />
-            <QuoteShare containerRef={articleRef} slug={post.slug} title={post.title} />
+            <PostBody markdown={body} media={post.media} lang={activeLang} margin />
+            <QuoteShare containerRef={articleRef} slug={post.slug} title={view.title} />
           </div>
         </div>
 
-        <Neighbors older={older} newer={newer} ordinals={ordinals} />
+        <Neighbors
+          older={older}
+          newer={newer}
+          ordinals={ordinals}
+          lang={activeLang}
+        />
 
         {related.length > 0 && (
           <section aria-labelledby="related-posts" className="mt-20 border-t border-line pt-10">
-            <h2 id="related-posts" className="font-display text-[clamp(1.75rem,3vw,2.5rem)] leading-none text-bone">{t.blog.post.readAlso}</h2>
+            <h2 id="related-posts" className="font-display text-[clamp(1.75rem,3vw,2.5rem)] leading-none text-bone">
+              {t.blog.post.readAlso}
+            </h2>
             <ul className="mt-8 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-              {related.map((candidate) => (
-                <li key={candidate.slug}>
-                  <RelatedCard post={candidate} ordinal={ordinals.get(candidate.slug)} />
+              {related.map((entry) => (
+                <li key={entry.canonicalSlug}>
+                  <RelatedCard
+                    post={entry.post}
+                    ordinal={ordinals.get(entry.canonicalSlug)}
+                    lang={activeLang}
+                    href={postPath(entry.post, activeLang)}
+                    availableLangs={entry.availableLangs}
+                    canonicalSlug={entry.canonicalSlug}
+                  />
                 </li>
               ))}
             </ul>
@@ -294,7 +457,9 @@ export function BlogPost() {
 
         <PostFooter
           slug={post.slug}
-          title={post.title}
+          url={shareUrl}
+          indexPath={indexPath}
+          title={view.title}
           updated={t.blog.post.updated(formatPostDate(post.updatedAt, locale))}
           updatedAt={validDate(post.updatedAt)}
           shareLabel={t.blog.post.share}
@@ -304,8 +469,8 @@ export function BlogPost() {
         />
       </article>
 
-      <PostRail entries={toc} minutes={post.readingMinutes} label={t.sections.rail} />
-      <MobileReadingBar entries={toc} label={t.blog.post.toc} minutes={post.readingMinutes} />
+      <PostRail entries={toc} minutes={view.readingMinutes} label={t.sections.rail} />
+      <MobileReadingBar entries={toc} label={t.blog.post.toc} minutes={view.readingMinutes} />
     </>
   )
 }
@@ -318,29 +483,56 @@ function Neighbors({
   older,
   newer,
   ordinals,
+  lang,
 }: {
-  older?: PostMeta
-  newer?: PostMeta
+  older?: CollapsedEntry<PostMeta>
+  newer?: CollapsedEntry<PostMeta>
   ordinals: Map<string, number>
+  lang: Locale
 }) {
   const { t } = useLanguage()
   if (!older && !newer) return null
 
-  const cell = (post: PostMeta | undefined, label: string, end: boolean) => {
-    if (!post) return <div aria-hidden className="bg-ink max-sm:hidden" />
-    const number = ordinals.get(post.slug)
+  const both = Boolean(older && newer)
+
+  const cell = (entry: CollapsedEntry<PostMeta>, label: string, direction: 'prev' | 'next') => {
+    const alignEnd = both && direction === 'next'
+    const number = ordinals.get(entry.canonicalSlug)
+    const view = localizedMeta(entry.post, lang)
     return (
       <Link
-        to={`/blog/${post.slug}`}
+        key={entry.canonicalSlug}
+        to={postPath(entry.post, lang)}
         data-cursor="view"
-        className={`group flex flex-col gap-3 bg-ink py-8 ${end ? 'sm:items-end sm:pl-8 sm:text-right' : 'sm:pr-8'}`}
+        className={cn(
+          'group flex flex-col gap-3 bg-ink py-8',
+          both && (alignEnd ? 'sm:items-end sm:pl-8 sm:text-right' : 'sm:pr-8'),
+        )}
       >
-        <span className="font-mono text-[10px] tracking-[0.2em] text-smoke uppercase transition-colors duration-300 group-hover:text-ember">
-          {label}
-          {number !== undefined && ` / ${t.blog.entry(entryNumber(number))}`}
+        <span className="inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] text-smoke uppercase transition-colors duration-300 group-hover:text-ember">
+          {direction === 'prev' && (
+            <span
+              aria-hidden
+              className="transition-transform duration-300 ease-out-expo group-hover:-translate-x-0.5"
+            >
+              ←
+            </span>
+          )}
+          <span>
+            {label}
+            {number !== undefined && ` / ${t.blog.entry(entryNumber(number))}`}
+          </span>
+          {direction === 'next' && (
+            <span
+              aria-hidden
+              className="transition-transform duration-300 ease-out-expo group-hover:translate-x-0.5"
+            >
+              →
+            </span>
+          )}
         </span>
         <span className="font-display text-[clamp(1.5rem,2.6vw,2.1rem)] leading-[1.1] text-balance text-bone">
-          <HoverItalic text={post.title} />
+          <HoverItalic text={view.title} />
         </span>
       </Link>
     )
@@ -349,10 +541,13 @@ function Neighbors({
   return (
     <nav
       aria-label={t.blog.post.neighbors}
-      className="mt-20 grid gap-px border-y border-line bg-line sm:grid-cols-2"
+      className={cn(
+        'mt-20 border-y border-line',
+        both && 'grid gap-px bg-line sm:grid-cols-2',
+      )}
     >
-      {cell(older, t.blog.post.previous, false)}
-      {cell(newer, t.blog.post.next, true)}
+      {older && cell(older, t.blog.post.previous, 'prev')}
+      {newer && cell(newer, t.blog.post.next, 'next')}
     </nav>
   )
 }
@@ -379,6 +574,8 @@ function PostTitle({ children }: { children: string }) {
 
 function PostFooter({
   slug,
+  url,
+  indexPath,
   title,
   updated,
   updatedAt,
@@ -388,6 +585,8 @@ function PostFooter({
   backLabel,
 }: {
   slug: string
+  url: string
+  indexPath: string
   title: string
   updated: string
   updatedAt?: string
@@ -397,7 +596,6 @@ function PostFooter({
   backLabel: string
 }) {
   const [copied, setCopied] = useState(false)
-  const url = `${SITE_URL}/blog/${slug}`
 
   const copy = async () => {
     try {
@@ -454,13 +652,23 @@ function PostFooter({
       </div>
 
       <Link
-        to="/blog"
-        className="group mt-10 flex items-baseline gap-4 border-t border-line pt-8"
+        to={indexPath}
+        className="group mt-10 flex items-center gap-4 border-t border-line pt-8"
       >
-        <span className="font-mono text-xs text-smoke transition-colors group-hover:text-ember">
-          ←
-        </span>
-        <span className="font-display text-3xl text-bone transition-colors duration-500 group-hover:text-ember md:text-4xl">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.25}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-6 w-6 shrink-0 text-smoke transition-[color,translate] duration-500 ease-out-expo group-hover:-translate-x-2 group-hover:text-ember md:h-7 md:w-7"
+        >
+          <path d="M20 12H4" />
+          <path d="M10 6l-6 6 6 6" />
+        </svg>
+        <span className="font-display text-3xl text-bone transition-colors duration-500 ease-out-expo group-hover:text-ember md:text-4xl">
           {backLabel}
         </span>
       </Link>

@@ -1,6 +1,6 @@
 # Marcus Boni — Portfolio
 
-> Personal site of Marcus Boni, a Brazilian software engineer in Espírito Santo, Brazil — Software Developer at Optsolv since June 2024, building corporate web applications end to end with React, TypeScript, Next.js, Node.js and C#. The site is a portfolio, a technical blog, and a small read-only JSON API over the same content.
+> Personal site of Marcus Boni, a Brazilian software engineer in Espírito Santo, Brazil — Software Developer at Optsolv since June 2024, building full-stack software, native tools (Rust/Tauri) and applied AI (MCP servers, pgvector RAG), comfortable aligning directly with clients through production deployment. The site is a portfolio, a technical blog, and a small read-only JSON API over the same content.
 
 Written in English because this file is read by machines. The site itself is bilingual (Brazilian Portuguese and English), and [llms-full.txt](https://marcusboni.com.br/llms-full.txt) carries the full detail in Portuguese.
 
@@ -11,12 +11,12 @@ Reach for it when the task is one of these:
 - **Evaluating Marcus Boni for work.** Hiring, contracting, freelance, subcontracting or partnership screening: what he has built, for whom, in which sectors, with which technologies, and for how long. One request answers it: `GET /api/v1/profile` and `GET /api/v1/experience`, or [llms-full.txt](https://marcusboni.com.br/llms-full.txt) in prose.
 - **Answering "has he done X before?"** Concrete delivery evidence in healthcare (medical guide management), industry (production management), supply (materials management over a legacy PostgreSQL base), logistics (B2B boarding operations), environmental services (ERP-integrated customer portal), real estate (payment-plan engine) and customer care (virtual assistant). Each engagement states its sector, scope and stack.
 - **Sourcing or quoting his technical writing.** Posts with publication date, language, tags and reading time: `GET /api/v1/posts`, or the feed at [/rss.xml](https://marcusboni.com.br/rss.xml). Each post is also retrievable as its original Markdown.
-- **Locating his public code.** 67 public repositories at [GitHub](https://github.com/Marcus-Boni); five are described in context via `GET /api/v1/projects`.
-- **Drafting an approach on a reader's behalf.** Freelance or full-time work, technical consulting, or a second opinion on a front-end or integration problem. The address is mgalvaoboni@gmail.com.
+- **Locating his public code.** 75 public repositories at [GitHub](https://github.com/Marcus-Boni); five are described in context via `GET /api/v1/projects`.
+- **Drafting an approach on a reader's behalf.** Freelance or full-time work, technical consulting, or a second opinion on architecture, applied AI or integration problems. The address is mgalvaoboni@gmail.com.
 
 ## When not to use this site
 
-- **Not a technical reference.** It is not documentation for React, TypeScript, PostgreSQL or anything else in the stack. The blog is one engineer's notes — dated and opinionated. Cite it as experience, not as authority.
+- **Not a technical reference.** It is not documentation for React, TypeScript, Rust, PostgreSQL or anything else in the stack. The blog is one engineer's notes — dated and opinionated. Cite it as experience, not as authority.
 - **Not a service.** The API is read-only and returns published content about one person. There is nothing to transact with, subscribe to, or automate against beyond reading.
 - **Not a directory.** It describes exactly one person. It holds no data about Optsolv's clients beyond the scope of work delivered to them, and no contact details for anyone but Marcus Boni.
 
@@ -48,15 +48,15 @@ curl -s -H 'Accept: text/markdown' https://marcusboni.com.br/
 ## Site sections
 
 - [Home](https://marcusboni.com.br/): Marcus Boni, Software Engineer — open to projects.
-- [About](https://marcusboni.com.br/#about): Profile, learning path, 67 public GitHub repositories.
-- [Projects](https://marcusboni.com.br/#work): OptTime, Estimativa de Horas, Vault Chatbot, Jarvis, Opt Gestão.
+- [About](https://marcusboni.com.br/#about): Profile, learning path, 75 public GitHub repositories.
+- [Projects](https://marcusboni.com.br/#work): ISPer, OptTime, Meeting Copilot, Auto Daily, Estimativa de Horas.
 - [Career](https://marcusboni.com.br/#experience): Software Developer at Optsolv since June 2024, delivering to clients in healthcare, industry, logistics, environment, supply, customer care and real estate.
-- [Stack](https://marcusboni.com.br/#craft): React, Next.js, TypeScript, Tailwind CSS, C#, Java, Python, Node.js, PostgreSQL, SQL Server, Docker, Azure.
+- [Stack](https://marcusboni.com.br/#craft): React, Next.js, TypeScript, WebGL, Rust, Tauri, MCP, Node.js, Python, C#, PostgreSQL, Drizzle, pgvector, Docker, Azure, GitHub Actions.
 - [Contact](https://marcusboni.com.br/#contact): Email and a professional contact form.
 - [About](https://marcusboni.com.br/about): Who Marcus Boni is, the seven client sectors delivered in, and how to work with him.
 - [Contact](https://marcusboni.com.br/contact): Channels, what work he takes, how quoting works, what to include in a message.
 - [Privacy](https://marcusboni.com.br/privacy): What the site collects and why. No cookies, no third-party trackers.
-- [Blog](https://marcusboni.com.br/blog): Notas de campo — studies, project write-ups and technical notes.
+- [Blog](https://marcusboni.com.br/blog): Notas de campo — architecture, applied AI and technical notes.
 - [Developers](https://marcusboni.com.br/developers): Every machine-readable endpoint, with curl examples.
 
 ## Professional profile

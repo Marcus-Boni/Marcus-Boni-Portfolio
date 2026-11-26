@@ -8,20 +8,35 @@ import { entryNumber, formatPostDateCompact } from '@/blog/lib/text'
 import type { PostMeta } from '@/blog/types'
 import { HoverItalic } from '@/components/ui/HoverItalic'
 import { useLanguage } from '@/i18n/LanguageContext'
+import type { Locale } from '@/i18n/translations'
 import { cn } from '@/lib/utils'
+import { localizedMeta, postPath } from '../../../netlify/lib/blog-locale'
+
+function formatLangBadge(langs: Locale[]): string {
+  if (langs.length >= 2) return 'PT · EN'
+  return (langs[0] ?? 'pt').toUpperCase()
+}
 
 /** Mono metadata line shared by every card shape. */
 function PostMetaLine({
   post,
+  lang,
+  langs,
+  canonicalSlug,
   className,
   dateClassName,
 }: {
   post: PostMeta
+  lang: Locale
+  langs?: Locale[]
+  canonicalSlug?: string
   className?: string
   /** Lets a layout that already prints the date elsewhere drop it here. */
   dateClassName?: string
 }) {
   const { locale, t } = useLanguage()
+  const view = localizedMeta(post, lang)
+  const displayLangs = langs && langs.length > 0 ? langs : view.availableLangs
   const date = formatPostDateCompact(post.publishedAt, locale)
   const parts: { key: string; node: React.ReactNode; className?: string }[] = []
   if (date) {
@@ -31,17 +46,20 @@ function PostMetaLine({
       node: <time dateTime={post.publishedAt ?? undefined}>{date}</time>,
     })
   }
-  if (typeof post.readingMinutes === 'number') {
-    parts.push({ key: 'reading', node: t.blog.readingTime(post.readingMinutes) })
+  if (typeof view.readingMinutes === 'number') {
+    parts.push({ key: 'reading', node: t.blog.readingTime(view.readingMinutes) })
   }
-  if (post.lang) {
-    parts.push({ key: 'lang', node: <span className="text-bone-dim">{post.lang.toUpperCase()}</span> })
+  if (displayLangs.length > 0) {
+    parts.push({
+      key: 'lang',
+      node: <span className="text-bone-dim">{formatLangBadge(displayLangs)}</span>,
+    })
   }
   if (post.series) {
     parts.push({ key: 'series', node: <span className="text-ember">{post.series.title}</span> })
   }
   // The reader's own mark, from their browser (see `reading-memory.ts`).
-  const progress = readingProgress(post.slug)
+  const progress = readingProgress(canonicalSlug ?? post.slug)
   if (progress >= 8) {
     parts.push({
       key: 'progress',
@@ -93,13 +111,31 @@ function useActive() {
  * The lead slot on the index: the entry's cover — or its field plate when it
  * has none — beside an oversized title. Rendered once, for the featured post.
  */
-export function FeaturedPostCard({ post, ordinal }: { post: PostMeta; ordinal?: number }) {
-  const { t } = useLanguage()
+export function FeaturedPostCard({
+  post,
+  ordinal,
+  lang,
+  href,
+  availableLangs,
+  canonicalSlug,
+}: {
+  post: PostMeta
+  ordinal?: number
+  lang?: Locale
+  href?: string
+  availableLangs?: Locale[]
+  canonicalSlug?: string
+}) {
+  const { locale, t } = useLanguage()
   const { active, handlers } = useActive()
+  const displayLang = lang ?? locale
+  const view = localizedMeta(post, displayLang)
+  const target = href ?? postPath(post, displayLang)
+  const seed = canonicalSlug ?? post.slug
 
   return (
     <Link
-      to={`/blog/${post.slug}`}
+      to={target}
       data-cursor="view"
       {...handlers}
       className="group grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:items-end lg:gap-14"
@@ -107,14 +143,14 @@ export function FeaturedPostCard({ post, ordinal }: { post: PostMeta; ordinal?: 
       <div className="relative">
         {post.cover ? (
           <BlogImage
-            media={post.cover}
+            media={{ ...post.cover, alt: view.coverAlt || post.cover.alt }}
             priority
             sizes="(min-width: 1024px) 55vw, 100vw"
             className="border border-line transition-opacity duration-500 group-hover:opacity-90"
           />
         ) : (
           <PostPlate
-            seed={post.slug}
+            seed={seed}
             motion="drift"
             active={active}
             className="aspect-[16/10] border border-line transition-colors duration-500 group-hover:border-ember/60"
@@ -131,16 +167,21 @@ export function FeaturedPostCard({ post, ordinal }: { post: PostMeta; ordinal?: 
       </div>
 
       <div>
-        <PostMetaLine post={post} />
+        <PostMetaLine
+          post={post}
+          lang={displayLang}
+          langs={availableLangs}
+          canonicalSlug={seed}
+        />
         {/* Colour carries the hover here: at this size the upright and italic
             faces of a long title wrap differently, and stacking them (as
             HoverItalic does) would reserve a line that is never filled. */}
         <h2 className="mt-5 font-display text-[clamp(2.25rem,4.6vw,4rem)] leading-[1.02] text-balance text-bone transition-colors duration-500 group-hover:text-ember">
-          {post.title}
+          {view.title}
         </h2>
-        {(post.subtitle || post.excerpt) && (
+        {(view.subtitle || view.excerpt) && (
           <p className="mt-5 max-w-lg text-base leading-relaxed text-pretty text-bone-dim">
-            {post.subtitle || post.excerpt}
+            {view.subtitle || view.excerpt}
           </p>
         )}
         <span className="mt-8 inline-flex items-center gap-3 font-mono text-[11px] tracking-[0.22em] text-bone uppercase transition-colors duration-300 group-hover:text-ember">
@@ -161,14 +202,26 @@ export function PostRow({
   post,
   ordinal,
   index,
+  lang,
+  href,
+  availableLangs,
+  canonicalSlug,
 }: {
   post: PostMeta
   ordinal: number
   /** Position in the visible list — staggers the row's entrance. */
   index: number
+  lang?: Locale
+  href?: string
+  availableLangs?: Locale[]
+  canonicalSlug?: string
 }) {
   const { locale, t } = useLanguage()
   const { active, handlers } = useActive()
+  const displayLang = lang ?? locale
+  const view = localizedMeta(post, displayLang)
+  const target = href ?? postPath(post, displayLang)
+  const seed = canonicalSlug ?? post.slug
 
   return (
     <li
@@ -176,7 +229,7 @@ export function PostRow({
       style={{ '--row': Math.min(index, 8) } as CSSProperties}
     >
       <Link
-        to={`/blog/${post.slug}`}
+        to={target}
         data-cursor="view"
         {...handlers}
         className="group grid gap-x-8 gap-y-3 border-b border-line py-8 transition-colors duration-500 hover:border-ember/50 md:grid-cols-[7.5rem_minmax(0,1fr)_9.5rem] lg:grid-cols-[8.5rem_minmax(0,1fr)_11.5rem]"
@@ -192,16 +245,22 @@ export function PostRow({
 
         <div className="min-w-0">
           <h2 className="font-display text-[clamp(1.6rem,2.7vw,2.4rem)] leading-[1.08] text-bone">
-            <HoverItalic text={post.title} />
+            <HoverItalic text={view.title} />
           </h2>
-          {post.excerpt && (
+          {view.excerpt && (
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-pretty text-bone-dim md:text-[15px]">
-              {post.excerpt}
+              {view.excerpt}
             </p>
           )}
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-            <PostMetaLine post={post} dateClassName="md:hidden" />
-            {post.tags.slice(0, 3).map((tag) => (
+            <PostMetaLine
+              post={post}
+              lang={displayLang}
+              langs={availableLangs}
+              canonicalSlug={seed}
+              dateClassName="md:hidden"
+            />
+            {view.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
                 className="border border-line px-2 py-0.5 font-mono text-[9px] tracking-[0.18em] text-smoke uppercase"
@@ -213,7 +272,7 @@ export function PostRow({
         </div>
 
         <PostPlate
-          seed={post.slug}
+          seed={seed}
           active={active}
           className="aspect-[16/10] border border-line transition-colors duration-500 group-hover:border-ember/60 max-md:hidden"
         />
@@ -223,22 +282,40 @@ export function PostRow({
 }
 
 /** "Read next" card: plate or cover, title, the essentials. */
-export function RelatedCard({ post, ordinal }: { post: PostMeta; ordinal?: number }) {
-  const { t } = useLanguage()
+export function RelatedCard({
+  post,
+  ordinal,
+  lang,
+  href,
+  availableLangs,
+  canonicalSlug,
+}: {
+  post: PostMeta
+  ordinal?: number
+  lang?: Locale
+  href?: string
+  availableLangs?: Locale[]
+  canonicalSlug?: string
+}) {
+  const { locale, t } = useLanguage()
   const { active, handlers } = useActive()
+  const displayLang = lang ?? locale
+  const view = localizedMeta(post, displayLang)
+  const target = href ?? postPath(post, displayLang)
+  const seed = canonicalSlug ?? post.slug
 
   return (
-    <Link to={`/blog/${post.slug}`} data-cursor="view" {...handlers} className="group block">
+    <Link to={target} data-cursor="view" {...handlers} className="group block">
       <div className="relative">
         {post.cover ? (
           <BlogImage
-            media={post.cover}
+            media={{ ...post.cover, alt: view.coverAlt || post.cover.alt }}
             sizes="(min-width: 768px) 30vw, 100vw"
             className="border border-line"
           />
         ) : (
           <PostPlate
-            seed={post.slug}
+            seed={seed}
             active={active}
             className="aspect-[16/10] border border-line transition-colors duration-500 group-hover:border-ember/60"
           />
@@ -250,9 +327,15 @@ export function RelatedCard({ post, ordinal }: { post: PostMeta; ordinal?: numbe
         )}
       </div>
       <h3 className="mt-4 font-display text-2xl leading-[1.1] text-balance text-bone">
-        <HoverItalic text={post.title} />
+        <HoverItalic text={view.title} />
       </h3>
-      <PostMetaLine post={post} className="mt-3" />
+      <PostMetaLine
+        post={post}
+        lang={displayLang}
+        langs={availableLangs}
+        canonicalSlug={seed}
+        className="mt-3"
+      />
     </Link>
   )
 }

@@ -62,6 +62,14 @@
   function = "blog-meta"
   path = "/blog/*"
 
+[[edge_functions]]
+  function = "blog-meta"
+  path = "/en/blog"
+
+[[edge_functions]]
+  function = "blog-meta"
+  path = "/en/blog/*"
+
 # Live RSS + sitemap, generated from Firestore so publishing needs no rebuild.
 [[edge_functions]]
   function = "feeds"

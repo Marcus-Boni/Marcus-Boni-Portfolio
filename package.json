@@ -16,8 +16,6 @@
     "@fontsource/fragment-mono": "^5.2.8",
     "@fontsource/instrument-serif": "^5.2.8",
     "@radix-ui/react-slot": "^1.2.5",
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.6.1",
     "@shikijs/langs": "^4.4.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -35,7 +33,6 @@
     "shiki": "^4.4.3",
     "split-type": "^0.3.4",
     "tailwind-merge": "^3.6.0",
-    "three": "^0.182.0",
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
@@ -46,7 +43,6 @@
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@types/three": "^0.182.0",
     "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",

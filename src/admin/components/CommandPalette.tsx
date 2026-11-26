@@ -179,12 +179,20 @@ export function CommandPalette({
     }
 
     for (const post of posts.slice(0, 40)) {
+      const extraTitles = [post.locales?.pt?.title, post.locales?.en?.title]
+        .filter((value): value is string => Boolean(value))
+        .join(' ')
+      const extraTags = [
+        ...(post.locales?.pt?.tags ?? []),
+        ...(post.locales?.en?.tags ?? []),
+        ...post.tags,
+      ].join(' ')
       items.push({
         id: `post:${post.slug}`,
         label: post.title || post.slug,
         group: 'Blog',
         hint: post.status === 'published' ? 'publicado' : post.status === 'draft' ? 'rascunho' : 'não listado',
-        keywords: `${post.slug} ${post.tags.join(' ')}`,
+        keywords: `${post.slug} ${extraTitles} ${extraTags}`,
         run: go(`/admin/blog/${post.slug}`),
       })
     }
