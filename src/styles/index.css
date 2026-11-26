@@ -1194,3 +1194,16 @@ button.note-ref[aria-expanded='true'] {
     transform: translateY(10px);
   }
 }
+
+/* ─── Agent console: Kokonut AI-04 per-letter brightness wave ───────────────
+   Off-main-thread opacity wave across individual characters; neutralised
+   cleanly under prefers-reduced-motion. */
+.kokonut-ai-wave {
+  animation: kokonut-ai-wave 1.6s ease-in-out infinite both;
+}
+
+@keyframes kokonut-ai-wave {
+  50% {
+    opacity: 0.32;
+  }
+}

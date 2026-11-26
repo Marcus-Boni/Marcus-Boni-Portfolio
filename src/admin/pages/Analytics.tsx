@@ -25,6 +25,10 @@ const TYPE_LABEL: Record<string, string> = {
   post_view: 'Post aberto',
   post_read: 'Post lido',
   post_share: 'Post compartilhado',
+  agent_open: 'Dossiê aberto',
+  agent_query: 'Consulta ao dossiê',
+  agent_fit: 'Análise de vaga (/fit)',
+  agent_handoff: 'Handoff do dossiê',
 }
 
 function timeAgo(date: Date | null): string {

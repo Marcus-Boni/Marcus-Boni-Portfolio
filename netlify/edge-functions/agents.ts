@@ -9,6 +9,7 @@ import {
 } from '../lib/accept.ts'
 import {
   aboutMarkdown,
+  askMarkdown,
   blogIndexMarkdown,
   contactMarkdown,
   developersMarkdown,
@@ -136,6 +137,12 @@ async function buildMarkdown(
   switch (kind) {
     case 'home':
       return { body: homeMarkdown(), status: 200 }
+
+    case 'ask':
+      return {
+        body: askMarkdown(url.pathname.startsWith('/en/') ? 'en' : 'pt'),
+        status: 200,
+      }
 
     case 'developers':
       return { body: developersMarkdown(), status: 200 }

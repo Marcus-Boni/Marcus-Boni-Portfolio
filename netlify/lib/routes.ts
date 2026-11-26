@@ -20,6 +20,7 @@
 /** What kind of document a path resolves to. Drives the Markdown branch. */
 export type RouteKind =
   | 'home'
+  | 'ask'
   | 'blog-index'
   | 'blog-post'
   | 'developers'
@@ -58,6 +59,8 @@ export interface Route {
  */
 export const ROUTES: readonly Route[] = [
   { path: '/', kind: 'home', wildcard: 'none', served: 'spa' },
+  { path: '/ask', kind: 'ask', wildcard: 'none', served: 'spa' },
+  { path: '/en/ask', kind: 'ask', wildcard: 'none', served: 'spa' },
   { path: '/blog', kind: 'blog-index', wildcard: 'none', served: 'spa' },
   { path: '/blog', kind: 'blog-post', wildcard: 'segment', served: 'spa' },
   { path: '/en/blog', kind: 'blog-index', wildcard: 'none', served: 'spa' },

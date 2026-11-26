@@ -4,6 +4,7 @@ import { useScramble } from '@/hooks/useScramble'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { trackEvent } from '@/lib/analytics'
+import { triggerAgentDrawer } from '@/lib/agent-trigger'
 import { Button } from '@/components/ui/button'
 import { ContactForm } from '@/components/sections/ContactForm'
 import { SectionHeading } from '@/components/ui/SectionHeading'
@@ -54,9 +55,19 @@ export function Contact() {
               </a>
             </Button>
           </div>
-          <p className="max-w-sm text-sm leading-relaxed text-bone-dim">
-            {t.contact.blurb}
-          </p>
+          <div className="max-w-sm space-y-3">
+            <p className="text-sm leading-relaxed text-bone-dim">
+              {t.contact.blurb}
+            </p>
+            <button
+              type="button"
+              onClick={() => triggerAgentDrawer()}
+              data-cursor="link"
+              className="font-mono text-[11px] tracking-[0.16em] text-ember uppercase underline decoration-ember/50 underline-offset-4 transition-colors hover:text-bone hover:decoration-bone"
+            >
+              {t.contact.askCta}
+            </button>
+          </div>
         </div>
 
         <div className="mt-16 md:mt-20">

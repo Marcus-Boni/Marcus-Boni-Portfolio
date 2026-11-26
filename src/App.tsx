@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 
 import { Cursor } from '@/components/cursor/Cursor'
 import { restoreSiteHead } from '@/blog/lib/seo'
+import { AgentLauncher } from '@/components/layout/AgentLauncher'
 import { CodeTooth } from '@/components/layout/CodeTooth'
 import { Header } from '@/components/layout/Header'
 import { SectionRail } from '@/components/layout/SectionRail'
@@ -79,6 +80,7 @@ export default function App() {
       <Cursor />
       <Header />
       <SectionRail />
+      <AgentLauncher />
 
       {/* under the content: `main` is isolated so it paints over this layer */}
       <CodeTooth />

@@ -26,6 +26,8 @@ export interface Translation {
     backHome: string
     themeToLight: string
     themeToDark: string
+    ask: string
+    openAsk: string
   }
   hero: {
     portfolio: string
@@ -85,6 +87,7 @@ export interface Translation {
     title: ReactNode
     cta: string
     blurb: string
+    askCta: string
     form: {
       heading: string
       name: string
@@ -171,6 +174,101 @@ export interface Translation {
       callout: { info: string; tip: string; warn: string; danger: string }
     }
   }
+  agent: {
+    nav: string
+    pageTitle: string
+    pageHeading: ReactNode
+    pageSubtitle: string
+    drawerHeading: string
+    newChat: string
+    expandFull: string
+    assistantTurnLabel: string
+    stoppedNotice: string
+    lenses: {
+      label: string
+      recruiter: string
+      recruiterHint: string
+      engineer: string
+      engineerHint: string
+      client: string
+      clientHint: string
+    }
+    input: {
+      ariaLabel: string
+      placeholder: string
+      fitPlaceholder: string
+      commandsLabel: string
+      slashToggle: string
+      attachFile: string
+      removeCommand: string
+      kbdMove: string
+      kbdPick: string
+      kbdClose: string
+      send: string
+      stop: string
+    }
+    voice: {
+      start: string
+      listening: string
+      discard: string
+      unsupported: string
+    }
+    tools: {
+      running: (count: number) => string
+      summary: (count: number, totalMs: number, evidenceCount: number) => string
+      viewJson: string
+      hideJson: string
+    }
+    citations: {
+      sourcesLabel: string
+      openSource: string
+    }
+    fit: {
+      heading: string
+      verifiedShort: string
+      gapsShort: string
+      copyBrief: string
+      copiedBrief: string
+      verifiedLabel: string
+      gapsLabel: string
+      noMatches: string
+      noGaps: string
+      adjacentPrefix: string
+    }
+    approval: {
+      defaultSubject: string
+      toLabel: string
+      subjectLabel: string
+      inboxTag: string
+      confirmSend: string
+      undo: string
+      cancel: string
+      dismissed: string
+      sentSuccess: string
+      sentReceipt: (name: string) => string
+      fillRequired: string
+      sendError: string
+      offlineFallback: string
+      openedMailto: string
+      namePlaceholder: string
+      emailPlaceholder: string
+      downloadPt: string
+      downloadEn: string
+    }
+    meter: {
+      ariaLabel: (total: number) => string
+      sourcesUnit: string
+      popoverTitle: string
+      projects: string
+      clients: string
+      stack: string
+      posts: string
+      turns: string
+      runtimeLabel: string
+      liveCms: string
+      staticSeed: string
+    }
+  }
   marquee: string[]
   cursor: { view: string; drag: string }
 }
@@ -194,6 +292,8 @@ export const translations: Record<Locale, Translation> = {
       backHome: 'Voltar ao início',
       themeToLight: 'Mudar para o tema claro',
       themeToDark: 'Mudar para o tema escuro',
+      ask: 'Dossiê',
+      openAsk: 'Abrir dossiê interativo (Ctrl+K)',
     },
     hero: {
       portfolio: 'Portfólio',
@@ -294,6 +394,7 @@ export const translations: Record<Locale, Translation> = {
       cta: 'Escreva para mim',
       blurb:
         'Aberto a projetos, colaborações e boas conversas sobre engenharia de software e IA aplicada — em português ou inglês.',
+      askCta: 'Ou consulte o dossiê / analise uma vaga (/fit) →',
       form: {
         heading: 'Ou mande uma mensagem direto por aqui',
         name: 'Nome',
@@ -381,6 +482,110 @@ export const translations: Record<Locale, Translation> = {
         backToIndex: 'Ver todos os registros',
       },
     },
+    agent: {
+      nav: 'Dossiê',
+      pageTitle: 'Consulte o dossiê',
+      pageHeading: (
+        <>
+          O que você quer saber sobre o <em className="text-ember">Marcus</em>?
+        </>
+      ),
+      pageSubtitle:
+        'Respostas ancoradas em projetos e entregas reais — ou cole uma vaga para mapear evidências.',
+      drawerHeading: 'Dossiê interativo',
+      newChat: 'Nova conversa',
+      expandFull: 'Tela cheia',
+      assistantTurnLabel: 'Resposta do dossiê',
+      stoppedNotice: 'Resposta interrompida.',
+      lenses: {
+        label: 'Lente',
+        recruiter: 'Recrutador',
+        recruiterHint: 'Fit de vaga, entregas e disponibilidade',
+        engineer: 'Técnico',
+        engineerHint: 'Arquitetura, stack e decisões de código',
+        client: 'Cliente',
+        clientHint: 'Discovery, escopo e entrega em produção',
+      },
+      input: {
+        ariaLabel: 'Perguntar ao dossiê do Marcus',
+        placeholder: 'Pergunte algo, digite / ou cole uma vaga…',
+        fitPlaceholder: 'Cole a descrição da vaga ou arraste um arquivo .txt/.md…',
+        commandsLabel: 'Comandos',
+        slashToggle: 'Comandos /',
+        attachFile: 'Anexar descrição de vaga (.txt / .md)',
+        removeCommand: 'Remover comando',
+        kbdMove: 'navegar',
+        kbdPick: 'selecionar',
+        kbdClose: 'fechar',
+        send: 'Enviar',
+        stop: 'Parar',
+      },
+      voice: {
+        start: 'Falar pergunta por voz',
+        listening: 'Ouvindo… fale sua pergunta',
+        discard: 'Cancelar',
+        unsupported: 'Reconhecimento de voz indisponível neste navegador.',
+      },
+      tools: {
+        running: (count) =>
+          count === 1 ? 'Consultando 1 fonte…' : `Consultando ${count} fontes…`,
+        summary: (count, totalMs, evidenceCount) =>
+          `${count} ${count === 1 ? 'tool' : 'tools'} · ${totalMs}ms · ${evidenceCount} ${evidenceCount === 1 ? 'fonte' : 'fontes'}`,
+        viewJson: 'JSON',
+        hideJson: 'Fechar',
+      },
+      citations: {
+        sourcesLabel: 'Fontes',
+        openSource: 'Abrir fonte',
+      },
+      fit: {
+        heading: 'Aderência por evidências',
+        verifiedShort: 'comprovados',
+        gapsShort: 'fora do dossiê',
+        copyBrief: 'Copiar .md',
+        copiedBrief: 'Copiado',
+        verifiedLabel: 'Evidências reais',
+        gapsLabel: 'Não registrado no dossiê',
+        noMatches:
+          'Nenhuma tecnologia específica reconhecida — inclua o stack ou responsabilidades da vaga.',
+        noGaps:
+          'Nenhuma tecnologia fora do stack público foi detectada no texto.',
+        adjacentPrefix: 'Adjacente',
+      },
+      approval: {
+        defaultSubject: 'Contato via dossiê',
+        toLabel: 'Para',
+        subjectLabel: 'Assunto',
+        inboxTag: 'Inbox direto do Marcus',
+        confirmSend: 'Enviar',
+        undo: 'Desfazer',
+        cancel: 'Descartar',
+        dismissed: 'Rascunho descartado.',
+        sentSuccess: 'Mensagem entregue na caixa de entrada do Marcus.',
+        sentReceipt: (name) => `Enviado para ${name} · agora mesmo`,
+        fillRequired: 'Preencha nome, e-mail válido e mensagem antes de enviar.',
+        sendError: 'Não foi possível enviar agora — tente novamente.',
+        offlineFallback: 'Inbox offline no momento — tente por e-mail.',
+        openedMailto: 'Cliente de e-mail aberto com o rascunho.',
+        namePlaceholder: 'Seu nome',
+        emailPlaceholder: 'voce@empresa.com',
+        downloadPt: 'CV (PT-BR)',
+        downloadEn: 'Resume (EN)',
+      },
+      meter: {
+        ariaLabel: (total) => `${total} fontes indexadas. Ver detalhamento`,
+        sourcesUnit: 'fontes',
+        popoverTitle: 'Base indexada',
+        projects: 'Projetos públicos',
+        clients: 'Entregas em clientes',
+        stack: 'Tecnologias',
+        posts: 'Registros do Diário',
+        turns: 'Turnos na sessão',
+        runtimeLabel: 'Local · determinístico',
+        liveCms: 'CMS ao vivo',
+        staticSeed: 'Base estática',
+      },
+    },
     marquee: ['Construir', 'Aprender', 'Iterar', 'Repetir'],
     cursor: { view: 'VER', drag: 'ARRASTE' },
   },
@@ -403,6 +608,8 @@ export const translations: Record<Locale, Translation> = {
       backHome: 'Back to top',
       themeToLight: 'Switch to the light theme',
       themeToDark: 'Switch to the dark theme',
+      ask: 'Ask',
+      openAsk: 'Open interactive dossier (Ctrl+K)',
     },
     hero: {
       portfolio: 'Portfolio',
@@ -504,6 +711,7 @@ export const translations: Record<Locale, Translation> = {
       cta: 'Write to me',
       blurb:
         'Open to projects, collaborations and sharp conversations on software engineering and applied AI — in Portuguese or English.',
+      askCta: 'Or query the dossier / check role fit (/fit) →',
       form: {
         heading: 'Or send a message right here',
         name: 'Name',
@@ -587,6 +795,110 @@ export const translations: Record<Locale, Translation> = {
         notFoundBody:
           'This link may have moved, or the entry has not been published yet.',
         backToIndex: 'See all entries',
+      },
+    },
+    agent: {
+      nav: 'Ask',
+      pageTitle: 'Query the dossier',
+      pageHeading: (
+        <>
+          What would you like to know about <em className="text-ember">Marcus</em>?
+        </>
+      ),
+      pageSubtitle:
+        'Answers grounded in shipped code and client work — or paste a role to map evidence.',
+      drawerHeading: 'Interactive dossier',
+      newChat: 'New thread',
+      expandFull: 'Full page',
+      assistantTurnLabel: 'Dossier response',
+      stoppedNotice: 'Generation stopped.',
+      lenses: {
+        label: 'Lens',
+        recruiter: 'Recruiter',
+        recruiterHint: 'Role fit, impact, and availability',
+        engineer: 'Engineer',
+        engineerHint: 'Architecture, stack, and systems craft',
+        client: 'Client',
+        clientHint: 'Discovery, scoping, and production delivery',
+      },
+      input: {
+        ariaLabel: 'Ask Marcus’s dossier',
+        placeholder: 'Ask anything, type / or paste a job description…',
+        fitPlaceholder: 'Paste a job description or drop a .txt/.md file…',
+        commandsLabel: 'Commands',
+        slashToggle: 'Slash commands',
+        attachFile: 'Attach job description (.txt / .md)',
+        removeCommand: 'Remove command',
+        kbdMove: 'move',
+        kbdPick: 'pick',
+        kbdClose: 'close',
+        send: 'Send',
+        stop: 'Stop',
+      },
+      voice: {
+        start: 'Dictate question by voice',
+        listening: 'Listening… speak your question',
+        discard: 'Discard',
+        unsupported: 'Speech recognition is unavailable in this browser.',
+      },
+      tools: {
+        running: (count) =>
+          count === 1 ? 'Querying 1 source…' : `Querying ${count} sources…`,
+        summary: (count, totalMs, evidenceCount) =>
+          `${count} ${count === 1 ? 'tool' : 'tools'} · ${totalMs}ms · ${evidenceCount} ${evidenceCount === 1 ? 'source' : 'sources'}`,
+        viewJson: 'JSON',
+        hideJson: 'Hide',
+      },
+      citations: {
+        sourcesLabel: 'Sources',
+        openSource: 'Open source',
+      },
+      fit: {
+        heading: 'Evidence-based fit',
+        verifiedShort: 'verified',
+        gapsShort: 'unlisted',
+        copyBrief: 'Copy .md',
+        copiedBrief: 'Copied',
+        verifiedLabel: 'Verified evidence',
+        gapsLabel: 'Not listed in public dossier',
+        noMatches:
+          'No specific technologies extracted — include the role’s tech stack or responsibilities.',
+        noGaps:
+          'No technologies outside the public stack were detected in the text.',
+        adjacentPrefix: 'Adjacent',
+      },
+      approval: {
+        defaultSubject: 'Dossier inquiry',
+        toLabel: 'To',
+        subjectLabel: 'Subject',
+        inboxTag: 'Direct to Marcus’s inbox',
+        confirmSend: 'Send',
+        undo: 'Undo',
+        cancel: 'Discard',
+        dismissed: 'Draft discarded.',
+        sentSuccess: 'Delivered to Marcus’s inbox.',
+        sentReceipt: (name) => `Sent to ${name} · just now`,
+        fillRequired: 'Please enter your name, valid email, and message first.',
+        sendError: 'Could not send right now — please try again.',
+        offlineFallback: 'Inbox is temporarily offline — please email directly.',
+        openedMailto: 'Opened your email client with the draft.',
+        namePlaceholder: 'Your name',
+        emailPlaceholder: 'you@company.com',
+        downloadPt: 'CV (PT-BR)',
+        downloadEn: 'Resume (EN)',
+      },
+      meter: {
+        ariaLabel: (total) => `${total} indexed sources. Show breakdown`,
+        sourcesUnit: 'sources',
+        popoverTitle: 'Indexed context',
+        projects: 'Public projects',
+        clients: 'Client deliveries',
+        stack: 'Technologies',
+        posts: 'Journal entries',
+        turns: 'Session turns',
+        runtimeLabel: 'Local · deterministic',
+        liveCms: 'Live CMS',
+        staticSeed: 'Static seed',
       },
     },
     marquee: ['Build', 'Learn', 'Iterate', 'Repeat'],
