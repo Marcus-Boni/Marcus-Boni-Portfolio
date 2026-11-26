@@ -116,6 +116,28 @@ describe('walkthrough', () => {
 })
 
 describe('key ideas and section links', () => {
+  const comparison = ':::report-comparison\nAntes, a tela fica em silêncio. Depois, o CSV está pronto.\n:::'
+
+  it('renders the report comparison with a native slider, view buttons and a text description', () => {
+    const html = render(comparison)
+    expect(html).toContain('type="range"')
+    expect(html).toContain('value="50"')
+    expect(html).toContain('aria-label="Divisão entre a tela anterior e a revisada"')
+    expect(html).toContain('aria-pressed="false">Antes</button>')
+    expect(html).toContain('aria-pressed="true">Comparar</button>')
+    expect(html).toContain('aria-pressed="false">Depois</button>')
+    expect(html).toContain('o CSV está pronto.')
+    expect(render(comparison, 'en')).toContain('aria-label="Split between the original and revised screens"')
+  })
+
+  it('retains the comparison description in the server document', async () => {
+    vi.stubGlobal('Deno', { env: { get: () => 'demo' } })
+    const { renderMarkdown } = await import('../netlify/lib/blog-html.ts')
+    expect(renderMarkdown(comparison)).toBe(
+      '<figure><figcaption><p>Antes, a tela fica em silêncio. Depois, o CSV está pronto.</p></figcaption></figure>',
+    )
+  })
+
   it('renders the takeaways block with a label in the language of the post', () => {
     expect(render(':::takeaways\n- Uma ideia.\n:::')).toContain('aria-label="Em resumo"')
     expect(render(':::takeaways\n- An idea.\n:::', 'en')).toContain('aria-label="In short"')

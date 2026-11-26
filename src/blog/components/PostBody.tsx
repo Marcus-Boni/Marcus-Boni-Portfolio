@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm'
 
 import { BlogFigure } from '@/blog/components/BlogImage'
 import { CodeBlock, InlineCode } from '@/blog/components/CodeBlock'
+import { ReportComparison } from '@/blog/components/ReportComparison'
 import {
   Callout,
   Gallery,
@@ -278,6 +279,7 @@ function buildComponents(media: Record<string, MediaRef>): Components {
     'x-video': Video,
     'x-repo': RepoCard,
     'x-takeaways': Takeaways,
+    'x-report-comparison': ReportComparison,
     'x-steps': Steps,
     'x-steps-stage': StepsStage,
     'x-steps-pane': StepsPane,

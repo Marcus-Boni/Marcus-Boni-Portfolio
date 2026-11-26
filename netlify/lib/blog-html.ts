@@ -77,6 +77,7 @@ export function renderMarkdown(body: string, media: BodyMedia = {}, lang: BlogLo
               : (en ? 'Note' : 'Nota'))), children),
     'x-quote': ({ children, cite }: DirectiveProps) => h('figure', null,
       h('blockquote', null, children), typeof cite === 'string' ? h('figcaption', null, cite) : null),
+    'x-report-comparison': ({ children }: DirectiveProps) => h('figure', null, h('figcaption', null, children)),
     'x-gallery': ({ children }: DirectiveProps) => h('div', null, children),
     'x-youtube': ({ id, title }: DirectiveProps) => typeof id === 'string' && /^[A-Za-z0-9_-]{11}$/.test(id)
       ? h('figure', null, h('a', { href: `https://www.youtube.com/watch?v=${id}` },

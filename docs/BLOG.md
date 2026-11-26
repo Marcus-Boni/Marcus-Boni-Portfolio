@@ -138,6 +138,17 @@ O texto da citação.
 
 Vira o bloco "Em resumo". `title` troca o rótulo: `:::takeaways{title="O que aprendi"}`.
 
+### Comparação da tela de exportação
+
+```md
+:::report-comparison
+Antes, a tela fica em silêncio. Depois, ela confirma que o CSV está pronto.
+:::
+```
+
+O bloco exibe o antes e depois do exemplo de exportação. O texto dentro da
+diretiva descreve as diferenças e aparece também no HTML sem JavaScript.
+
 ### Notas de margem
 
 Use a nota de rodapé do Markdown. O botão **margem** do editor insere a marca

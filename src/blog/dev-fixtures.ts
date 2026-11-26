@@ -2,6 +2,8 @@ import type { Post, PostLocaleMeta } from '@/blog/types'
 import { readingMinutes } from '@/blog/lib/text'
 
 import toolboxBody from '../../docs/diario/caixa-de-ferramentas-front-end.md?raw'
+import frontendPracticesBody from '../../docs/diario/boas-praticas-de-front-end.md?raw'
+import frontendPracticesBodyEn from '../../docs/diario/what-i-learned-about-building-a-good-frontend.md?raw'
 import wifiBody from '../../docs/diario/diagnosticar-wi-fi-lento-com-ia.md?raw'
 import wifiBodyEn from '../../docs/diario/how-i-improved-my-wi-fi-with-ai.md?raw'
 import toolboxBodyEn from '../../docs/diario/my-front-end-toolbox.md?raw'
@@ -273,6 +275,28 @@ function entry(
 }
 
 export const fixturePosts: Post[] = [
+  entry({
+    slug: 'boas-praticas-de-front-end',
+    publishedAt: '2026-11-25T12:00:00.000Z',
+    pt: {
+      title: 'O que aprendi sobre construir um bom front-end',
+      subtitle:
+        'As práticas que levo da pesquisa de UI e UX para a hora de desenhar, implementar e revisar uma interface.',
+      excerpt:
+        'Usei uma tela de relatórios para reunir o que aprendi sobre hierarquia visual, estados da interface, acessibilidade e desempenho.',
+      tags: ['Front-end', 'UI/UX', 'Acessibilidade', 'Design Systems'],
+      body: frontendPracticesBody,
+    },
+    en: {
+      title: 'What I learned about building a good front end',
+      subtitle:
+        'What I took from UI and UX research into designing, building and reviewing interfaces.',
+      excerpt:
+        'I used a reports screen to bring together what I learned about visual hierarchy, interface states, accessibility and performance.',
+      tags: ['Front-end', 'UI/UX', 'Accessibility', 'Design Systems'],
+      body: frontendPracticesBodyEn,
+    },
+  }),
   entry({
     slug: 'diagnosticar-wi-fi-lento-com-ia',
     publishedAt: '2026-11-24T12:00:00.000Z',
