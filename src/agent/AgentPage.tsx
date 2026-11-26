@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { AgentConsole } from '@/agent/components/AgentConsole'
+import { parseAskQueryParams } from '@/agent/share'
 import { LanguageToggle } from '@/components/ui/LanguageToggle'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { useLanguage } from '@/i18n/LanguageContext'
@@ -58,7 +59,9 @@ function useAskHead(locale: Locale) {
 export default function AgentPage({ routeLang = 'pt' }: { routeLang?: Locale }) {
   const { locale, setLocale, t } = useLanguage()
   const navigate = useNavigate()
+  const { search } = useLocation()
   const [scrolled, setScrolled] = useState(false)
+  const deepLink = useMemo(() => parseAskQueryParams(search), [search])
 
   useEffect(() => {
     if (locale !== routeLang) setLocale(routeLang)
@@ -137,7 +140,12 @@ export default function AgentPage({ routeLang = 'pt' }: { routeLang?: Locale }) 
       </header>
 
       <main data-locale-surface className="flex flex-1 flex-col">
-        <AgentConsole variant="page" />
+        <AgentConsole
+          variant="page"
+          initialPrompt={deepLink.prompt}
+          initialLens={deepLink.lens}
+          initialMode={deepLink.mode}
+        />
       </main>
     </div>
   )

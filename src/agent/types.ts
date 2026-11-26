@@ -27,6 +27,7 @@ export interface EdgeCapability {
   configured: boolean
   provider: string | null
   model: string | null
+  fallbackCount?: number
 }
 
 export interface AgentHistoryEntry {
@@ -161,6 +162,7 @@ export interface AgentTurn {
   fitReport?: FitReport
   approval?: ApprovalAction
   runtimeMeta?: RuntimeMeta
+  sourcePrompt?: string
   streaming?: boolean
   stopped?: boolean
   createdAt: number

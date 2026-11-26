@@ -38,7 +38,7 @@ const CLOSE_DELAY_MS = 100
 const WARM_MS = 400
 const CARD_GUESS = 170
 const MARKER_RE = /\[(0\d|EXP·\d{2}|POST·\d{2}|DOC·\d{2})\]/g
-const INLINE_FORMAT_RE = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*)/g
+const INLINE_FORMAT_RE = /(\*\*[^*\n]+\*\*|`[^`\n]+`|\*(?!\s)(?:[^*\n]*[^\s*\n])?\*)/g
 const LAST_WORD_RE = /\S+\s*$/
 const BULLET_RE = /^(?:[-*•])\s+/
 
@@ -343,10 +343,30 @@ export function GroundedProse({
   }
 
   const cleanedText = text.replace(/[ \t]+([.,;:!?])/g, '$1')
-  const blocks = cleanedText
+  const rawBlocks = cleanedText
     .split(/\n{2,}/)
     .map((block) => block.trim())
     .filter(Boolean)
+
+  // Group mixed paragraph + bullet runs within a single block (e.g. a lead-in
+  // line followed directly by `* item` without an extra blank line).
+  const blocks: Array<{ kind: 'list' | 'paragraph'; lines: string[] }> = []
+  for (const raw of rawBlocks) {
+    const lines = raw
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      const kind = BULLET_RE.test(line) ? 'list' : 'paragraph'
+      const prev = blocks[blocks.length - 1]
+      if (prev && prev.kind === kind && i > 0) {
+        prev.lines.push(line)
+      } else {
+        blocks.push({ kind, lines: [line] })
+      }
+    }
+  }
 
   const activeSources = (preview?.ids ?? [])
     .map((id) => byId.get(id))
@@ -356,12 +376,11 @@ export function GroundedProse({
     <div ref={rootRef} className="relative">
       <div className="max-w-[66ch] space-y-3 text-[15px] leading-[1.72] text-bone-dim">
         {blocks.map((block, blockIdx) => {
-          const lines = block.split('\n').map((line) => line.trim())
-          const isList = lines.length > 0 && lines.every((line) => BULLET_RE.test(line))
-          if (isList) {
+          const isLastBlock = blockIdx === blocks.length - 1
+          if (block.kind === 'list') {
             return (
               <ul key={blockIdx} className="space-y-2 pl-4" role="list">
-                {lines.map((line, lineIdx) => (
+                {block.lines.map((line, lineIdx) => (
                   <li key={lineIdx} className="relative pl-3">
                     <span
                       aria-hidden
@@ -370,6 +389,12 @@ export function GroundedProse({
                       —
                     </span>
                     {renderCitedLine(line.replace(BULLET_RE, ''), `${blockIdx}-${lineIdx}`)}
+                    {streaming && isLastBlock && lineIdx === block.lines.length - 1 && (
+                      <span
+                        aria-hidden
+                        className="ml-1 inline-block h-3.5 w-1.5 align-middle bg-ember motion-safe:animate-pulse"
+                      />
+                    )}
                   </li>
                 ))}
               </ul>
@@ -378,13 +403,13 @@ export function GroundedProse({
 
           return (
             <p key={blockIdx} className="text-pretty">
-              {lines.map((line, lineIdx) => (
+              {block.lines.map((line, lineIdx) => (
                 <Fragment key={lineIdx}>
                   {lineIdx > 0 && <br />}
                   {renderCitedLine(line, `${blockIdx}-${lineIdx}`)}
                 </Fragment>
               ))}
-              {streaming && blockIdx === blocks.length - 1 && (
+              {streaming && isLastBlock && (
                 <span
                   aria-hidden
                   className="ml-1 inline-block h-3.5 w-1.5 align-middle bg-ember motion-safe:animate-pulse"

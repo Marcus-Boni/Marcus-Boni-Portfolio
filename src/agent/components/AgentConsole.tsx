@@ -15,6 +15,7 @@ import {
   setRuntimePreference,
   subscribeAgentSession,
 } from '@/agent/session'
+import { buildShareableAskUrl } from '@/agent/share'
 import type {
   AgentHistoryEntry,
   AgentLens,
@@ -22,6 +23,7 @@ import type {
   ApprovalAction,
   EdgeCapability,
   RuntimeMeta,
+  RuntimePreference,
 } from '@/agent/types'
 import type { PostMeta } from '@/blog/types'
 import { useSiteContent } from '@/content/SiteContentContext'
@@ -32,7 +34,7 @@ import { isFirebaseConfigured } from '@/lib/firebase-config'
 import { cn } from '@/lib/utils'
 
 import { FitReportView } from './FitReportView'
-import { IconReset, IconSpark } from './icons'
+import { IconCheck, IconCopy, IconLink, IconReset, IconSpark } from './icons'
 import { GroundedProse } from './InlineCitations'
 import { PromptBar } from './PromptBar'
 import { TextLoading } from './TextLoading'
@@ -55,10 +57,14 @@ function createId(prefix: string): string {
 export function AgentConsole({
   variant = 'page',
   initialPrompt,
+  initialLens,
+  initialMode,
   onCloseDrawer,
 }: {
   variant?: 'page' | 'drawer'
   initialPrompt?: string
+  initialLens?: AgentLens
+  initialMode?: RuntimePreference
   onCloseDrawer?: () => void
 }) {
   const { locale, t } = useLanguage()
@@ -72,6 +78,8 @@ export function AgentConsole({
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
   const [posts, setPosts] = useState<PostMeta[]>([])
+  const [copiedTurnId, setCopiedTurnId] = useState<string | null>(null)
+  const [sharedTurnId, setSharedTurnId] = useState<string | null>(null)
   const [edgeCapability, setEdgeCapability] = useState<EdgeCapability>({
     checked: false,
     configured: false,
@@ -83,6 +91,14 @@ export function AgentConsole({
   const bottomRef = useRef<HTMLDivElement>(null)
   const prevTurnCountRef = useRef(turns.length)
   const consumedInitialRef = useRef<string | undefined>(undefined)
+
+  useEffect(() => {
+    if (initialLens) setAgentLens(initialLens)
+  }, [initialLens])
+
+  useEffect(() => {
+    if (initialMode) setRuntimePreference(initialMode)
+  }, [initialMode])
 
   useEffect(() => {
     let cancelled = false
@@ -148,9 +164,15 @@ export function AgentConsole({
   }, [])
 
   const runPrompt = useCallback(
-    async (rawPrompt: string) => {
+    async (
+      rawPrompt: string,
+      overrides?: { lens?: AgentLens; preference?: RuntimePreference },
+    ) => {
       const trimmed = rawPrompt.trim()
       if (!trimmed) return
+
+      const activeLens = overrides?.lens ?? lens
+      const activePreference = overrides?.preference ?? runtimePreference
 
       abortRef.current?.abort()
       const controller = new AbortController()
@@ -161,7 +183,7 @@ export function AgentConsole({
         id: createId('user'),
         role: 'user',
         text: trimmed,
-        lens,
+        lens: activeLens,
         locale,
         tools: [],
         citations: [],
@@ -173,8 +195,9 @@ export function AgentConsole({
         id: assistantId,
         role: 'assistant',
         text: '',
-        lens,
+        lens: activeLens,
         locale,
+        sourcePrompt: trimmed,
         tools: [],
         citations: [],
         streaming: true,
@@ -209,9 +232,9 @@ export function AgentConsole({
           content,
           posts,
           locale,
-          lens,
+          lens: activeLens,
           history,
-          preference: runtimePreference,
+          preference: activePreference,
           reducedMotion: reduced,
           signal: controller.signal,
         })) {
@@ -270,7 +293,7 @@ export function AgentConsole({
               trackEvent('agent_fit', {
                 matched: event.report.matched.length,
                 gaps: event.report.gaps.length,
-                lens,
+                lens: activeLens,
               })
               break
             case 'approval_request':
@@ -285,9 +308,10 @@ export function AgentConsole({
               }))
               trackEvent('agent_query', {
                 intent: event.intent,
-                lens,
+                lens: activeLens,
                 surface: variant,
                 runtime: observedRuntime?.mode ?? 'local-deterministic',
+                provider: observedRuntime?.provider ?? 'local',
                 fallback: observedRuntime?.fallbackReason ?? 'none',
               })
               break
@@ -317,11 +341,32 @@ export function AgentConsole({
   )
 
   useEffect(() => {
-    if (initialPrompt && consumedInitialRef.current !== initialPrompt) {
+    if (!initialPrompt || consumedInitialRef.current === initialPrompt) return
+    const alreadyAnswered = getAgentSession().turns.some(
+      (turn) =>
+        turn.role === 'assistant' &&
+        !turn.stopped &&
+        !turn.streaming &&
+        turn.sourcePrompt === initialPrompt,
+    )
+    if (alreadyAnswered) {
       consumedInitialRef.current = initialPrompt
-      void runPrompt(initialPrompt)
+      return
     }
-  }, [initialPrompt, runPrompt])
+    let cancelled = false
+    const timer = window.setTimeout(() => {
+      if (cancelled) return
+      consumedInitialRef.current = initialPrompt
+      void runPrompt(initialPrompt, {
+        lens: initialLens,
+        preference: initialMode,
+      })
+    }, 0)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [initialPrompt, initialLens, initialMode, runPrompt])
 
   const handleStop = () => {
     abortRef.current?.abort()
@@ -342,6 +387,38 @@ export function AgentConsole({
     abortRef.current?.abort()
     setStreaming(false)
     clearAgentSession()
+  }
+
+  const handleCopyAnswer = async (turn: AgentTurn) => {
+    try {
+      await navigator.clipboard.writeText(turn.text)
+      setCopiedTurnId(turn.id)
+      trackEvent('agent_share', { kind: 'answer_copy' })
+      window.setTimeout(() => {
+        setCopiedTurnId((current) => (current === turn.id ? null : current))
+      }, 2000)
+    } catch {
+      /* clipboard unavailable */
+    }
+  }
+
+  const handleShareTurn = async (turn: AgentTurn) => {
+    if (!turn.sourcePrompt) return
+    try {
+      const url = buildShareableAskUrl({
+        locale: turn.locale,
+        lens: turn.lens,
+        prompt: turn.sourcePrompt,
+      })
+      await navigator.clipboard.writeText(url)
+      setSharedTurnId(turn.id)
+      trackEvent('agent_share', { kind: 'turn_link' })
+      window.setTimeout(() => {
+        setSharedTurnId((current) => (current === turn.id ? null : current))
+      }, 2000)
+    } catch {
+      /* clipboard unavailable */
+    }
   }
 
   const handleNavigateInternal = (href: string) => {
@@ -538,28 +615,74 @@ export function AgentConsole({
                             </p>
                           )}
 
-                          {!turn.streaming &&
-                            turn.runtimeMeta?.mode === 'edge-llm' &&
-                            turn.runtimeMeta.model && (
-                              <p className="mt-2 font-mono text-[10px] tracking-[0.06em] text-smoke">
-                                {t.agent.meter.edgeReady(
-                                  turn.runtimeMeta.provider
-                                    ? `${turn.runtimeMeta.provider} · ${turn.runtimeMeta.model}`
-                                    : turn.runtimeMeta.model,
+                          {!turn.streaming && turn.text && (
+                            <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] tracking-[0.06em] text-smoke">
+                              {turn.runtimeMeta?.mode === 'edge-llm' &&
+                                turn.runtimeMeta.model && (
+                                  <span>
+                                    {t.agent.meter.edgeReady(
+                                      turn.runtimeMeta.provider
+                                        ? `${turn.runtimeMeta.provider} · ${turn.runtimeMeta.model}`
+                                        : turn.runtimeMeta.model,
+                                    )}
+                                  </span>
                                 )}
-                              </p>
-                            )}
 
-                          {!turn.streaming &&
-                            turn.runtimeMeta?.fallbackReason === 'rate_limited' && (
-                              <p className="mt-2 font-mono text-[10px] text-smoke">
-                                {t.agent.meter.rateLimitNote}
-                              </p>
-                            )}
+                              {turn.runtimeMeta?.fallbackReason === 'rate_limited' && (
+                                <span>{t.agent.meter.rateLimitNote}</span>
+                              )}
+
+                              <span className="inline-flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => void handleCopyAnswer(turn)}
+                                  className="inline-flex items-center gap-1 rounded-full py-0.5 text-smoke transition-colors hover:text-bone focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember"
+                                >
+                                  {copiedTurnId === turn.id ? (
+                                    <>
+                                      <IconCheck className="size-3 text-ember" />
+                                      <span className="text-bone">
+                                        {t.agent.copiedAnswer}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <IconCopy className="size-3" />
+                                      <span>{t.agent.copyAnswer}</span>
+                                    </>
+                                  )}
+                                </button>
+
+                                {turn.sourcePrompt && (
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleShareTurn(turn)}
+                                    className="inline-flex items-center gap-1 rounded-full py-0.5 text-smoke transition-colors hover:text-bone focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember"
+                                  >
+                                    {sharedTurnId === turn.id ? (
+                                      <>
+                                        <IconCheck className="size-3 text-ember" />
+                                        <span className="text-bone">
+                                          {t.agent.copiedLink}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <IconLink className="size-3" />
+                                        <span>{t.agent.shareLink}</span>
+                                      </>
+                                    )}
+                                  </button>
+                                )}
+                              </span>
+                            </div>
+                          )}
 
                           {turn.fitReport && (
                             <FitReportView
                               report={turn.fitReport}
+                              sourcePrompt={turn.sourcePrompt}
+                              lens={turn.lens}
                               onNavigateInternal={handleNavigateInternal}
                             />
                           )}

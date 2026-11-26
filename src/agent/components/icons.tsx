@@ -216,3 +216,13 @@ export function IconUser(props: IconProps) {
     </svg>
   )
 }
+
+export function IconLink(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M6.5 9.5l3-3" />
+      <path d="M8.8 5.2l1.1-1.1a2.2 2.2 0 1 1 3.1 3.1l-1.1 1.1" />
+      <path d="M7.2 10.8l-1.1 1.1a2.2 2.2 0 1 1-3.1-3.1l1.1-1.1" />
+    </svg>
+  )
+}

@@ -25,6 +25,7 @@ export type AnalyticsEventType =
   | 'agent_query'
   | 'agent_fit'
   | 'agent_handoff'
+  | 'agent_share'
 
 export interface AnalyticsContext {
   visitorId: string

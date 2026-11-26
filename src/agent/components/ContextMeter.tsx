@@ -323,7 +323,11 @@ export function ContextMeter({
                   : edgeCapability?.configured && edgeCapability.model
                     ? t.agent.meter.edgeReady(
                         edgeCapability.provider
-                          ? `${edgeCapability.provider} · ${edgeCapability.model}`
+                          ? `${edgeCapability.provider}${
+                              edgeCapability.fallbackCount && edgeCapability.fallbackCount > 1
+                                ? ` (+${edgeCapability.fallbackCount - 1})`
+                                : ''
+                            } · ${edgeCapability.model}`
                           : edgeCapability.model,
                       )
                     : edgeCapability?.checked

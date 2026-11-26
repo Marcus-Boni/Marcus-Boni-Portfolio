@@ -88,12 +88,16 @@ export async function probeEdgeCapability(
       configured?: boolean
       provider?: string | null
       model?: string | null
+      fallbackChain?: unknown[]
     }
     cachedCapability = {
       checked: true,
       configured: Boolean(data.configured),
       provider: typeof data.provider === 'string' ? data.provider : null,
       model: typeof data.model === 'string' ? data.model : null,
+      fallbackCount: Array.isArray(data.fallbackChain)
+        ? data.fallbackChain.length
+        : undefined,
     }
     return cachedCapability
   } catch {

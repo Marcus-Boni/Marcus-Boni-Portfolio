@@ -1,10 +1,22 @@
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 
-import type { FitReport } from '@/agent/types'
+import {
+  buildShareableAskUrl,
+  downloadMarkdownFile,
+  slugifyBriefFilename,
+} from '@/agent/share'
+import type { AgentLens, FitReport } from '@/agent/types'
 import { useLanguage } from '@/i18n/LanguageContext'
+import { trackEvent } from '@/lib/analytics'
 
-import { IconArrowUpRight, IconCheck, IconCopy } from './icons'
+import {
+  IconArrowUpRight,
+  IconCheck,
+  IconCopy,
+  IconDownload,
+  IconLink,
+} from './icons'
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const
 
@@ -13,25 +25,52 @@ const EASE_OUT = [0.23, 1, 0.32, 1] as const
  *
  * Clean rounded-2xl surface, calm hierarchy, zero fake percentage gauges:
  * pairs each matched skill with concrete production/project evidence and lists
- * gaps transparently alongside adjacent experience.
+ * gaps transparently alongside adjacent experience. Includes 1-click Markdown
+ * copy, `.md` download, and shareable deep-link export.
  */
 export function FitReportView({
   report,
+  sourcePrompt,
+  lens = 'recruiter',
   onNavigateInternal,
 }: {
   report: FitReport
+  sourcePrompt?: string
+  lens?: AgentLens
   onNavigateInternal?: (href: string) => void
 }) {
-  const { t } = useLanguage()
+  const { locale, t } = useLanguage()
   const [copied, setCopied] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
 
   const copyBrief = async () => {
     try {
       await navigator.clipboard.writeText(report.markdownBrief)
       setCopied(true)
+      trackEvent('agent_share', { kind: 'fit_markdown' })
       window.setTimeout(() => setCopied(false), 2200)
     } catch {
       setCopied(false)
+    }
+  }
+
+  const downloadBrief = () => {
+    const filename = slugifyBriefFilename(report.roleHint)
+    if (downloadMarkdownFile(filename, report.markdownBrief)) {
+      trackEvent('agent_share', { kind: 'fit_download' })
+    }
+  }
+
+  const copyShareLink = async () => {
+    if (!sourcePrompt) return
+    try {
+      const url = buildShareableAskUrl({ locale, lens, prompt: sourcePrompt })
+      await navigator.clipboard.writeText(url)
+      setLinkCopied(true)
+      trackEvent('agent_share', { kind: 'fit_link' })
+      window.setTimeout(() => setLinkCopied(false), 2200)
+    } catch {
+      setLinkCopied(false)
     }
   }
 
@@ -58,23 +97,58 @@ export function FitReportView({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => void copyBrief()}
-          className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line bg-ink px-3 font-mono text-[11px] text-bone-dim transition-colors hover:border-ember hover:text-bone"
-        >
-          {copied ? (
-            <>
-              <IconCheck className="size-3.5 text-ember" />
-              <span className="text-bone">{t.agent.fit.copiedBrief}</span>
-            </>
-          ) : (
-            <>
-              <IconCopy className="size-3.5" />
-              <span>{t.agent.fit.copyBrief}</span>
-            </>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => void copyBrief()}
+            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line bg-ink px-3 font-mono text-[11px] text-bone-dim transition-colors hover:border-ember hover:text-bone focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember"
+          >
+            {copied ? (
+              <>
+                <IconCheck className="size-3.5 text-ember" />
+                <span className="text-bone">{t.agent.fit.copiedBrief}</span>
+              </>
+            ) : (
+              <>
+                <IconCopy className="size-3.5" />
+                <span>{t.agent.fit.copyBrief}</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={downloadBrief}
+            aria-label={t.agent.fit.downloadBrief}
+            title={t.agent.fit.downloadBrief}
+            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line bg-ink px-3 font-mono text-[11px] text-bone-dim transition-colors hover:border-ember hover:text-bone focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember"
+          >
+            <IconDownload className="size-3.5" />
+            <span className="hidden sm:inline">{t.agent.fit.downloadBrief}</span>
+          </button>
+
+          {sourcePrompt && (
+            <button
+              type="button"
+              onClick={() => void copyShareLink()}
+              aria-label={t.agent.fit.shareLink}
+              title={t.agent.fit.shareLink}
+              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line bg-ink px-3 font-mono text-[11px] text-bone-dim transition-colors hover:border-ember hover:text-bone focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember"
+            >
+              {linkCopied ? (
+                <>
+                  <IconCheck className="size-3.5 text-ember" />
+                  <span className="text-bone">{t.agent.fit.copiedLink}</span>
+                </>
+              ) : (
+                <>
+                  <IconLink className="size-3.5" />
+                  <span className="hidden sm:inline">{t.agent.fit.shareLink}</span>
+                </>
+              )}
+            </button>
           )}
-        </button>
+        </div>
       </div>
 
       <div className="divide-y divide-line/80">

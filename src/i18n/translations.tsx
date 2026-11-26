@@ -144,6 +144,7 @@ export interface Translation {
       share: string
       copyLink: string
       copied: string
+      askDossier: string
       readAlso: string
       translationAvailable: string
       notFound: string
@@ -184,6 +185,10 @@ export interface Translation {
     expandFull: string
     assistantTurnLabel: string
     stoppedNotice: string
+    copyAnswer: string
+    copiedAnswer: string
+    shareLink: string
+    copiedLink: string
     lenses: {
       label: string
       recruiter: string
@@ -229,6 +234,9 @@ export interface Translation {
       gapsShort: string
       copyBrief: string
       copiedBrief: string
+      downloadBrief: string
+      shareLink: string
+      copiedLink: string
       verifiedLabel: string
       gapsLabel: string
       noMatches: string
@@ -480,6 +488,7 @@ export const translations: Record<Locale, Translation> = {
         share: 'Compartilhar',
         copyLink: 'Copiar link',
         copied: 'Link copiado',
+        askDossier: 'Perguntar no Dossiê',
         readAlso: 'Leia também',
         translationAvailable: 'Read in English',
         notFound: 'Registro não encontrado',
@@ -504,6 +513,10 @@ export const translations: Record<Locale, Translation> = {
       expandFull: 'Tela cheia',
       assistantTurnLabel: 'Resposta do dossiê',
       stoppedNotice: 'Resposta interrompida.',
+      copyAnswer: 'Copiar',
+      copiedAnswer: 'Copiado',
+      shareLink: 'Copiar link',
+      copiedLink: 'Link copiado',
       lenses: {
         label: 'Lente',
         recruiter: 'Recrutador',
@@ -551,6 +564,9 @@ export const translations: Record<Locale, Translation> = {
         gapsShort: 'fora do dossiê',
         copyBrief: 'Copiar .md',
         copiedBrief: 'Copiado',
+        downloadBrief: 'Baixar .md',
+        shareLink: 'Copiar link',
+        copiedLink: 'Link copiado',
         verifiedLabel: 'Evidências reais',
         gapsLabel: 'Não registrado no dossiê',
         noMatches:
@@ -802,6 +818,7 @@ export const translations: Record<Locale, Translation> = {
         share: 'Share',
         copyLink: 'Copy link',
         copied: 'Link copied',
+        askDossier: 'Ask Dossier',
         readAlso: 'Read next',
         translationAvailable: 'Ler em português',
         notFound: 'Entry not found',
@@ -826,6 +843,10 @@ export const translations: Record<Locale, Translation> = {
       expandFull: 'Full page',
       assistantTurnLabel: 'Dossier response',
       stoppedNotice: 'Generation stopped.',
+      copyAnswer: 'Copy',
+      copiedAnswer: 'Copied',
+      shareLink: 'Copy link',
+      copiedLink: 'Link copied',
       lenses: {
         label: 'Lens',
         recruiter: 'Recruiter',
@@ -873,6 +894,9 @@ export const translations: Record<Locale, Translation> = {
         gapsShort: 'unlisted',
         copyBrief: 'Copy .md',
         copiedBrief: 'Copied',
+        downloadBrief: 'Download .md',
+        shareLink: 'Copy link',
+        copiedLink: 'Link copied',
         verifiedLabel: 'Verified evidence',
         gapsLabel: 'Not listed in public dossier',
         noMatches:
