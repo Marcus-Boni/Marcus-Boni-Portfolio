@@ -346,8 +346,9 @@ export function PromptBar({
               id={menuId}
               role="listbox"
               aria-label={t.agent.input.commandsLabel}
+              data-lenis-prevent
               className={cn(
-                'overflow-y-auto [scrollbar-color:var(--color-line)_transparent] [scrollbar-width:thin]',
+                'overflow-y-auto overscroll-contain [scrollbar-color:var(--color-line)_transparent] [scrollbar-width:thin]',
                 menuSide === 'bottom' ? 'max-h-[168px]' : 'max-h-56',
               )}
             >

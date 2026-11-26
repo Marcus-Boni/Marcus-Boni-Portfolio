@@ -332,7 +332,8 @@ export function ToolCallsTrace({
                           >
                             <pre
                               tabIndex={0}
-                              className="mt-1 mb-2 max-h-52 overflow-auto rounded-xl border border-line bg-ink-soft p-3 font-mono text-[11px] leading-relaxed text-bone-dim"
+                              data-lenis-prevent
+                              className="mt-1 mb-2 max-h-52 overflow-auto overscroll-contain rounded-xl border border-line bg-ink-soft p-3 font-mono text-[11px] leading-relaxed text-bone-dim [scrollbar-color:var(--color-line)_transparent] [scrollbar-width:thin]"
                             >
                               {JSON.stringify(
                                 {

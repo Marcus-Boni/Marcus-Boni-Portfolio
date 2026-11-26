@@ -1,3 +1,4 @@
+import { useLenis } from 'lenis/react'
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -20,6 +21,7 @@ export default function AgentDrawer({
 }) {
   const { locale, t } = useLanguage()
   const navigate = useNavigate()
+  const lenis = useLenis()
   const returnFocusRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
@@ -27,8 +29,10 @@ export default function AgentDrawer({
     trackEvent('agent_open', { surface: 'drawer' })
 
     const html = document.documentElement
-    const prevOverflow = document.body.style.overflow
-    html.classList.add('lenis-stopped')
+    const prevHtmlOverflow = html.style.overflow
+    const prevBodyOverflow = document.body.style.overflow
+    lenis?.stop()
+    html.style.overflow = 'hidden'
     document.body.style.overflow = 'hidden'
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -41,16 +45,20 @@ export default function AgentDrawer({
 
     return () => {
       window.removeEventListener('keydown', onKeyDown)
-      html.classList.remove('lenis-stopped')
-      document.body.style.overflow = prevOverflow
+      html.style.overflow = prevHtmlOverflow
+      document.body.style.overflow = prevBodyOverflow
+      lenis?.start()
       returnFocusRef.current?.focus()
     }
-  }, [onClose])
+  }, [onClose, lenis])
 
   const fullPagePath = locale === 'en' ? '/en/ask' : '/ask'
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center p-0 sm:items-center sm:p-5 md:p-8">
+    <div
+      data-lenis-prevent
+      className="fixed inset-0 z-[90] flex items-end justify-center overscroll-contain p-0 sm:items-center sm:p-5 md:p-8"
+    >
       <button
         type="button"
         aria-label={t.header.close}
@@ -62,9 +70,10 @@ export default function AgentDrawer({
         role="dialog"
         aria-modal="true"
         aria-label={t.agent.drawerHeading}
-        className="relative flex h-[92svh] w-full max-w-3xl flex-col overflow-hidden rounded-t-2xl border border-line bg-ink shadow-[0_24px_80px_var(--shade)] sm:h-[min(86svh,760px)] sm:rounded-2xl motion-safe:animate-[panel-in_220ms_cubic-bezier(0.16,1,0.3,1)]"
+        data-lenis-prevent
+        className="relative flex h-[92svh] w-full max-w-3xl flex-col overflow-hidden overscroll-contain rounded-t-2xl border border-line bg-ink shadow-[0_24px_80px_var(--shade)] sm:h-[min(86svh,760px)] sm:rounded-2xl motion-safe:animate-[panel-in_220ms_cubic-bezier(0.16,1,0.3,1)]"
       >
-        <div className="flex items-center justify-between gap-4 border-b border-line/70 px-5 py-3">
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-line/70 px-5 py-3">
           <div className="flex items-baseline gap-3">
             <span className="font-display-italic text-xl leading-none text-bone">
               mb<span className="text-ember">.</span>

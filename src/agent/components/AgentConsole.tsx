@@ -62,7 +62,9 @@ export function AgentConsole({
   const [streaming, setStreaming] = useState(false)
   const [posts, setPosts] = useState<PostMeta[]>([])
   const abortRef = useRef<AbortController | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const prevTurnCountRef = useRef(turns.length)
   const consumedInitialRef = useRef<string | undefined>(undefined)
 
   useEffect(() => {
@@ -86,12 +88,29 @@ export function AgentConsole({
   const lastTurnToolCount = lastTurn?.tools.length ?? 0
 
   useEffect(() => {
+    const turnAdded = turns.length > prevTurnCountRef.current
+    prevTurnCountRef.current = turns.length
     if (turns.length === 0) return
+
+    if (variant === 'drawer') {
+      const container = scrollContainerRef.current
+      if (!container) return
+      const distanceFromBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight
+      if (turnAdded || distanceFromBottom < 140) {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: reduced ? 'instant' : 'smooth',
+        })
+      }
+      return
+    }
+
     bottomRef.current?.scrollIntoView({
       behavior: reduced ? 'instant' : 'smooth',
       block: 'end',
     })
-  }, [turns.length, lastTurnText, lastTurnToolCount, reduced])
+  }, [turns.length, lastTurnText, lastTurnToolCount, reduced, variant])
 
   useEffect(() => {
     return () => abortRef.current?.abort()
@@ -382,8 +401,10 @@ export function AgentConsole({
               className="flex min-h-0 flex-1 flex-col"
             >
               <div
+                ref={scrollContainerRef}
+                data-lenis-prevent
                 className={cn(
-                  'flex-1 overflow-y-auto px-5',
+                  'min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 [scrollbar-color:var(--color-line)_transparent] [scrollbar-width:thin]',
                   variant === 'page' ? 'pt-6 pb-10' : 'py-5',
                 )}
               >
