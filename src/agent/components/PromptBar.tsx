@@ -10,7 +10,12 @@ import {
 } from 'react'
 
 import { SLASH_COMMANDS } from '@/agent/knowledge'
-import type { AgentLens, SlashCommandDef } from '@/agent/types'
+import type {
+  AgentLens,
+  EdgeCapability,
+  RuntimePreference,
+  SlashCommandDef,
+} from '@/agent/types'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { cn } from '@/lib/utils'
 
@@ -84,6 +89,9 @@ export function PromptBar({
   postCount,
   turnCount,
   source,
+  runtimePreference = 'auto',
+  onRuntimePreferenceChange,
+  edgeCapability,
   menuSide = 'top',
   autoFocus = false,
 }: {
@@ -100,6 +108,9 @@ export function PromptBar({
   postCount: number
   turnCount: number
   source: 'live' | 'static'
+  runtimePreference?: RuntimePreference
+  onRuntimePreferenceChange?: (next: RuntimePreference) => void
+  edgeCapability?: EdgeCapability
   menuSide?: 'top' | 'bottom'
   autoFocus?: boolean
 }) {
@@ -649,7 +660,10 @@ export function PromptBar({
                     postCount={postCount}
                     turnCount={turnCount}
                     source={source}
-                    menuSide={menuSide}
+                    runtimePreference={runtimePreference}
+                    onRuntimePreferenceChange={onRuntimePreferenceChange}
+                    edgeCapability={edgeCapability}
+                    menuSide="top"
                   />
 
                   {voiceAvailable && !streaming && (

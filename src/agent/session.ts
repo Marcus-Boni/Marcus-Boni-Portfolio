@@ -1,4 +1,4 @@
-import type { AgentLens, AgentTurn } from './types'
+import type { AgentLens, AgentTurn, RuntimePreference } from './types'
 
 /**
  * Shared in-tab session store so a conversation opened in the home `⌘K` drawer
@@ -13,25 +13,30 @@ const OPEN_EVENT = 'mb:open-agent'
 
 interface StoredSession {
   lens: AgentLens
+  runtimePreference: RuntimePreference
   turns: AgentTurn[]
 }
 
 const listeners = new Set<() => void>()
 
 function readStorage(): StoredSession {
-  if (typeof window === 'undefined') return { lens: 'recruiter', turns: [] }
+  if (typeof window === 'undefined') {
+    return { lens: 'recruiter', runtimePreference: 'auto', turns: [] }
+  }
   try {
     const raw = window.sessionStorage.getItem(STORAGE_KEY)
-    if (!raw) return { lens: 'recruiter', turns: [] }
+    if (!raw) return { lens: 'recruiter', runtimePreference: 'auto', turns: [] }
     const parsed = JSON.parse(raw) as Partial<StoredSession>
     const lens: AgentLens =
       parsed.lens === 'engineer' || parsed.lens === 'client' ? parsed.lens : 'recruiter'
+    const runtimePreference: RuntimePreference =
+      parsed.runtimePreference === 'local' ? 'local' : 'auto'
     const turns = Array.isArray(parsed.turns)
       ? parsed.turns.map((turn) => ({ ...turn, streaming: false }))
       : []
-    return { lens, turns }
+    return { lens, runtimePreference, turns }
   } catch {
-    return { lens: 'recruiter', turns: [] }
+    return { lens: 'recruiter', runtimePreference: 'auto', turns: [] }
   }
 }
 
@@ -60,6 +65,12 @@ export function subscribeAgentSession(listener: () => void): () => void {
 export function setAgentLens(lens: AgentLens): void {
   if (state.lens === lens) return
   state = { ...state, lens }
+  emit()
+}
+
+export function setRuntimePreference(runtimePreference: RuntimePreference): void {
+  if (state.runtimePreference === runtimePreference) return
+  state = { ...state, runtimePreference }
   emit()
 }
 

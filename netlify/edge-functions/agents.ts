@@ -271,6 +271,8 @@ export const config: Config = {
     '/admin/*',
     // `api.ts` owns everything under /api, errors included.
     '/api/*',
+    // `/agent/v1/*` hosts JSON/SSE edge endpoints (`agent-publish`, `agent-chat`).
+    '/agent/*',
     '/*.js',
     '/*.mjs',
     '/*.css',

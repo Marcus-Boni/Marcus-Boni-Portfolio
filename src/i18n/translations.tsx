@@ -267,6 +267,12 @@ export interface Translation {
       runtimeLabel: string
       liveCms: string
       staticSeed: string
+      modeLabel: string
+      modeAuto: string
+      modeLocal: string
+      edgeReady: (model: string) => string
+      edgeStandby: string
+      rateLimitNote: string
     }
   }
   marquee: string[]
@@ -585,6 +591,12 @@ export const translations: Record<Locale, Translation> = {
         runtimeLabel: 'Local · determinístico',
         liveCms: 'CMS ao vivo',
         staticSeed: 'Base estática',
+        modeLabel: 'Motor',
+        modeAuto: 'Híbrido',
+        modeLocal: 'Local',
+        edgeReady: (model) => `Edge LLM · ${model}`,
+        edgeStandby: 'Local · Edge pronto p/ chave',
+        rateLimitNote: 'Limite de taxa da Edge atingido — respondido pelo motor local determinístico.',
       },
     },
     marquee: ['Construir', 'Aprender', 'Iterar', 'Repetir'],
@@ -901,6 +913,12 @@ export const translations: Record<Locale, Translation> = {
         runtimeLabel: 'Local · deterministic',
         liveCms: 'Live CMS',
         staticSeed: 'Static seed',
+        modeLabel: 'Runtime',
+        modeAuto: 'Hybrid',
+        modeLocal: 'Local',
+        edgeReady: (model) => `Edge LLM · ${model}`,
+        edgeStandby: 'Local · Edge ready for key',
+        rateLimitNote: 'Edge rate limit reached — answered by the local deterministic engine.',
       },
     },
     marquee: ['Build', 'Learn', 'Iterate', 'Repeat'],

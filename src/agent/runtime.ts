@@ -26,6 +26,8 @@ import {
 } from './tools'
 import type {
   AgentEvent,
+  AgentHistoryEntry,
+  AgentIntent,
   AgentLens,
   AgentRuntime,
   AgentRuntimeContext,
@@ -609,16 +611,16 @@ function composeResponse(params: {
       return {
         text: isPt
           ? [
-              'Este console é um **Agente de Dossiê determinístico** projetado para transparência máxima [DOC·05]:',
-              '- **Sem LLM opaco na V1:** o motor local faz normalização bilíngue, ontologia técnica, busca híbrida (BM25 + trigramas) e executa as mesmas operações de `/openapi.json` em milissegundos — custo zero e zero alucinação.',
-              '- **Mesmo protocolo de um agente com LLM:** a interface consome um stream tipado (`tool_start`, `tool_result`, `text_delta`, `citations`, `approval_request`), então plugar um modelo via Netlify Edge Function na Fase 2 não muda uma linha da UI.',
-              '- **Superfície aberta para máquinas:** teste `/openapi.json`, `/llms.txt`, `/api/v1/profile` ou `curl -H "Accept: text/markdown" https://marcusboni.com.br/` em `/developers` [DOC·05].',
+              'Este console roda uma arquitetura **híbrida de Agente de Dossiê** (recuperação determinística + síntese opcional via Edge LLM) [DOC·05]:',
+              '- **Grounding determinístico primeiro:** normalização bilíngue, ontologia técnica, busca híbrida (BM25 + trigramas) e ferramentas que espelham `/openapi.json` extraem evidências, citações e o relatório `/fit` com zero alucinação.',
+              '- **Streaming SSE na Edge (`POST /agent/v1/chat`):** quando há uma chave de LLM configurada no servidor da Netlify (OpenAI, Gemini, Anthropic, Groq ou OpenRouter), a síntese em linguagem natural faz streaming token a token sobre as evidências verificadas — com rate limit por IP, proteção contra prompt injection e fallback automático para o motor local.',
+              '- **Superfície aberta para máquinas:** inspecione `/openapi.json`, `/llms.txt`, `/api/v1/profile`, `GET /agent/v1/chat` ou `curl -H "Accept: text/markdown" https://marcusboni.com.br/` em `/developers` [DOC·05].',
             ].join('\n\n')
           : [
-              'This console is a **deterministic Dossier Agent** built for radical technical transparency [DOC·05]:',
-              '- **Zero opaque LLM in V1:** the local engine runs bilingual normalization, a tech ontology, hybrid BM25 + trigram retrieval, and executes the exact operations documented in `/openapi.json` in milliseconds — zero token cost and zero hallucination.',
-              '- **Drop-in LLM architecture:** the UI consumes a typed event stream (`tool_start`, `tool_result`, `text_delta`, `citations`, `approval_request`), so swapping in an edge LLM adapter in Phase 2 takes zero UI changes.',
-              '- **Machine-readable surface:** inspect `/openapi.json`, `/llms.txt`, `/api/v1/profile`, or `curl -H "Accept: text/markdown" https://marcusboni.com.br/` at `/developers` [DOC·05].',
+              'This console runs a **hybrid Dossier Agent architecture** (deterministic grounding + optional Edge LLM synthesis) [DOC·05]:',
+              '- **Deterministic grounding first:** bilingual normalization, tech ontology, hybrid BM25 + trigram retrieval, and tools mirroring `/openapi.json` extract verified evidence, citations, and `/fit` ledgers with zero hallucination.',
+              '- **Edge SSE streaming (`POST /agent/v1/chat`):** when a server-side LLM key is configured on Netlify (OpenAI, Gemini, Anthropic, Groq, or OpenRouter), natural prose streams token by token grounded strictly in retrieved evidence — with per-IP rate limiting, prompt-injection hardening, and silent local fallback.',
+              '- **Machine-readable surface:** inspect `/openapi.json`, `/llms.txt`, `/api/v1/profile`, `GET /agent/v1/chat`, or `curl -H "Accept: text/markdown" https://marcusboni.com.br/` at `/developers` [DOC·05].',
             ].join('\n\n'),
         citations: dedupeCitations(citations),
       }
@@ -711,6 +713,208 @@ function composeResponse(params: {
   }
 }
 
+const FOLLOW_UP_PATTERN =
+  /\b(isso|disso|nisso|dele|dela|desse|dessa|nele|nela|nesse|nessa|mais detalhes|me conte mais|fale mais|aprofunde|e a stack|qual a stack|quais tecnologias|qual o link|como funciona|tell me more|more about|about it|about that|its stack|what stack|how does it|elaborate|go deeper)\b/i
+
+/**
+ * Resolves short conversational follow-ups ("tell me more about it", "qual a
+ * stack dele?") by attaching the main entity from the most recent assistant
+ * turn when the current query doesn't name an entity explicitly.
+ */
+export function resolveFollowUpInput(
+  rawInput: string,
+  history: AgentHistoryEntry[] | undefined,
+  content: SiteContent,
+): string {
+  const trimmed = rawInput.trim()
+  if (!trimmed || trimmed.startsWith('/') || !history || history.length === 0) {
+    return trimmed
+  }
+  if (trimmed.length > 140) return trimmed
+
+  const initial = classifyIntent(trimmed, content)
+  const hasExplicitAnchor =
+    initial.signals.matchedProjectTitles.length > 0 ||
+    initial.signals.matchedClients.length > 0 ||
+    initial.signals.matchedTechs.length > 0 ||
+    initial.signals.externalTechs.length > 0
+
+  if (hasExplicitAnchor || !FOLLOW_UP_PATTERN.test(initial.signals.normalized)) {
+    return trimmed
+  }
+
+  const lastAssistant = [...history]
+    .reverse()
+    .find(
+      (entry) =>
+        entry.role === 'assistant' &&
+        (entry.intent === 'projects' ||
+          entry.intent === 'experience' ||
+          entry.intent === 'ai_work') &&
+        entry.citationTitles &&
+        entry.citationTitles.length > 0,
+    )
+
+  const anchor = lastAssistant?.citationTitles?.[0]?.split(' — ')[0]?.trim()
+  if (!anchor) return trimmed
+
+  return `${trimmed} ${anchor}`
+}
+
+export interface GroundedTurnPlan {
+  intent: AgentIntent
+  query: string
+  effectiveInput: string
+  plannedTools: (() => ToolExecutionResult)[]
+  composed: ComposedTurn
+}
+
+/**
+ * Shared deterministic retrieval, tool plan, citations, FitReport, and
+ * approval builder used by both `LocalDeterministicRuntime` and the Phase 2
+ * `HybridEdgeRuntime`.
+ */
+export function prepareGroundedTurn(
+  input: string,
+  context: Pick<AgentRuntimeContext, 'content' | 'posts' | 'locale' | 'lens' | 'history'>,
+): GroundedTurnPlan {
+  const { content, posts, locale, lens, history } = context
+  const effectiveInput = resolveFollowUpInput(input, history, content)
+  const { intent, signals, slash } = classifyIntent(effectiveInput, content)
+  const query = slash.rest || effectiveInput
+
+  const plannedTools: (() => ToolExecutionResult)[] = []
+  switch (intent) {
+    case 'fit':
+      plannedTools.push(
+        () => runListTechnologies(content, signals, locale),
+        () => runGetExperience(query, content, signals, locale),
+        () => runListProjects(query, content, signals, locale),
+        () => runMatchRole(effectiveInput, content, locale),
+      )
+      break
+    case 'stack':
+      plannedTools.push(
+        () => runListTechnologies(content, signals, locale),
+        () => runGetExperience(query, content, signals, locale),
+        () => runListProjects(query, content, signals, locale),
+      )
+      break
+    case 'projects':
+      plannedTools.push(() => runListProjects(query, content, signals, locale))
+      break
+    case 'experience':
+      plannedTools.push(() => runGetExperience(query, content, signals, locale))
+      break
+    case 'ai_work':
+      plannedTools.push(
+        () => runListProjects(query, content, signals, locale),
+        () => runGetExperience(query, content, signals, locale),
+      )
+      break
+    case 'posts':
+      plannedTools.push(() => runListPosts(query, posts, signals, locale))
+      break
+    case 'cv':
+    case 'availability':
+    case 'profile':
+      plannedTools.push(() => runGetProfile(content, locale))
+      break
+    case 'contact':
+      plannedTools.push(
+        () => runGetProfile(content, locale),
+        () => runPrepareHandoff(query.slice(0, 60) || 'Contact', locale),
+      )
+      break
+    case 'api':
+      plannedTools.push(() => runGetProfile(content, locale))
+      break
+    case 'out_of_scope':
+      plannedTools.push(
+        () => runListTechnologies(content, signals, locale),
+        () => runPrepareHandoff(query.slice(0, 60), locale),
+      )
+      break
+    default:
+      plannedTools.push(
+        () => runListProjects(query, content, signals, locale),
+        () => runGetExperience(query, content, signals, locale),
+        () => runListPosts(query, posts, signals, locale),
+      )
+      break
+  }
+
+  const composed = composeResponse({
+    intent,
+    query,
+    rawInput: effectiveInput,
+    signals,
+    content,
+    posts,
+    locale,
+    lens,
+  })
+
+  return { intent, query, effectiveInput, plannedTools, composed }
+}
+
+export async function* streamTextLocally(
+  text: string,
+  fast: boolean,
+  signal?: AbortSignal,
+): AsyncGenerator<AgentEvent, void, void> {
+  if (fast) {
+    yield { type: 'text_delta', delta: text }
+    return
+  }
+  const chunks = text.match(/\S+\s*/g) ?? [text]
+  const stride = chunks.length > 60 ? 3 : 2
+  for (let i = 0; i < chunks.length; i += stride) {
+    if (signal?.aborted) return
+    yield { type: 'text_delta', delta: chunks.slice(i, i + stride).join('') }
+    await wait(16, signal)
+  }
+}
+
+export async function* runPlannedTools(
+  plannedTools: (() => ToolExecutionResult)[],
+  locale: Locale,
+  fast: boolean,
+  signal?: AbortSignal,
+): AsyncGenerator<AgentEvent, void, void> {
+  const isPt = locale === 'pt'
+  for (const runTool of plannedTools) {
+    if (signal?.aborted) return
+    const execution = runTool()
+    const traceId = makeId('tool')
+    yield {
+      type: 'status',
+      label: isPt ? `Executando ${execution.endpoint}…` : `Calling ${execution.endpoint}…`,
+    }
+    yield {
+      type: 'tool_start',
+      tool: {
+        id: traceId,
+        name: execution.name,
+        endpoint: execution.endpoint,
+        label: execution.label,
+        args: execution.args,
+        status: 'running',
+        startedAt: Date.now(),
+      },
+    }
+    if (!fast) await wait(130, signal)
+    if (signal?.aborted) return
+    yield {
+      type: 'tool_result',
+      id: traceId,
+      durationMs: execution.durationMs,
+      summary: execution.summary,
+      result: execution.data,
+    }
+  }
+}
+
 export class LocalDeterministicRuntime implements AgentRuntime {
   readonly id = 'signal-dossier-local-v1'
   readonly mode = 'local-deterministic' as const
@@ -719,150 +923,42 @@ export class LocalDeterministicRuntime implements AgentRuntime {
     input: string,
     context: AgentRuntimeContext,
   ): AsyncGenerator<AgentEvent, void, void> {
-    const { content, posts, locale, lens, reducedMotion, instant, signal } = context
+    const { locale, reducedMotion, instant, signal } = context
     const isPt = locale === 'pt'
     const fast = Boolean(reducedMotion || instant)
 
-    const { intent, signals, slash } = classifyIntent(input, content)
-    const query = slash.rest || input
-
-    const plannedTools: (() => ToolExecutionResult)[] = []
-    switch (intent) {
-      case 'fit':
-        plannedTools.push(
-          () => runListTechnologies(content, signals, locale),
-          () => runGetExperience(query, content, signals, locale),
-          () => runListProjects(query, content, signals, locale),
-          () => runMatchRole(input, content, locale),
-        )
-        break
-      case 'stack':
-        plannedTools.push(
-          () => runListTechnologies(content, signals, locale),
-          () => runGetExperience(query, content, signals, locale),
-          () => runListProjects(query, content, signals, locale),
-        )
-        break
-      case 'projects':
-        plannedTools.push(() => runListProjects(query, content, signals, locale))
-        break
-      case 'experience':
-        plannedTools.push(() => runGetExperience(query, content, signals, locale))
-        break
-      case 'ai_work':
-        plannedTools.push(
-          () => runListProjects(query, content, signals, locale),
-          () => runGetExperience(query, content, signals, locale),
-        )
-        break
-      case 'posts':
-        plannedTools.push(() => runListPosts(query, posts, signals, locale))
-        break
-      case 'cv':
-      case 'availability':
-      case 'profile':
-        plannedTools.push(() => runGetProfile(content, locale))
-        break
-      case 'contact':
-        plannedTools.push(
-          () => runGetProfile(content, locale),
-          () => runPrepareHandoff(query.slice(0, 60) || 'Contact', locale),
-        )
-        break
-      case 'api':
-        plannedTools.push(() => runGetProfile(content, locale))
-        break
-      case 'out_of_scope':
-        plannedTools.push(
-          () => runListTechnologies(content, signals, locale),
-          () => runPrepareHandoff(query.slice(0, 60), locale),
-        )
-        break
-      default:
-        plannedTools.push(
-          () => runListProjects(query, content, signals, locale),
-          () => runGetExperience(query, content, signals, locale),
-          () => runListPosts(query, posts, signals, locale),
-        )
-        break
-    }
+    const plan = prepareGroundedTurn(input, context)
 
     // 1. Execute tools and emit live trace events
-    for (const runTool of plannedTools) {
-      if (signal?.aborted) return
-      const execution = runTool()
-      const traceId = makeId('tool')
-      yield {
-        type: 'status',
-        label: isPt ? `Executando ${execution.endpoint}…` : `Calling ${execution.endpoint}…`,
-      }
-      yield {
-        type: 'tool_start',
-        tool: {
-          id: traceId,
-          name: execution.name,
-          endpoint: execution.endpoint,
-          label: execution.label,
-          args: execution.args,
-          status: 'running',
-          startedAt: Date.now(),
-        },
-      }
-      if (!fast) await wait(130, signal)
-      if (signal?.aborted) return
-      yield {
-        type: 'tool_result',
-        id: traceId,
-        durationMs: execution.durationMs,
-        summary: execution.summary,
-        result: execution.data,
-      }
-    }
+    yield* runPlannedTools(plan.plannedTools, locale, fast, signal)
+    if (signal?.aborted) return
 
-    // 2. Compose grounded answer + citations + structured outputs
+    // 2. Emit grounded metadata & citations
     yield {
       type: 'status',
       label: isPt ? 'Verificando citações e evidências…' : 'Grounding citations & evidence…',
     }
-    const composed = composeResponse({
-      intent,
-      query,
-      rawInput: input,
-      signals,
-      content,
-      posts,
-      locale,
-      lens,
-    })
-
-    if (composed.citations.length > 0) {
-      yield { type: 'citations', citations: composed.citations }
+    yield {
+      type: 'runtime_meta',
+      meta: { mode: 'local-deterministic' },
+    }
+    if (plan.composed.citations.length > 0) {
+      yield { type: 'citations', citations: plan.composed.citations }
     }
 
-    // 3. Stream text smoothly (chunked by small word spans, instant in reduced-motion/tests)
-    if (fast) {
-      yield { type: 'text_delta', delta: composed.text }
-    } else {
-      const chunks = composed.text.match(/\S+\s*/g) ?? [composed.text]
-      const stride = chunks.length > 60 ? 3 : 2
-      for (let i = 0; i < chunks.length; i += stride) {
-        if (signal?.aborted) return
-        yield { type: 'text_delta', delta: chunks.slice(i, i + stride).join('') }
-        await wait(16, signal)
-      }
-    }
-
+    // 3. Stream text smoothly
+    yield* streamTextLocally(plan.composed.text, fast, signal)
     if (signal?.aborted) return
 
-    if (composed.fitReport) {
-      yield { type: 'fit_report', report: composed.fitReport }
+    if (plan.composed.fitReport) {
+      yield { type: 'fit_report', report: plan.composed.fitReport }
     }
 
-    if (composed.approval) {
-      yield { type: 'approval_request', approval: composed.approval }
+    if (plan.composed.approval) {
+      yield { type: 'approval_request', approval: plan.composed.approval }
     }
 
-    yield { type: 'done', intent }
+    yield { type: 'done', intent: plan.intent }
   }
 }
 

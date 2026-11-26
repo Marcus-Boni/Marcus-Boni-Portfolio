@@ -40,6 +40,7 @@ const CARD_GUESS = 170
 const MARKER_RE = /\[(0\d|EXP·\d{2}|POST·\d{2}|DOC·\d{2})\]/g
 const INLINE_FORMAT_RE = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*)/g
 const LAST_WORD_RE = /\S+\s*$/
+const BULLET_RE = /^(?:[-*•])\s+/
 
 interface Segment {
   text: string
@@ -318,7 +319,7 @@ export function GroundedProse({
                 if (event.pointerType === 'mouse') hide()
               }}
               className={cn(
-                'inline-flex h-5 translate-y-[-1px] items-center gap-1 rounded-full py-0 pr-2 pl-0.5 align-middle font-mono text-[10px] transition-colors duration-150 focus-visible:outline-1 focus-visible:outline-ember',
+                'inline-flex h-5 translate-y-[-1px] items-center gap-1 rounded-full py-0 pr-2 pl-0.5 align-middle font-mono text-[10px] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember',
                 isActive || isLinked
                   ? 'bg-bone text-ink'
                   : 'border border-line bg-ink-soft text-bone-dim hover:border-ember hover:text-bone',
@@ -341,7 +342,8 @@ export function GroundedProse({
     })
   }
 
-  const blocks = text
+  const cleanedText = text.replace(/[ \t]+([.,;:!?])/g, '$1')
+  const blocks = cleanedText
     .split(/\n{2,}/)
     .map((block) => block.trim())
     .filter(Boolean)
@@ -355,7 +357,7 @@ export function GroundedProse({
       <div className="max-w-[66ch] space-y-3 text-[15px] leading-[1.72] text-bone-dim">
         {blocks.map((block, blockIdx) => {
           const lines = block.split('\n').map((line) => line.trim())
-          const isList = lines.every((line) => line.startsWith('- '))
+          const isList = lines.length > 0 && lines.every((line) => BULLET_RE.test(line))
           if (isList) {
             return (
               <ul key={blockIdx} className="space-y-2 pl-4" role="list">
@@ -367,7 +369,7 @@ export function GroundedProse({
                     >
                       —
                     </span>
-                    {renderCitedLine(line.slice(2), `${blockIdx}-${lineIdx}`)}
+                    {renderCitedLine(line.replace(BULLET_RE, ''), `${blockIdx}-${lineIdx}`)}
                   </li>
                 ))}
               </ul>
@@ -482,7 +484,7 @@ export function GroundedProse({
             aria-controls={listId}
             aria-expanded={listOpen}
             onClick={() => setListOpen((prev) => !prev)}
-            className="inline-flex items-center gap-2 rounded-full py-1 pr-2.5 pl-1 font-mono text-[11px] text-bone-dim transition-colors hover:bg-ink-soft hover:text-bone focus-visible:outline-1 focus-visible:outline-ember"
+            className="inline-flex items-center gap-2 rounded-full py-1 pr-2.5 pl-1 font-mono text-[11px] text-bone-dim transition-colors hover:bg-ink-soft hover:text-bone focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember"
           >
             <span className="flex -space-x-1">
               {citations.slice(0, 4).map((source) => (
@@ -601,7 +603,7 @@ function SourceRow({
   onNavigateInternal?: (href: string) => void
 }) {
   const rowCls =
-    'group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-left transition-colors hover:bg-ink-soft focus-visible:outline-1 focus-visible:outline-ember'
+    'group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-left transition-colors hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember'
 
   const inner = (
     <>

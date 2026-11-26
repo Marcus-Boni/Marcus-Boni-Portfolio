@@ -13,6 +13,30 @@ import type { Locale } from '@/i18n/translations'
 
 export type AgentLens = 'recruiter' | 'engineer' | 'client'
 
+export type RuntimePreference = 'auto' | 'local'
+
+export interface RuntimeMeta {
+  mode: 'edge-llm' | 'local-deterministic'
+  provider?: string
+  model?: string
+  fallbackReason?: 'unconfigured' | 'rate_limited' | 'offline' | 'manual'
+}
+
+export interface EdgeCapability {
+  checked: boolean
+  configured: boolean
+  provider: string | null
+  model: string | null
+}
+
+export interface AgentHistoryEntry {
+  role: 'user' | 'assistant'
+  text: string
+  intent?: AgentIntent
+  citationTitles?: string[]
+  citations?: Citation[]
+}
+
 export type AgentIntent =
   | 'fit'
   | 'stack'
@@ -136,6 +160,7 @@ export interface AgentTurn {
   citations: Citation[]
   fitReport?: FitReport
   approval?: ApprovalAction
+  runtimeMeta?: RuntimeMeta
   streaming?: boolean
   stopped?: boolean
   createdAt: number
@@ -150,6 +175,7 @@ export interface SlashCommandDef {
 
 export type AgentEvent =
   | { type: 'status'; label: string }
+  | { type: 'runtime_meta'; meta: RuntimeMeta }
   | { type: 'tool_start'; tool: ToolCallTrace }
   | {
       type: 'tool_result'
@@ -170,6 +196,10 @@ export interface AgentRuntimeContext {
   posts: PostMeta[]
   locale: Locale
   lens: AgentLens
+  /** Previous turns in the active thread for multi-turn follow-up resolution. */
+  history?: AgentHistoryEntry[]
+  /** `'auto'` tries `/agent/v1/chat` and falls back silently to local deterministic. */
+  preference?: RuntimePreference
   reducedMotion?: boolean
   /** Disables simulated token pacing (used by the Vitest eval suite). */
   instant?: boolean
@@ -178,7 +208,7 @@ export interface AgentRuntimeContext {
 
 export interface AgentRuntime {
   readonly id: string
-  readonly mode: 'local-deterministic' | 'edge-llm'
+  readonly mode: 'local-deterministic' | 'edge-llm' | 'hybrid'
   streamTurn(
     input: string,
     context: AgentRuntimeContext,

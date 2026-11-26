@@ -2,16 +2,27 @@ import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import {
+  defaultHybridRuntime,
+  probeEdgeCapability,
+} from '@/agent/edge-runtime'
 import { SAMPLE_JOB_DESCRIPTIONS, STARTER_PROMPTS } from '@/agent/knowledge'
-import { defaultAgentRuntime } from '@/agent/runtime'
 import {
   clearAgentSession,
   getAgentSession,
   setAgentLens,
   setAgentTurns,
+  setRuntimePreference,
   subscribeAgentSession,
 } from '@/agent/session'
-import type { AgentLens, AgentTurn, ApprovalAction } from '@/agent/types'
+import type {
+  AgentHistoryEntry,
+  AgentLens,
+  AgentTurn,
+  ApprovalAction,
+  EdgeCapability,
+  RuntimeMeta,
+} from '@/agent/types'
 import type { PostMeta } from '@/blog/types'
 import { useSiteContent } from '@/content/SiteContentContext'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
@@ -56,16 +67,32 @@ export function AgentConsole({
   const navigate = useNavigate()
 
   const session = useSyncExternalStore(subscribeAgentSession, getAgentSession)
-  const { lens, turns } = session
+  const { lens, runtimePreference, turns } = session
 
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
   const [posts, setPosts] = useState<PostMeta[]>([])
+  const [edgeCapability, setEdgeCapability] = useState<EdgeCapability>({
+    checked: false,
+    configured: false,
+    provider: null,
+    model: null,
+  })
   const abortRef = useRef<AbortController | null>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const prevTurnCountRef = useRef(turns.length)
   const consumedInitialRef = useRef<string | undefined>(undefined)
+
+  useEffect(() => {
+    let cancelled = false
+    void probeEdgeCapability().then((cap) => {
+      if (!cancelled) setEdgeCapability(cap)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -154,6 +181,19 @@ export function AgentConsole({
         createdAt: Date.now(),
       }
 
+      const history: AgentHistoryEntry[] = getAgentSession()
+        .turns.filter((turn) => !turn.streaming && turn.text.trim().length > 0)
+        .slice(-6)
+        .map((turn) => ({
+          role: turn.role,
+          text: turn.text,
+          intent: turn.intent,
+          citationTitles: turn.citations
+            .filter((item) => item.kind === 'project' || item.kind === 'experience')
+            .map((item) => item.title),
+          citations: turn.citations,
+        }))
+
       setAgentTurns((prev) => [...prev, userTurn, assistantTurn])
 
       const patchAssistant = (updater: (turn: AgentTurn) => AgentTurn) => {
@@ -162,12 +202,16 @@ export function AgentConsole({
         )
       }
 
+      let observedRuntime: RuntimeMeta | undefined
+
       try {
-        for await (const event of defaultAgentRuntime.streamTurn(trimmed, {
+        for await (const event of defaultHybridRuntime.streamTurn(trimmed, {
           content,
           posts,
           locale,
           lens,
+          history,
+          preference: runtimePreference,
           reducedMotion: reduced,
           signal: controller.signal,
         })) {
@@ -176,6 +220,18 @@ export function AgentConsole({
           switch (event.type) {
             case 'status':
               patchAssistant((turn) => ({ ...turn, statusLabel: event.label }))
+              break
+            case 'runtime_meta':
+              observedRuntime = event.meta
+              patchAssistant((turn) => ({ ...turn, runtimeMeta: event.meta }))
+              if (event.meta.mode === 'edge-llm' && event.meta.model) {
+                setEdgeCapability({
+                  checked: true,
+                  configured: true,
+                  provider: event.meta.provider ?? null,
+                  model: event.meta.model,
+                })
+              }
               break
             case 'tool_start':
               patchAssistant((turn) => ({
@@ -231,6 +287,8 @@ export function AgentConsole({
                 intent: event.intent,
                 lens,
                 surface: variant,
+                runtime: observedRuntime?.mode ?? 'local-deterministic',
+                fallback: observedRuntime?.fallbackReason ?? 'none',
               })
               break
             case 'error':
@@ -255,7 +313,7 @@ export function AgentConsole({
         setStreaming(false)
       }
     },
-    [content, posts, locale, lens, reduced, variant],
+    [content, posts, locale, lens, runtimePreference, reduced, variant],
   )
 
   useEffect(() => {
@@ -328,6 +386,9 @@ export function AgentConsole({
       postCount={posts.length}
       turnCount={turns.length}
       source={source}
+      runtimePreference={runtimePreference}
+      onRuntimePreferenceChange={setRuntimePreference}
+      edgeCapability={edgeCapability}
       menuSide={isEmpty ? 'bottom' : 'top'}
       autoFocus={variant === 'drawer'}
     />
@@ -476,6 +537,25 @@ export function AgentConsole({
                               {t.agent.stoppedNotice}
                             </p>
                           )}
+
+                          {!turn.streaming &&
+                            turn.runtimeMeta?.mode === 'edge-llm' &&
+                            turn.runtimeMeta.model && (
+                              <p className="mt-2 font-mono text-[10px] tracking-[0.06em] text-smoke">
+                                {t.agent.meter.edgeReady(
+                                  turn.runtimeMeta.provider
+                                    ? `${turn.runtimeMeta.provider} · ${turn.runtimeMeta.model}`
+                                    : turn.runtimeMeta.model,
+                                )}
+                              </p>
+                            )}
+
+                          {!turn.streaming &&
+                            turn.runtimeMeta?.fallbackReason === 'rate_limited' && (
+                              <p className="mt-2 font-mono text-[10px] text-smoke">
+                                {t.agent.meter.rateLimitNote}
+                              </p>
+                            )}
 
                           {turn.fitReport && (
                             <FitReportView

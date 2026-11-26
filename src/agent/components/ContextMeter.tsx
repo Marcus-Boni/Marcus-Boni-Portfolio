@@ -7,6 +7,7 @@ import {
   type CSSProperties,
 } from 'react'
 
+import type { EdgeCapability, RuntimePreference } from '@/agent/types'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { cn } from '@/lib/utils'
@@ -121,6 +122,9 @@ export function ContextMeter({
   postCount,
   turnCount,
   source,
+  runtimePreference = 'auto',
+  onRuntimePreferenceChange,
+  edgeCapability,
   menuSide = 'top',
 }: {
   projectCount: number
@@ -129,6 +133,9 @@ export function ContextMeter({
   postCount: number
   turnCount: number
   source: 'live' | 'static'
+  runtimePreference?: RuntimePreference
+  onRuntimePreferenceChange?: (next: RuntimePreference) => void
+  edgeCapability?: EdgeCapability
   menuSide?: 'top' | 'bottom'
 }) {
   const { t } = useLanguage()
@@ -212,13 +219,13 @@ export function ContextMeter({
             }}
             transition={{ duration: 0.16, ease: EASE_OUT }}
             className={cn(
-              'absolute right-0 z-30 w-72 rounded-2xl border border-line bg-ink-soft p-3.5 shadow-[0_16px_40px_-12px_var(--shade)]',
+              'absolute right-0 z-30 w-72 rounded-2xl border border-line bg-ink-soft p-3 shadow-[0_16px_40px_-12px_var(--shade)]',
               menuSide === 'bottom'
                 ? 'top-full mt-2 origin-top-right'
                 : 'bottom-full mb-2 origin-bottom-right',
             )}
           >
-            <div className="mb-2.5 flex items-baseline justify-between gap-2">
+            <div className="mb-2 flex items-baseline justify-between gap-2">
               <p className="text-xs font-medium text-bone">
                 {t.agent.meter.popoverTitle}
               </p>
@@ -254,14 +261,14 @@ export function ContextMeter({
               </div>
             </div>
 
-            <ul className="mt-3 space-y-0.5" role="list">
+            <ul className="mt-2 space-y-0.5" role="list">
               {segments.map((seg) => (
                 <li
                   key={seg.id}
                   onPointerEnter={() => setActiveId(seg.id)}
                   onPointerLeave={() => setActiveId(null)}
                   className={cn(
-                    'flex items-center gap-2 rounded-lg px-1.5 py-1 text-xs transition-colors',
+                    'flex items-center gap-2 rounded-lg px-1.5 py-0.5 text-xs transition-colors',
                     activeId === seg.id && 'bg-ink',
                   )}
                 >
@@ -274,11 +281,58 @@ export function ContextMeter({
               ))}
             </ul>
 
-            <div className="mt-3 flex items-center justify-between border-t border-line pt-2.5 font-mono text-[10px] text-smoke">
-              <span>{t.agent.meter.runtimeLabel}</span>
+            {onRuntimePreferenceChange && (
+              <div className="mt-2 flex items-center justify-between gap-2 border-t border-line pt-2">
+                <span className="font-mono text-[10px] text-smoke uppercase">
+                  {t.agent.meter.modeLabel}
+                </span>
+                <div
+                  role="group"
+                  aria-label={t.agent.meter.modeLabel}
+                  className="inline-flex rounded-full border border-line bg-ink p-0.5"
+                >
+                  {(['auto', 'local'] as const).map((option) => {
+                    const active = runtimePreference === option
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => onRuntimePreferenceChange(option)}
+                        className={cn(
+                          'rounded-full px-2 py-0.5 font-mono text-[10px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember',
+                          active
+                            ? 'bg-ember text-ink'
+                            : 'text-smoke hover:text-bone',
+                        )}
+                      >
+                        {option === 'auto'
+                          ? t.agent.meter.modeAuto
+                          : t.agent.meter.modeLocal}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-2 flex items-center justify-between gap-2 border-t border-line pt-2 font-mono text-[10px] text-smoke">
+              <span className="truncate">
+                {runtimePreference === 'local'
+                  ? t.agent.meter.runtimeLabel
+                  : edgeCapability?.configured && edgeCapability.model
+                    ? t.agent.meter.edgeReady(
+                        edgeCapability.provider
+                          ? `${edgeCapability.provider} · ${edgeCapability.model}`
+                          : edgeCapability.model,
+                      )
+                    : edgeCapability?.checked
+                      ? t.agent.meter.edgeStandby
+                      : t.agent.meter.runtimeLabel}
+              </span>
               <a
                 href="/developers"
-                className="inline-flex items-center gap-1 text-bone-dim transition-colors hover:text-ember"
+                className="inline-flex shrink-0 items-center gap-1 text-bone-dim transition-colors hover:text-ember"
               >
                 <span>OpenAPI 3.1</span>
                 <IconArrowUpRight className="size-3" />

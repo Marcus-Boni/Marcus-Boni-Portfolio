@@ -220,6 +220,57 @@ asserts what makes that work — unique `operationId`s, a description long enoug
 to decide on, typed parameters, a named response schema per operation, and no
 dangling or unused `$ref`.
 
+## 6. Interactive Dossier Console (`/ask` and `/agent/v1/chat`)
+
+The interactive dossier console (`⌘K` drawer and `/ask` / `/en/ask`) uses a
+**hybrid architecture**:
+
+1. **Deterministic grounding first (always on, zero cost).** Every query runs
+   local bilingual retrieval, fuzzy/ontology matching, real timed tools
+   mirroring `/openapi.json`, evidence citations, and the `/fit` ledger before
+   any model is called.
+2. **Optional Edge LLM SSE synthesis (`POST /agent/v1/chat`).**
+   `netlify/edge-functions/agent-chat.ts` (backed by `netlify/lib/agent-chat.ts`)
+   streams grounded prose over `text/event-stream` using pure Web Standard
+   `fetch` + `ReadableStream` (zero SDK dependencies, server-side secrets only).
+   When no key is configured (`503`), rate-limited (`429`), or unreachable, the
+   UI falls back silently to the local deterministic composition with zero error
+   flash.
+
+### Enabling live LLM synthesis in Netlify (Free-First Failover Waterfall)
+
+Set **one or more** server-side API keys in Netlify → Site Configuration →
+Environment Variables (never prefix with `VITE_`, and never add them to
+`SECRETS_SCAN_OMIT_KEYS`).
+
+Free providers are **always prioritized first** in an automatic failover chain
+with a 45-second per-provider cooldown on 429/5xx/timeouts. Paid keys
+(`GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`) are **never called**
+while any free key is present unless `AGENT_ALLOW_PAID_FALLBACK=true` is
+explicitly enabled:
+
+| Priority | Variable | Provider | Tier | Default model |
+| --- | --- | --- | --- | --- |
+| 1 | `GROQ_API_KEY` | Groq | Free | `qwen/qwen3.8-27b` (`AGENT_GROQ_MODEL`) |
+| 2 | `NVIDIA_API_KEY` | NVIDIA NIM | Free | `nvidia/nemotron-3.5-lightning-30b-a3b` (`AGENT_NVIDIA_MODEL`) |
+| 3 | `OPENROUTER_API_KEY` | OpenRouter | Free | `openrouter/free` (`AGENT_OPENROUTER_MODEL`) |
+| 4 (opt-in) | `OPENAI_API_KEY` / `GEMINI_API_KEY` / `ANTHROPIC_API_KEY` | OpenAI / Gemini / Anthropic | Paid | Only used if no free key exists or `AGENT_ALLOW_PAID_FALLBACK=true` |
+| Override | `AGENT_LLM_API_KEY` | Explicit via `AGENT_LLM_PROVIDER` | Manual | Override via `AGENT_LLM_MODEL` + optional `AGENT_LLM_BASE_URL` |
+
+Optional operational controls: `AGENT_FREE_ONLY=true` (hard block on paid keys),
+`AGENT_ALLOW_PAID_FALLBACK=true`, `AGENT_LLM_MAX_TOKENS` (default `520`),
+`AGENT_LLM_TEMPERATURE` (default `0.25`), `AGENT_RATE_LIMIT_MAX` (default `15`),
+`AGENT_RATE_LIMIT_WINDOW_S` (default `60`), and `AGENT_ALLOWED_ORIGINS`
+(comma-separated allowlist). During `pnpm dev`, `vite.config.ts` mounts the
+exact same handler on `/agent/v1/chat` using server-side `.env` keys without
+exposing them to the client bundle.
+
+Inspect live capability (never returns secrets):
+
+```bash
+curl -s https://marcusboni.com.br/agent/v1/chat
+```
+
 ---
 
 ## Verifying
