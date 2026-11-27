@@ -38,6 +38,7 @@ const NAV: { to: string; label: string; keywords: string }[] = [
   { to: '/admin/projects', label: 'Projetos', keywords: 'trabalho work portfolio' },
   { to: '/admin/experience', label: 'Carreira', keywords: 'experiência clientes timeline' },
   { to: '/admin/profile', label: 'Perfil & Stack', keywords: 'bio sobre tecnologias redes sociais' },
+  { to: '/admin/dossier', label: 'Dossiê IA', keywords: 'agente faq conhecimento disponibilidade knowledge' },
   { to: '/admin/settings', label: 'Ajustes', keywords: 'settings backup firebase conta' },
 ]
 

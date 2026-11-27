@@ -13,6 +13,7 @@ import { Analytics } from '@/admin/pages/Analytics'
 import { BlogEditor } from '@/admin/pages/BlogEditor'
 import { BlogList } from '@/admin/pages/BlogList'
 import { Dashboard } from '@/admin/pages/Dashboard'
+import { Dossier } from '@/admin/pages/Dossier'
 import { Experience } from '@/admin/pages/Experience'
 import { Login } from '@/admin/pages/Login'
 import { Media } from '@/admin/pages/Media'
@@ -72,6 +73,7 @@ export default function AdminApp() {
                 <Route path="projects" element={<Projects />} />
                 <Route path="experience" element={<Experience />} />
                 <Route path="profile" element={<Profile />} />
+                <Route path="dossier" element={<Dossier />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
             </Route>
