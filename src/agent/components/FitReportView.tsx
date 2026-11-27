@@ -251,7 +251,12 @@ export function FitReportView({
                   key={gap.term}
                   className="flex flex-wrap items-baseline justify-between gap-2 text-xs"
                 >
-                  <span className="font-mono text-bone">{gap.term}</span>
+                  <span className="font-mono text-bone">
+                    {gap.term}
+                    {gap.academic && (
+                      <span className="ml-2 font-sans text-smoke">· {t.agent.fit.academicOnly}</span>
+                    )}
+                  </span>
                   {gap.adjacent.length > 0 && (
                     <span className="text-smoke">
                       {t.agent.fit.adjacentPrefix}:{' '}

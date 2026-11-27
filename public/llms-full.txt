@@ -27,6 +27,8 @@ Não use este site como referência técnica sobre as tecnologias citadas, nem p
 - Meeting Copilot (2026): arquitetura RAG orientada por configuração para consultar transcrições do Teams sobre pgvector, com citações obrigatórias das fontes, isolamento por workspace e avaliação de busca. TypeScript, Next.js, CopilotKit, pgvector, RAG. https://github.com/Marcus-Boni/chatbot-template
 - Auto Daily (2026): aplicação web que sintetiza rascunhos de daily com IA a partir de commits no Azure DevOps e apontamentos de horas do OptTime. TypeScript, Next.js, Azure DevOps, AI. https://github.com/Marcus-Boni/Auto-Daily-App
 - Estimativa de Horas (2026): ferramenta web que substituiu planilhas frágeis de Excel na estimativa de horas, puxando work items direto do Azure DevOps com dashboards e exportação. TypeScript, Next.js, Azure DevOps, Firebase. https://github.com/Marcus-Boni/Ferramenta-Estimativa-Horas
+- Opt Suporte (2026): central de suporte dos clientes Optsolv — portal do cliente, backoffice, API REST e servidor MCP sobre a mesma camada de regras e acesso, com login da equipe via Microsoft Entra ID (OIDC + PKCE) e a IA de captura avaliada contra um conjunto rotulado. TypeScript, React, Fastify, PostgreSQL, MCP. https://github.com/Marcus-Boni/Opt-suporte
+- Opt News (2026): plataforma interna de inteligência tecnológica que coleta fontes oficiais e de imprensa, resume em português com IA marcada como IA e liga cada notícia à discussão e ao aprendizado do time, com proveniência de ponta a ponta. TypeScript, React, Fastify, PostgreSQL, IA. https://github.com/Marcus-Boni/Opt-news
 
 ## Experiência profissional — Optsolv (jun 2024 — presente)
 
@@ -40,12 +42,32 @@ Projetos entregues junto a clientes em produção:
 - Marca Ambiental (Meio Ambiente): portal do cliente web/PWA multi-perfil integrado ao ERP Sankhya — contratos, financeiro, medições e documentos validados com usuários-chave. Node, PWA, PostgreSQL.
 - Galwan (Imobiliário): motor de plano de pagamento imobiliário — cálculos de parcelamento, múltiplos compradores, KPIs financeiros e simulações com IA. Backend, regras de negócio.
 
+Outras entregas na Optsolv, entre clientes e produtos internos (registradas no dossiê e na API, fora da página inicial):
+
+- Cidade Engenharia (Construção): plataforma interna extensível que unifica a operação — planejamento comercial de visitas e carteira, painel gerencial, previsão de entregas, PCP e MRP, estoque e orçamentos integrados ao ERP, com agentes no Microsoft Foundry, transcrição de voz e servidor MCP de dados para IA. React, TanStack, Fastify, PostgreSQL, MCP.
+- AB Científica (Distribuição): front-end completo de cotações e pedidos — processamento assistido por IA dos produtos cotados, preço de venda com câmbio, PDF do pedido, dashboard e cadastros, atrás do login Microsoft. React, Material UI, Microsoft Entra ID.
+- Optsolv — Painel Estratégico (produto interno): consultores conduzem o método Sincronismo Organizacional com entrevistas, documentos e indicadores processados por IA, revisão humana de cada sugestão, mapa da empresa, iniciativas e pacote da reunião em PDF e PowerPoint. Next.js, FastAPI, Python, OpenAI API.
+- Optsolv — Code Agent (produto interno): agentes Claude no fluxo do Azure DevOps — piloto de revisão automática de PRs em uso, comandos @claude e serviço central validados em sandbox, fila no Postgres, teto de custo por repositório, auditoria e telemetria OpenTelemetry. Claude Agent SDK, Fastify, PostgreSQL, OpenTelemetry.
+- Rede Vitória (Eventos): MVP que substituiu planilhas — eventos recorrentes, planejamento previsto x realizado, fornecedores e notas fiscais, checklist operacional e prestação de contas em Excel. React, Firebase.
+- Shopping Vitória (Varejo): portal do atendimento a lojistas por WhatsApp com IA — chat com ditado por voz, base de conhecimento RAG com Azure AI Search e n8n, gestão de usuários e App Check. React, Firebase, n8n.
+- LBH Group Brasil (Logística marítima): Navigate, line-up de navios por terminal — relatório e exportação do tempo de espera, portos UN/LOCODE, checagem de IMO e deploy no Azure App Service. Next.js, Azure.
+- Optsolv — PMS (produto interno): gestão de projetos em monorepo — central de projetos, recursos e tarefas sobre repositórios Drizzle, criação e edição de projetos e configurações. React, TanStack, Fastify, PostgreSQL, Drizzle.
+- Optsolv — Site institucional (Marketing): Next.js e Payload CMS com sistema de movimento, tokens da marca, vitrine de design system, cases com busca e blog. Next.js, Payload CMS, GSAP.
+- Optsolv — Gestão de Chamados (produto interno): servidor MCP com tokens pessoais para agentes de IA trabalharem chamados com anexos e webhooks de saída assinados com HMAC. MCP, Firebase.
+- Optsolv — Plano de Corte (produto interno): fundação do monorepo do otimizador de corte de chapas — PRD, Turborepo, login Microsoft, Biome, commitlint e changesets. React, TanStack, Turborepo.
+- Perfil Alumínio (Indústria): portal B2B de autoatendimento — redesign da interface e correções no status de remessas e vendas triangulares. React, Material UI, Firebase.
+
 ## Stack técnica
 
-- Interface: React, Next.js, TypeScript, Tailwind CSS, React Native, Astro, Flutter, WebGL
-- Serviços: C#, Java, Python, Node.js, Rust, Tauri, MCP
+- Interface: React, Next.js, TypeScript, Tailwind CSS, React Native, Astro, Flutter, WebGL, TanStack, Material UI, GSAP
+- Serviços: C#, Java, Python, Node.js, Rust, Tauri, MCP, Fastify, FastAPI, n8n, Claude Agent SDK, OpenAI API
 - Dados: PostgreSQL, SQL Server, Supabase, Firebase, SQLite, Neon, Turso, Drizzle, pgvector
-- Infra: Docker, Azure, Azure DevOps, Portainer, IIS, Netlify, GitHub Actions
+- Infra: Docker, Azure, Azure DevOps, Portainer, IIS, Netlify, GitHub Actions, Microsoft Entra ID, OpenTelemetry
+
+## Formação e laboratório
+
+- Instituto Infnet: trabalhos acadêmicos publicados no GitHub desde 2024 — Python e fundamentos de dados, mobile com React Native, IA e machine learning, Engenharia Disciplinada de Softwares (testes, clean code, refatoração), CI/CD e DevOps (Spring Boot em Docker e Kubernetes, PostgreSQL, Redis, GitHub Actions), Engenharia de Softwares Escaláveis (Spring Boot, Spring Cloud, microsserviços, DDD com Java) e Ciência da Computação (estruturas de dados, algoritmos, Linux e programação distribuída com Python). Spring Boot, Kubernetes e Redis aparecem só nesse contexto acadêmico. Nome do curso e situação não são publicados.
+- Laboratório: projetos de estudo no GitHub — Jarvis (assistente local com FastAPI, Ollama e ChromaDB), Nexus (orquestração local de agentes de código), Study Platform, SignalR Meetup App, Opt Gestão e este portfólio.
 
 ## Como chamar este site
 

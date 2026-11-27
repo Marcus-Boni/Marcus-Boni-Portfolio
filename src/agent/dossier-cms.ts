@@ -24,6 +24,7 @@ const VALID_TOPICS = new Set<KnowledgeNoteTopic>([
   'api_readiness',
   'languages',
   'contact_policy',
+  'background',
   'faq',
 ])
 
@@ -34,6 +35,7 @@ export const KNOWLEDGE_TOPIC_LABELS: Record<KnowledgeNoteTopic, string> = {
   languages: 'Idiomas & comunicação',
   api_readiness: 'Arquitetura & OpenAPI',
   contact_policy: 'Canais de contato',
+  background: 'Formação & laboratório',
   faq: 'FAQ personalizada',
 }
 
@@ -44,6 +46,7 @@ export const KNOWLEDGE_TOPICS: readonly KnowledgeNoteTopic[] = [
   'languages',
   'api_readiness',
   'contact_policy',
+  'background',
   'faq',
 ]
 

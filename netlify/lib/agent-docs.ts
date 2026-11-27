@@ -108,6 +108,8 @@ products.
 | [Meeting Copilot](https://github.com/Marcus-Boni/chatbot-template) | 2026 | TypeScript, Next.js, CopilotKit, pgvector, RAG | Config-driven RAG architecture for searching Teams meeting transcripts over pgvector, with mandatory source citations, workspace isolation and a retrieval evaluation harness. |
 | [Auto Daily](https://github.com/Marcus-Boni/Auto-Daily-App) | 2026 | TypeScript, Next.js, Azure DevOps, AI | Web app that synthesizes AI-assisted daily standup drafts from Azure DevOps commits and OptTime hour logs. |
 | [Estimativa de Horas](https://github.com/Marcus-Boni/Ferramenta-Estimativa-Horas) | 2026 | TypeScript, Next.js, Azure DevOps, Firebase | A web tool that replaced fragile Excel spreadsheets for task-hour estimation, pulling work items straight from Azure DevOps with dashboards and export. |
+| [Opt Suporte](https://github.com/Marcus-Boni/Opt-suporte) | 2026 | TypeScript, React, Fastify, PostgreSQL, MCP | Optsolv customer-support hub — client portal, back office, REST API and MCP server over one business and access layer, with team sign-in through Microsoft Entra ID (OIDC + PKCE) and the AI intake evaluated against a labelled set. |
+| [Opt News](https://github.com/Marcus-Boni/Opt-news) | 2026 | TypeScript, React, Fastify, PostgreSQL, AI | Internal tech-intelligence platform that collects official and press sources, summarizes them in Portuguese with AI clearly labelled as AI, and links each story to the team discussion and learning it sparked, with end-to-end provenance. |
 
 ## Professional experience
 
@@ -137,12 +139,70 @@ through production deployment — across seven sectors:
   business rules: installment math, multiple buyers, financial KPIs, and
   AI-assisted simulations. Backend, business rules, AI.
 
+Further Optsolv deliveries, recorded for the dossier and the API rather than the
+home page (client work and internal products):
+
+- **Cidade Engenharia** — Construction. Extensible internal platform unifying
+  operations: commercial visit and portfolio planning, a management dashboard,
+  delivery forecasts, production planning and MRP, stock and quotes wired to the
+  ERP, with Microsoft Foundry agents, speech transcription and an MCP data
+  server for AI. React, TanStack, Fastify, PostgreSQL, MCP.
+- **AB Científica** — Distribution. Full front end for quotes and orders: AI-assisted
+  processing of quoted products, FX-aware sale pricing, order PDFs, a dashboard
+  and master data, behind Microsoft sign-in. React, Material UI, Microsoft Entra ID.
+- **Optsolv — Strategy Dashboard** — Internal product. Consultants run the
+  Organizational Synchronism method: AI-processed interviews, documents and
+  indicators with human review of every suggestion, a company map, initiatives
+  and a meeting pack in PDF and PowerPoint. Next.js, FastAPI, Python, OpenAI API.
+- **Optsolv — Code Agent** — Internal product. Claude agents in the Azure DevOps
+  workflow: an automated PR-review pilot in use, @claude commands and the central
+  service validated in a sandbox, with a Postgres queue, per-repository cost
+  ceilings, security auditing and OpenTelemetry tracing. Claude Agent SDK,
+  Fastify, PostgreSQL, OpenTelemetry.
+- **Rede Vitória** — Events. MVP that replaced spreadsheets: recurring events,
+  planned-vs-actual budgeting, suppliers and invoices, an operational checklist
+  and Excel expense reports. React, Firebase.
+- **Shopping Vitória** — Retail. Portal for AI-assisted WhatsApp tenant support:
+  chat with voice dictation, a RAG knowledge base on Azure AI Search and n8n,
+  user management and App Check. React, Firebase, n8n.
+- **LBH Group Brasil** — Maritime logistics. Navigate, a per-terminal ship
+  line-up: waiting-time reporting and Excel export, UN/LOCODE port variants, IMO
+  checks and Azure App Service deployment. Next.js, Azure.
+- **Optsolv — Project Management (PMS)** — Internal product. Project center,
+  resources and tasks over Drizzle repositories, project create/edit flows and
+  system settings. React, TanStack, Fastify, PostgreSQL, Drizzle.
+- **Optsolv — Company website** — Marketing. Next.js and Payload CMS site with a
+  motion system, brand tokens, a design-system showcase, cases with search and
+  filters, and a blog. Next.js, Payload CMS, GSAP.
+- **Optsolv — Ticket Management** — Internal product. MCP server with personal
+  tokens for AI agents to work tickets with attachments, plus HMAC-signed
+  outbound webhooks with retries. MCP, Firebase.
+- **Optsolv — Cutting Plan** — Internal product. Monorepo foundation for a
+  sheet-cutting optimizer: requirements document, Turborepo packages, Microsoft
+  sign-in, Biome, commitlint and changesets. React, TanStack, Turborepo.
+- **Perfil Alumínio** — Industry. B2B self-service portal: interface redesign
+  and fixes to shipment and triangular-sale status. React, Material UI, Firebase.
+
 ## Technical stack
 
-- **Interface:** React, Next.js, TypeScript, Tailwind CSS, React Native, Astro, Flutter, WebGL
-- **Services:** C#, Java, Python, Node.js, Rust, Tauri, MCP
+- **Interface:** React, Next.js, TypeScript, Tailwind CSS, React Native, Astro, Flutter, WebGL, TanStack, Material UI, GSAP
+- **Services:** C#, Java, Python, Node.js, Rust, Tauri, MCP, Fastify, FastAPI, n8n, Claude Agent SDK, OpenAI API
 - **Data:** PostgreSQL, SQL Server, Supabase, Firebase, SQLite, Neon, Turso, Drizzle, pgvector
-- **Infrastructure:** Docker, Azure, Azure DevOps, Portainer, IIS, Netlify, GitHub Actions
+- **Infrastructure:** Docker, Azure, Azure DevOps, Portainer, IIS, Netlify, GitHub Actions, Microsoft Entra ID, OpenTelemetry
+
+## Academic work and lab
+
+- **Instituto Infnet** — coursework published on GitHub since 2024: Python and
+  data fundamentals, React Native mobile, AI and machine learning, disciplined
+  software engineering (testing, clean code, refactoring), CI/CD and DevOps
+  (Spring Boot on Docker and Kubernetes, PostgreSQL, Redis, GitHub Actions),
+  scalable software engineering (Spring Boot, Spring Cloud, microservices, DDD
+  in Java) and computer science (data structures, algorithms, Linux, distributed
+  programming in Python). Spring Boot, Kubernetes and Redis appear only in this
+  academic context; the programme name and status are not published.
+- **Lab** — study projects on GitHub: Jarvis (local assistant with FastAPI,
+  Ollama and ChromaDB), Nexus (local coding-agent orchestration), Study
+  Platform, SignalR Meetup App, Opt Gestão and this portfolio.
 
 ## Writing
 
@@ -430,6 +490,13 @@ Sete clientes, sete setores, todos na Optsolv:
 - **Imobiliário** — Galwan: motor de plano de pagamento, parcelamento e KPIs
   financeiros.
 - **Atendimento** — EAV, Escola Americana de Vitória: assistente virtual.
+
+Também registrados no dossiê: Cidade Engenharia (plataforma de gestão com
+agentes no Microsoft Foundry e servidor MCP), AB Científica (cotações e
+pedidos), Rede Vitória (gestão de eventos), Shopping Vitória (atendimento a
+lojistas com IA), LBH Group Brasil (line-up de navios), Perfil Alumínio
+(portal do cliente) e produtos internos da Optsolv: Painel Estratégico, Code
+Agent, PMS, site institucional, Gestão de Chamados e Plano de Corte.
 
 Escopo e stack de cada um em \`GET ${SITE_URL}/api/v1/experience\`.
 

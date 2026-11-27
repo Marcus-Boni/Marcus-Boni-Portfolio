@@ -109,7 +109,7 @@ export interface QuerySignals {
   tokens: string[]
   matchedTechs: string[]
   matchedDomains: string[]
-  externalTechs: { name: string; adjacent: readonly string[] }[]
+  externalTechs: { name: string; adjacent: readonly string[]; academic?: boolean }[]
   matchedProjectTitles: string[]
   matchedClients: string[]
 }
@@ -154,8 +154,15 @@ export function extractQuerySignals(input: string, content: SiteContent): QueryS
     { canonical: 'REST APIs', aliases: ['rest', 'rest api', 'rest apis', 'restful'] },
     { canonical: 'WebService', aliases: ['webservice', 'web service', 'soap'] },
     { canonical: 'AD Auth', aliases: ['active directory', 'ad auth'] },
+    { canonical: 'Microsoft Foundry', aliases: ['foundry', 'ai foundry', 'azure ai foundry', 'microsoft foundry'] },
+    { canonical: 'Azure AI Search', aliases: ['azure ai search', 'ai search', 'cognitive search'] },
+    { canonical: 'Payload CMS', aliases: ['payload', 'payload cms', 'headless cms'] },
+    { canonical: 'Turborepo', aliases: ['turborepo', 'turbo repo'] },
   ]
+  const stackNames = new Set(knownStackNames.map((name) => normalizeText(name)))
   for (const entry of extraEvidenceTerms) {
+    // Once a term is in the published stack (N8N → n8n), the stack match owns it.
+    if (stackNames.has(normalizeText(entry.canonical))) continue
     if (entry.aliases.some((alias) => containsPhrase(normalized, alias))) {
       techSet.add(entry.canonical)
     } else if (entry.canonical.length >= 5) {
@@ -178,7 +185,7 @@ export function extractQuerySignals(input: string, content: SiteContent): QueryS
   }
 
   // 3. External/unrecorded technologies (for honest gap detection)
-  const externalTechs: { name: string; adjacent: readonly string[] }[] = []
+  const externalTechs: { name: string; adjacent: readonly string[]; academic?: boolean }[] = []
   for (const entry of EXTERNAL_TECH_CATALOG) {
     const hit =
       entry.aliases.some((alias) => containsPhrase(normalized, alias)) ||
@@ -188,7 +195,7 @@ export function extractQuerySignals(input: string, content: SiteContent): QueryS
           entry.aliases.some((alias) => alias.length >= 5 && trigramSimilarity(token, normalizeText(alias)) >= 0.66),
       )
     if (hit) {
-      externalTechs.push({ name: entry.name, adjacent: entry.adjacent })
+      externalTechs.push({ name: entry.name, adjacent: entry.adjacent, academic: entry.academic })
     }
   }
 
@@ -494,9 +501,10 @@ export function searchEngagements(
       if (signals.matchedDomains.includes('Applied AI & RAG') && /\bAI\b|\bIA\b|N8N/i.test(text)) score += 5
       if (signals.matchedDomains.includes('Enterprise & ERP Integration') && /ERP|Sankhya|AD|IIS|WebService|B2B|legad/i.test(text)) score += 4
       if (signals.matchedDomains.includes('Healthcare (Unimed)') && entry.id === 'unimed') score += 8
-      if (signals.matchedDomains.includes('Logistics & Supply') && (entry.id === 'gab' || entry.id === 'cedisa')) score += 8
-      if (signals.matchedDomains.includes('Industry & Environment') && (entry.id === 'hidrauvit' || entry.id === 'marca-ambiental')) score += 8
+      if (signals.matchedDomains.includes('Logistics & Supply') && ['gab', 'cedisa', 'lbh'].includes(entry.id)) score += 8
+      if (signals.matchedDomains.includes('Industry & Environment') && ['hidrauvit', 'marca-ambiental', 'cidade-engenharia', 'perfil-aluminio'].includes(entry.id)) score += 8
       if (signals.matchedDomains.includes('Real Estate & Finance') && entry.id === 'galwan') score += 8
+      if (signals.matchedDomains.includes('Retail, Events & Distribution') && ['shopping-vitoria', 'rede-vitoria', 'ab-cientifica'].includes(entry.id)) score += 8
       return { entry, score }
     })
     .filter((item) => item.score > 0)
@@ -748,6 +756,7 @@ export function analyzeJobFit(
   const gaps: FitGapItem[] = signals.externalTechs.map((entry) => ({
     term: entry.name,
     adjacent: [...entry.adjacent],
+    ...(entry.academic ? { academic: true } : {}),
   }))
 
   // Rank projects & client engagements by how many JD terms they prove
@@ -849,7 +858,9 @@ function formatFitMarkdown(input: {
     '',
     ...(gaps.length > 0
       ? gaps.map((gap) =>
-          gap.adjacent.length > 0
+          gap.academic
+            ? `- **${gap.term}** (${isPt ? 'só em trabalho acadêmico' : 'coursework only'}; ${isPt ? 'experiência adjacente' : 'adjacent experience'}: ${gap.adjacent.join(', ')})`
+            : gap.adjacent.length > 0
             ? `- **${gap.term}** (${isPt ? 'experiência adjacente' : 'adjacent experience'}: ${gap.adjacent.join(', ')})`
             : `- **${gap.term}**`,
         )
@@ -859,7 +870,7 @@ function formatFitMarkdown(input: {
   if (relevantEngagements.length > 0) {
     lines.push(
       '',
-      `## ${isPt ? 'Entregas em produção mais relevantes' : 'Most relevant production engagements'}`,
+      `## ${isPt ? 'Entregas mais relevantes na Optsolv' : 'Most relevant Optsolv deliveries'}`,
       '',
       ...relevantEngagements.map(
         (eng) => `- **${eng.client}** (${eng.sector}) — ${eng.title}: ${eng.scope}`,

@@ -251,6 +251,7 @@ export interface Translation {
       noMatches: string
       noGaps: string
       adjacentPrefix: string
+      academicOnly: string
     }
     terrain: {
       title: string
@@ -610,6 +611,7 @@ export const translations: Record<Locale, Translation> = {
         noGaps:
           'Nenhuma tecnologia fora do stack público foi detectada no texto.',
         adjacentPrefix: 'Adjacente',
+        academicOnly: 'Só em trabalho acadêmico',
       },
       terrain: {
         title: 'Terreno de atividade no GitHub',
@@ -970,6 +972,7 @@ export const translations: Record<Locale, Translation> = {
         noGaps:
           'No technologies outside the public stack were detected in the text.',
         adjacentPrefix: 'Adjacent',
+        academicOnly: 'Coursework only',
       },
       terrain: {
         title: 'GitHub Activity Terrain',

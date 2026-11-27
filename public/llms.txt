@@ -49,8 +49,8 @@ curl -s -H 'Accept: text/markdown' https://marcusboni.com.br/
 
 - [Home](https://marcusboni.com.br/): Marcus Boni, Software Engineer — open to projects.
 - [About](https://marcusboni.com.br/#about): Profile, learning path, 75 public GitHub repositories.
-- [Projects](https://marcusboni.com.br/#work): ISPer, OptTime, Meeting Copilot, Auto Daily, Estimativa de Horas.
-- [Career](https://marcusboni.com.br/#experience): Software Developer at Optsolv since June 2024, delivering to clients in healthcare, industry, logistics, environment, supply, customer care and real estate.
+- [Projects](https://marcusboni.com.br/#work): ISPer, OptTime, Meeting Copilot, Auto Daily, Estimativa de Horas, Opt Suporte, Opt News.
+- [Career](https://marcusboni.com.br/#experience): Software Developer at Optsolv since June 2024, delivering to clients in healthcare, industry, logistics, environment, supply, customer care and real estate, plus construction, distribution, retail, events and internal products recorded in the dossier.
 - [Stack](https://marcusboni.com.br/#craft): React, Next.js, TypeScript, WebGL, Rust, Tauri, MCP, Node.js, Python, C#, PostgreSQL, Drizzle, pgvector, Docker, Azure, GitHub Actions.
 - [Contact](https://marcusboni.com.br/#contact): Email and a professional contact form.
 - [About](https://marcusboni.com.br/about): Who Marcus Boni is, the seven client sectors delivered in, and how to work with him.

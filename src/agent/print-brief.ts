@@ -92,7 +92,7 @@ export function buildFitPrintHtml(
     report.relevantEngagements.length > 0
       ? `
         <section class="block">
-          <h2>${escapeHtml(isPt ? 'Entregas em produção relevantes' : 'Relevant production deliveries')}</h2>
+          <h2>${escapeHtml(isPt ? 'Entregas relevantes na Optsolv' : 'Relevant Optsolv deliveries')}</h2>
           <ul class="highlights">
             ${report.relevantEngagements
               .slice(0, 4)

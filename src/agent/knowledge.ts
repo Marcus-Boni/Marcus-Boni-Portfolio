@@ -18,6 +18,7 @@ export type KnowledgeNoteTopic =
   | 'api_readiness'
   | 'languages'
   | 'contact_policy'
+  | 'background'
   | 'faq'
 
 export interface KnowledgeNote {
@@ -146,8 +147,8 @@ export const KNOWLEDGE_NOTES: readonly KnowledgeNote[] = [
       en: 'Applied AI & evidence-driven engineering',
     },
     body: {
-      pt: 'Usa IA de forma deliberada como multiplicador de engenharia ancorado em fundamentos. Em produto, já construiu servidor MCP com 16 ferramentas (OptTime), pipeline RAG sobre pgvector com citações obrigatórias e harness de avaliação de busca (Meeting Copilot), transcrição local offline via whisper.cpp CPU/CUDA em Rust (ISPer), assistente virtual com N8N/Firebase (EAV) e simulações assistidas por IA em regras financeiras (Galwan).',
-      en: 'Uses AI deliberately as an engineering multiplier grounded in fundamentals. Shipped work includes a 16-tool MCP server (OptTime), a config-driven pgvector RAG pipeline with mandatory citations and a retrieval evaluation harness (Meeting Copilot), offline local speech transcription via whisper.cpp CPU/CUDA in Rust (ISPer), a virtual assistant with N8N/Firebase (EAV), and AI-assisted financial simulations (Galwan).',
+      pt: 'Usa IA de forma deliberada como multiplicador de engenharia ancorado em fundamentos. Em produto, já construiu servidor MCP com 16 ferramentas (OptTime), pipeline RAG sobre pgvector com citações obrigatórias e harness de avaliação de busca (Meeting Copilot), transcrição local offline via whisper.cpp CPU/CUDA em Rust (ISPer), assistente virtual com N8N/Firebase (EAV), simulações assistidas por IA em regras financeiras (Galwan), agentes no Microsoft Foundry com servidor MCP de dados (Cidade Engenharia), agentes Claude revisando PRs no Azure DevOps (Code Agent) e sugestões de IA com revisão humana obrigatória (Painel Estratégico).',
+      en: 'Uses AI deliberately as an engineering multiplier grounded in fundamentals. Shipped work includes a 16-tool MCP server (OptTime), a config-driven pgvector RAG pipeline with mandatory citations and a retrieval evaluation harness (Meeting Copilot), offline local speech transcription via whisper.cpp CPU/CUDA in Rust (ISPer), a virtual assistant with N8N/Firebase (EAV), AI-assisted financial simulations (Galwan), Microsoft Foundry agents with an MCP data server (Cidade Engenharia), Claude agents reviewing pull requests in Azure DevOps (Code Agent), and AI suggestions gated by mandatory human review (Strategy Dashboard).',
     },
     href: '/#work',
   },
@@ -246,6 +247,87 @@ export const KNOWLEDGE_NOTES: readonly KnowledgeNote[] = [
     },
     href: '/contact',
   },
+  {
+    id: 'DOC·07',
+    topic: 'background',
+    keywords: [
+      'formacao',
+      'formação',
+      'faculdade',
+      'graduacao',
+      'graduação',
+      'universidade',
+      'college',
+      'university',
+      'degree',
+      'education',
+      'infnet',
+      'academico',
+      'acadêmico',
+      'academic',
+      'spring boot',
+      'spring',
+      'kubernetes',
+      'k8s',
+      'redis',
+      'ddd',
+      'microsservicos',
+      'microsserviços',
+      'microservices',
+      'algoritmos',
+      'algorithms',
+      'estruturas de dados',
+      'data structures',
+    ],
+    title: {
+      pt: 'Formação acadêmica no Instituto Infnet',
+      en: 'Academic work at Instituto Infnet',
+    },
+    // Only what the public coursework repositories show: no degree title, no status.
+    body: {
+      pt: 'Trabalhos acadêmicos no Instituto Infnet publicados no GitHub desde 2024, por bloco: programação com Python e fundamentos de dados; desenvolvimento mobile com React Native e Expo; IA, machine learning e ciclo de vida de modelos; Engenharia Disciplinada de Softwares (testes, clean code e refatoração); Pipelines de CI/CD e DevOps (Spring Boot em Docker e Kubernetes, PostgreSQL, Redis e GitHub Actions); Engenharia de Softwares Escaláveis (Spring Boot, Spring Cloud, microsserviços, Design Patterns e DDD com Java); e o bloco Ciência da Computação (estruturas de dados e algoritmos, Linux e programação distribuída com Python). Spring Boot, Kubernetes e Redis aparecem só nesse contexto acadêmico. O nome do curso e a situação não constam no dossiê público.',
+      en: 'Coursework at Instituto Infnet published on GitHub since 2024, by block: Python programming and data fundamentals; mobile development with React Native and Expo; AI, machine learning and model lifecycle; Disciplined Software Engineering (testing, clean code and refactoring); CI/CD pipelines and DevOps (Spring Boot on Docker and Kubernetes, PostgreSQL, Redis and GitHub Actions); Scalable Software Engineering (Spring Boot, Spring Cloud, microservices, design patterns and DDD in Java); and the Computer Science block (data structures and algorithms, Linux and distributed programming in Python). Spring Boot, Kubernetes and Redis appear only in this academic context. The programme name and status are not part of the public dossier.',
+    },
+    href: 'https://github.com/Marcus-Boni',
+  },
+  {
+    id: 'DOC·08',
+    topic: 'background',
+    keywords: [
+      'jarvis',
+      'nexus',
+      'ollama',
+      'chromadb',
+      'signalr',
+      'study platform',
+      'sitio',
+      'sítio',
+      'isadora',
+      'laboratorio',
+      'laboratório',
+      'lab',
+      'estudo',
+      'estudos',
+      'study',
+      'side project',
+      'side projects',
+      'projetos pessoais',
+      'personal projects',
+      'opt gestao',
+      'opt gestão',
+      'portfolio',
+      'portfólio',
+    ],
+    title: {
+      pt: 'Laboratório: projetos pessoais e de estudo',
+      en: 'Lab: personal and study projects',
+    },
+    body: {
+      pt: 'Além dos destaques, o GitHub guarda projetos de estudo: Jarvis (assistente local com FastAPI, Ollama, memória vetorial em ChromaDB, faster-whisper e Piper), Nexus (orquestração local de agentes de código com Next.js), Study Platform (TanStack Start e Bun), SignalR Meetup App (tempo real em C# com SignalR), Opt Gestão (gestão de projetos feita para a empresa), a landing do Sítio Recanto dos Amigos (Next.js na Vercel), o portfólio editorial da Isadora (React 19, Vite e Netlify) e este portfólio (React 19, Vite, GSAP, edge functions na Netlify e o dossiê com IA).',
+      en: 'Beyond the highlights, GitHub keeps study projects: Jarvis (a local assistant with FastAPI, Ollama, ChromaDB vector memory, faster-whisper and Piper), Nexus (local orchestration of coding agents with Next.js), Study Platform (TanStack Start and Bun), SignalR Meetup App (real-time C# with SignalR), Opt Gestão (project management built for the company), the Sítio Recanto dos Amigos landing page (Next.js on Vercel), Isadora’s editorial portfolio (React 19, Vite and Netlify) and this portfolio (React 19, Vite, GSAP, Netlify edge functions and the AI dossier).',
+    },
+    href: 'https://github.com/Marcus-Boni',
+  },
 ]
 
 /**
@@ -284,6 +366,16 @@ export const TECH_ONTOLOGY: Record<string, readonly string[]> = {
   IIS: ['iis', 'windows server', 'cors', 'active directory', 'ad auth'],
   Netlify: ['netlify', 'edge functions', 'edge', 'jamstack', 'deploy'],
   'GitHub Actions': ['github actions', 'ci', 'cd', 'ci/cd', 'cicd', 'workflows', 'releases'],
+  TanStack: ['tanstack', 'tanstack query', 'react query', 'tanstack router', 'tanstack start'],
+  'Material UI': ['material ui', 'material-ui', 'mui'],
+  GSAP: ['gsap', 'greensock', 'scrolltrigger'],
+  Fastify: ['fastify'],
+  FastAPI: ['fastapi'],
+  n8n: ['n8n', 'workflow automation'],
+  'Claude Agent SDK': ['claude agent sdk', 'agent sdk', 'claude', 'anthropic', 'claude code'],
+  'OpenAI API': ['openai', 'openai api', 'gpt', 'chatgpt'],
+  'Microsoft Entra ID': ['entra', 'entra id', 'azure ad', 'azure active directory', 'msal', 'oidc', 'sso'],
+  OpenTelemetry: ['opentelemetry', 'otel', 'tracing', 'observabilidade', 'observability'],
 }
 
 /**
@@ -291,12 +383,13 @@ export const TECH_ONTOLOGY: Record<string, readonly string[]> = {
  * "healthcare", "ERP", "logística", "financeiro", "imobiliário", "IA".
  */
 export const DOMAIN_ONTOLOGY: Record<string, readonly string[]> = {
-  'Applied AI & RAG': ['ia', 'ai', 'llm', 'rag', 'mcp', 'chatbot', 'assistente', 'assistant', 'copilot', 'whisper', 'n8n', 'inteligencia artificial', 'artificial intelligence', 'genai', 'generative ai'],
-  'Enterprise & ERP Integration': ['erp', 'sankhya', 'webservice', 'active directory', 'ad', 'legado', 'legacy', 'b2b', 'integracao', 'integracoes', 'integration', 'integrations', 'corporativo', 'enterprise'],
+  'Applied AI & RAG': ['ia', 'ai', 'llm', 'rag', 'mcp', 'chatbot', 'assistente', 'assistant', 'copilot', 'whisper', 'n8n', 'inteligencia artificial', 'artificial intelligence', 'genai', 'generative ai', 'claude', 'agentes', 'foundry', 'openai'],
+  'Enterprise & ERP Integration': ['erp', 'sankhya', 'webservice', 'active directory', 'ad', 'legado', 'legacy', 'b2b', 'integracao', 'integracoes', 'integration', 'integrations', 'corporativo', 'enterprise', 'entra', 'msal'],
   'Healthcare (Unimed)': ['saude', 'saúde', 'healthcare', 'hospital', 'medico', 'médico', 'guias', 'unimed'],
-  'Logistics & Supply': ['logistica', 'logística', 'logistics', 'suprimentos', 'supply', 'embarque', 'materiais', 'aguia branca', 'cedisa'],
-  'Industry & Environment': ['industria', 'indústria', 'industry', 'producao', 'produção', 'meio ambiente', 'environment', 'pwa', 'hidrauvit', 'marca ambiental'],
+  'Logistics & Supply': ['logistica', 'logística', 'logistics', 'suprimentos', 'supply', 'embarque', 'materiais', 'aguia branca', 'cedisa', 'maritimo', 'marítimo', 'maritime', 'navios', 'ships', 'porto', 'port', 'lbh'],
+  'Industry & Environment': ['industria', 'indústria', 'industry', 'producao', 'produção', 'meio ambiente', 'environment', 'pwa', 'hidrauvit', 'marca ambiental', 'construcao', 'construção', 'construction', 'pre-moldados', 'pré-moldados', 'concreto', 'pcp', 'mrp', 'cidade engenharia', 'aluminio', 'alumínio'],
   'Real Estate & Finance': ['imobiliario', 'imobiliário', 'real estate', 'financeiro', 'financial', 'kpi', 'parcelamento', 'pagamento', 'payment', 'galwan'],
+  'Retail, Events & Distribution': ['varejo', 'retail', 'shopping', 'lojista', 'lojistas', 'eventos', 'events', 'distribuicao', 'distribuição', 'distribution', 'cotacao', 'cotação', 'cotacoes', 'cotações', 'quotes'],
   'Desktop & Local Systems': ['desktop', 'offline', 'voz', 'voice', 'ditado', 'dictation', 'transcricao', 'transcrição', 'transcription', 'teams', 'windows', 'isper'],
 }
 
@@ -309,8 +402,10 @@ export const EXTERNAL_TECH_CATALOG: readonly {
   name: string
   aliases: readonly string[]
   adjacent: readonly string[]
+  /** Used in Infnet coursework (DOC·07) but in no professional delivery. */
+  academic?: boolean
 }[] = [
-  { name: 'Kubernetes', aliases: ['kubernetes', 'k8s', 'eks', 'aks', 'gke', 'helm'], adjacent: ['Docker', 'Portainer', 'Azure'] },
+  { name: 'Kubernetes', aliases: ['kubernetes', 'k8s', 'eks', 'aks', 'gke', 'helm'], adjacent: ['Docker', 'Portainer', 'Azure'], academic: true },
   { name: 'AWS', aliases: ['aws', 'amazon web services', 'ec2', 's3', 'lambda', 'dynamodb', 'ecs'], adjacent: ['Azure', 'Netlify', 'Firebase'] },
   { name: 'GCP', aliases: ['gcp', 'google cloud', 'cloud run', 'bigquery'], adjacent: ['Firebase', 'Azure'] },
   { name: 'Terraform', aliases: ['terraform', 'iac', 'pulumi', 'cloudformation'], adjacent: ['Docker', 'Azure DevOps', 'GitHub Actions'] },
@@ -321,21 +416,21 @@ export const EXTERNAL_TECH_CATALOG: readonly {
   { name: 'Vue.js', aliases: ['vue', 'vuejs', 'vue.js', 'nuxt', 'nuxtjs'], adjacent: ['React', 'Next.js', 'Astro'] },
   { name: 'Svelte', aliases: ['svelte', 'sveltekit'], adjacent: ['React', 'Astro', 'TypeScript'] },
   { name: 'GraphQL', aliases: ['graphql', 'apollo', 'hasura'], adjacent: ['REST APIs', 'TypeScript', 'Node.js'] },
-  { name: 'Redis', aliases: ['redis', 'valkey', 'memcached'], adjacent: ['PostgreSQL', 'SQLite', 'Firebase'] },
+  { name: 'Redis', aliases: ['redis', 'valkey', 'memcached'], adjacent: ['PostgreSQL', 'SQLite', 'Firebase'], academic: true },
   { name: 'MongoDB', aliases: ['mongodb', 'mongo', 'mongoose'], adjacent: ['Firebase', 'PostgreSQL'] },
   { name: 'Kafka', aliases: ['kafka', 'confluent', 'event streaming'], adjacent: ['Azure DevOps', 'Node.js', 'PostgreSQL'] },
   { name: 'RabbitMQ', aliases: ['rabbitmq', 'amqp', 'sqs'], adjacent: ['Node.js', 'N8N'] },
   { name: 'Prisma', aliases: ['prisma', 'prisma orm'], adjacent: ['Drizzle', 'PostgreSQL'] },
   { name: 'NestJS', aliases: ['nestjs', 'nest.js'], adjacent: ['Node.js', 'TypeScript'] },
-  { name: 'Spring Boot', aliases: ['spring', 'spring boot', 'springboot'], adjacent: ['Java', 'C#'] },
-  { name: 'Django / FastAPI', aliases: ['django', 'fastapi', 'flask'], adjacent: ['Python', 'Node.js'] },
+  { name: 'Spring Boot', aliases: ['spring', 'spring boot', 'springboot'], adjacent: ['Java', 'C#'], academic: true },
+  { name: 'Django / Flask', aliases: ['django', 'flask'], adjacent: ['FastAPI', 'Python'] },
   { name: 'Swift', aliases: ['swift', 'swiftui', 'objective-c'], adjacent: ['Flutter', 'React Native'] },
   { name: 'Kotlin', aliases: ['kotlin', 'jetpack compose'], adjacent: ['Flutter', 'Java', 'React Native'] },
   { name: 'Elixir', aliases: ['elixir', 'phoenix'], adjacent: ['Rust', 'Node.js'] },
   { name: 'C++', aliases: ['c++', 'cpp'], adjacent: ['Rust', 'whisper.cpp'] },
   { name: 'Elasticsearch', aliases: ['elasticsearch', 'opensearch', 'algolia'], adjacent: ['pgvector', 'PostgreSQL'] },
   { name: 'Snowflake / Databricks', aliases: ['snowflake', 'databricks', 'spark', 'airflow', 'dbt'], adjacent: ['PostgreSQL', 'SQL Server', 'Python'] },
-  { name: 'Datadog / Grafana', aliases: ['datadog', 'grafana', 'prometheus', 'opentelemetry', 'new relic'], adjacent: ['Azure DevOps', 'GitHub Actions'] },
+  { name: 'Datadog / Grafana', aliases: ['datadog', 'grafana', 'prometheus', 'new relic'], adjacent: ['OpenTelemetry', 'Azure DevOps'] },
   { name: 'SAP', aliases: ['sap', 'abap', 's/4hana'], adjacent: ['Sankhya ERP', 'REST APIs'] },
   { name: 'Salesforce', aliases: ['salesforce', 'apex'], adjacent: ['REST APIs', 'B2B'] },
   { name: 'Playwright / Cypress', aliases: ['playwright', 'cypress', 'selenium'], adjacent: ['Vitest', 'TypeScript'] },
@@ -393,8 +488,8 @@ export const SLASH_COMMANDS: readonly SlashCommandDef[] = [
     command: '/experience',
     label: { pt: 'Entregas em clientes', en: 'Client engagements' },
     description: {
-      pt: 'Mostra entregas em produção na Optsolv por setor e escopo',
-      en: 'Inspect production deliveries at Optsolv by sector and scope',
+      pt: 'Mostra as entregas na Optsolv por setor e escopo',
+      en: 'Inspect Optsolv deliveries by sector and scope',
     },
     template: {
       pt: '/experience Quais clientes e setores o Marcus já atendeu?',

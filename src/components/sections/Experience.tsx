@@ -157,10 +157,12 @@ export function Experience() {
     t.experience.downloadCv,
   )
 
-  const total = experience.projects.length
-  const counterItems = [...experience.projects.map((_, i) => pad2(i + 1)), '∞']
+  // Entries marked `home: false` live only in the dossier and the API.
+  const entries = experience.projects.filter((p) => p.home !== false)
+  const total = entries.length
+  const counterItems = [...entries.map((_, i) => pad2(i + 1)), '∞']
   const sectorItems = [
-    ...experience.projects.map((p) => p.sector[locale]),
+    ...entries.map((p) => p.sector[locale]),
     t.experience.moreSector,
   ]
 
@@ -238,7 +240,7 @@ export function Experience() {
         )
       }
     },
-    [experience.projects.length],
+    [total],
   )
 
   return (
@@ -342,7 +344,7 @@ export function Experience() {
               className="absolute top-0 left-0 h-full w-px bg-ember will-change-transform"
             />
 
-            {experience.projects.map((project, index) => (
+            {entries.map((project, index) => (
               <LedgerEntry
                 key={project.id}
                 project={project}

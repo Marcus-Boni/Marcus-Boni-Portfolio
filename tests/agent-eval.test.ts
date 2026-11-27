@@ -139,6 +139,35 @@ describe('evidence-based job fit analyzer', () => {
   })
 })
 
+describe('dossier-only deliveries (home: false) still count as evidence', () => {
+  it('proves Fastify and OpenTelemetry with Optsolv work and keeps academic Spring Boot a gap', () => {
+    const jd = `Backend Engineer
+- Node.js services with Fastify and PostgreSQL
+- Observability with OpenTelemetry
+- FastAPI is a plus
+- Spring Boot microservices`
+    const report = analyzeJobFit(jd, content, 'en')
+    const proofsFor = (skill: string) =>
+      report.matched.find((item) => item.skill === skill)?.proofs.map((p) => p.label).join(' | ') ?? ''
+
+    expect(proofsFor('Fastify')).toMatch(/Cidade Engenharia|Code Agent/)
+    expect(proofsFor('OpenTelemetry')).toMatch(/Code Agent/)
+    expect(proofsFor('FastAPI')).toMatch(/Strategy Dashboard/)
+    const gapTerms = report.gaps.map((gap) => gap.term)
+    expect(report.gaps.find((gap) => gap.term === 'Spring Boot')?.academic).toBe(true)
+    // Recorded techs must not be reported as gaps at the same time.
+    expect(gapTerms).not.toContain('Datadog / Grafana')
+    expect(gapTerms.some((term) => /FastAPI/.test(term))).toBe(false)
+  })
+
+  it('finds a dossier-only client through /experience', async () => {
+    const result = await collectTurn('/experience Cidade Engenharia', { locale: 'pt' })
+    expect(result.text).toContain('Cidade Engenharia')
+    const ordinal = content.experience.projects.findIndex((e) => e.id === 'cidade-engenharia') + 1
+    expect(result.citations.some((c) => c.id === `EXP·${String(ordinal).padStart(2, '0')}`)).toBe(true)
+  })
+})
+
 describe('LocalDeterministicRuntime eval suite', () => {
   const cases: {
     label: string
