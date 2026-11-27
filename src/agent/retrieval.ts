@@ -347,9 +347,9 @@ export function classifyIntent(
     return { intent: 'experience', signals, slash }
   }
 
-  // 8b. Live GitHub activity / recent releases / latest commits
+  // 8b. Live GitHub activity / recent releases / contribution heatmap
   if (
-    /\b(ultima release|ultimas releases|latest release|recent release|recent releases|releases recentes|atividade recente|recent activity|recent commits|commits recentes|ultimos commits|construiu recentemente|built recently|shipped recently|atualizacoes recentes|recent updates|novidades no github|github activity)\b/i.test(
+    /\b(ultima release|ultimas releases|latest release|recent release|recent releases|releases recentes|atividade recente|recent activity|recent commits|commits recentes|ultimos commits|construiu recentemente|built recently|shipped recently|atualizacoes recentes|recent updates|novidades no github|github activity|mapa de calor|heatmap|contribuicoes|contributions|contribution graph|activity terrain|frequencia no github|atividade no github)\b/i.test(
       norm,
     )
   ) {

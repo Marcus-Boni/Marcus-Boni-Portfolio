@@ -4,20 +4,59 @@ import { sanitizeCitationMarkers } from '@/agent/edge-runtime'
 import { buildContextualFollowups } from '@/agent/followups'
 import { buildFitPrintHtml } from '@/agent/print-brief'
 import { analyzeJobFit, classifyIntent } from '@/agent/retrieval'
-import { prepareGroundedTurn } from '@/agent/runtime'
-import type { AgentTurn } from '@/agent/types'
+import { LocalDeterministicRuntime, prepareGroundedTurn } from '@/agent/runtime'
+import type { AgentEvent, AgentTurn } from '@/agent/types'
 import { parseTokenAlternatives } from '@/blog/lib/token-alternatives'
 import { cloneDefaultContent } from '@/content/defaults'
 
 import {
   handleGitHubActivity,
+  parseGitHubContributionsHtml,
   resetGitHubActivityCache,
   type GitHubActivityPayload,
 } from '../netlify/lib/github-activity'
 
 const content = cloneDefaultContent()
 
+const SAMPLE_CONTRIBUTIONS_HTML = `
+<table>
+  <tbody>
+    <tr>
+      <td data-date="2026-11-20" id="contribution-day-component-0-0" data-level="0"></td>
+      <td data-date="2026-11-21" id="contribution-day-component-1-0" data-level="1"></td>
+      <td data-date="2026-11-22" id="contribution-day-component-2-0" data-level="2"></td>
+      <td data-date="2026-11-23" id="contribution-day-component-3-0" data-level="4"></td>
+      <td data-date="2026-11-24" id="contribution-day-component-4-0" data-level="0"></td>
+      <td data-date="2026-11-25" id="contribution-day-component-5-0" data-level="3"></td>
+      <td data-date="2026-11-26" id="contribution-day-component-6-0" data-level="2"></td>
+      <td data-date="2026-11-27" id="contribution-day-component-0-1" data-level="4"></td>
+    </tr>
+  </tbody>
+</table>
+<tool-tip for="contribution-day-component-0-0">No contributions on November 20th.</tool-tip>
+<tool-tip for="contribution-day-component-1-0">1 contribution on November 21st.</tool-tip>
+<tool-tip for="contribution-day-component-2-0">4 contributions on November 22nd.</tool-tip>
+<tool-tip for="contribution-day-component-3-0">12 contributions on November 23rd.</tool-tip>
+<tool-tip for="contribution-day-component-4-0">No contributions on November 24th.</tool-tip>
+<tool-tip for="contribution-day-component-5-0">7 contributions on November 25th.</tool-tip>
+<tool-tip for="contribution-day-component-0-1">1,024 contributions on November 27th.</tool-tip>
+`
+
 describe('Phase 4 — Live GitHub Activity Edge Handler (/agent/v1/github)', () => {
+  it('parses GitHub public contributions HTML into exact daily counts, totals and streak', () => {
+    const parsed = parseGitHubContributionsHtml(SAMPLE_CONTRIBUTIONS_HTML, 7)
+    expect(parsed).toBeDefined()
+    // 8 cells total: [0, 1, 4, 12, 0, 7, 3 (level-2 fallback), 1024]
+    // Last 7 days: [1, 4, 12, 0, 7, 3, 1024]
+    expect(parsed?.days).toEqual([1, 4, 12, 0, 7, 3, 1024])
+    expect(parsed?.endDate).toBe('2026-11-27')
+    expect(parsed?.windowTotal).toBe(1051)
+    expect(parsed?.yearTotal).toBe(1051)
+    expect(parsed?.activeDays).toBe(6)
+    expect(parsed?.longestStreak).toBe(3)
+    expect(parseGitHubContributionsHtml('<div>empty</div>')).toBeUndefined()
+  })
+
   it('rejects non-GET/HEAD requests with 405 Method Not Allowed', async () => {
     const res = await handleGitHubActivity(
       new Request('https://marcusboni.com.br/agent/v1/github', { method: 'POST' }),
@@ -26,14 +65,26 @@ describe('Phase 4 — Live GitHub Activity Edge Handler (/agent/v1/github)', () 
     expect(res.headers.get('allow')).toBe('GET, HEAD')
   })
 
-  it('aggregates releases + non-fork repos, uses optional GITHUB_TOKEN safely, and caches hits', async () => {
+  it('aggregates releases, non-fork repos and contributions calendar, scoping GITHUB_TOKEN to api.github.com only', async () => {
     resetGitHubActivityCache()
-    const seenAuth: (string | null)[] = []
+    const apiAuth: (string | null)[] = []
+    const htmlAuth: (string | null)[] = []
 
     const mockFetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const headers = new Headers(init?.headers)
-      seenAuth.push(headers.get('authorization'))
+      if (url.startsWith('https://api.github.com/')) {
+        apiAuth.push(headers.get('authorization'))
+      } else {
+        htmlAuth.push(headers.get('authorization'))
+      }
+
+      if (url.includes('/users/Marcus-Boni/contributions')) {
+        return new Response(SAMPLE_CONTRIBUTIONS_HTML, {
+          status: 200,
+          headers: { 'content-type': 'text/html; charset=utf-8' },
+        })
+      }
 
       if (url.includes('/users/Marcus-Boni/repos')) {
         return new Response(
@@ -97,7 +148,11 @@ describe('Phase 4 — Live GitHub Activity Edge Handler (/agent/v1/github)', () 
     expect(data.releases[0].tag).toBe('v0.25.0')
     expect(data.releases[0].summary).toContain('Faster CUDA whisper streaming')
     expect(data.recentRepos.map((r) => r.name)).toEqual(['ISPer'])
-    expect(seenAuth.every((val) => val === 'Bearer ghp_secret_test_value_12345')).toBe(true)
+    expect(data.contributions?.days).toHaveLength(8)
+    expect(data.contributions?.windowTotal).toBe(1051)
+    expect(apiAuth.length).toBeGreaterThan(0)
+    expect(apiAuth.every((val) => val === 'Bearer ghp_secret_test_value_12345')).toBe(true)
+    expect(htmlAuth).toEqual([null])
 
     const callsAfterFirst = mockFetch.mock.calls.length
 
@@ -109,6 +164,7 @@ describe('Phase 4 — Live GitHub Activity Edge Handler (/agent/v1/github)', () 
     expect(second.status).toBe(200)
     const secondData = (await second.json()) as GitHubActivityPayload
     expect(secondData.cached).toBe(true)
+    expect(secondData.contributions?.endDate).toBe('2026-11-27')
     expect(mockFetch.mock.calls.length).toBe(callsAfterFirst)
   })
 
@@ -152,14 +208,24 @@ describe('Phase 4 — Live GitHub Tool, Citations & Offline Fallback', () => {
         topics: ['mcp', 'nextjs'],
       },
     ],
+    contributions: {
+      days: [0, 2, 5, 1, 8, 3, 4],
+      endDate: '2026-11-27',
+      windowTotal: 23,
+      yearTotal: 420,
+      activeDays: 6,
+      longestStreak: 6,
+    },
   }
 
-  it('routes activity queries to getRecentActivity and emits verifiable GH·NN citations', () => {
+  it('routes activity and heatmap queries to getRecentActivity and emits verifiable GH·NN citations + github_activity event', async () => {
     expect(classifyIntent('/activity', content).intent).toBe('activity')
     expect(classifyIntent('Quais são as últimas releases no GitHub?', content).intent).toBe('activity')
+    expect(classifyIntent('Mostre o mapa de contribuições do GitHub', content).intent).toBe('activity')
+    expect(classifyIntent('Show me the GitHub contribution graph heatmap', content).intent).toBe('activity')
     expect(classifyIntent('What has Marcus built recently?', content).intent).toBe('activity')
 
-    const plan = prepareGroundedTurn('Quais são as últimas releases no GitHub?', {
+    const plan = prepareGroundedTurn('Mostre o mapa de calor e atividade no GitHub', {
       content,
       posts: [],
       githubActivity: sampleActivity,
@@ -170,8 +236,30 @@ describe('Phase 4 — Live GitHub Tool, Citations & Offline Fallback', () => {
     expect(plan.intent).toBe('activity')
     expect(plan.plannedTools[0]().name).toBe('getRecentActivity')
     expect(plan.composed.text).toContain('ISPer v0.25.0')
+    expect(plan.composed.text).toContain('23 contribuições')
+    expect(plan.composed.githubActivity?.contributions?.windowTotal).toBe(23)
     expect(plan.composed.citations[0]?.id).toBe('GH·01')
-    expect(plan.composed.citations[0]?.href).toContain('/ISPer/releases/tag/v0.25.0')
+    expect(plan.composed.citations[0]?.title).toContain('23 contribuições')
+    expect(plan.composed.citations[1]?.id).toBe('GH·02')
+    expect(plan.composed.citations[1]?.href).toContain('/ISPer/releases/tag/v0.25.0')
+
+    // LocalDeterministicRuntime must emit the structured github_activity event for ActivityTerrain
+    const runtime = new LocalDeterministicRuntime()
+    const events: AgentEvent[] = []
+    for await (const ev of runtime.streamTurn('Mapa de contribuições no GitHub', {
+      content,
+      posts: [],
+      githubActivity: sampleActivity,
+      locale: 'pt',
+      lens: 'engineer',
+      instant: true,
+    })) {
+      events.push(ev)
+    }
+    const ghEvent = events.find(
+      (ev): ev is Extract<AgentEvent, { type: 'github_activity' }> => ev.type === 'github_activity',
+    )
+    expect(ghEvent?.activity.contributions?.days).toEqual([0, 2, 5, 1, 8, 3, 4])
 
     // Citation sanitizer keeps verified GH·01 and strips unverified GH·99
     expect(

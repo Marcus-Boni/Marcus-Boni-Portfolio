@@ -1,10 +1,16 @@
 import type {
   GitHubActivityPayload,
+  GitHubContributionsCalendar,
   GitHubReleaseItem,
   GitHubRepoActivity,
 } from '../../netlify/lib/github-activity'
 
-export type { GitHubActivityPayload, GitHubReleaseItem, GitHubRepoActivity }
+export type {
+  GitHubActivityPayload,
+  GitHubContributionsCalendar,
+  GitHubReleaseItem,
+  GitHubRepoActivity,
+}
 
 /**
  * Client-side session-cached fetcher for `/agent/v1/github`.
@@ -23,7 +29,7 @@ export function resetClientGitHubCache(): void {
 
 export async function fetchLiveGitHubActivity(
   fetchImpl: typeof fetch = globalThis.fetch.bind(globalThis),
-  endpoint = '/agent/v1/github',
+  endpoint = '/agent/v1/github?v=2',
 ): Promise<GitHubActivityPayload | null> {
   if (cachedActivity) return cachedActivity
   if (inflight) return inflight

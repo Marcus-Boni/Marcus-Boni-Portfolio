@@ -6,6 +6,7 @@ import type { Locale } from '@/i18n/translations'
 import { activeKnowledgeNotes } from './dossier-cms'
 import type {
   GitHubActivityPayload,
+  GitHubContributionsCalendar,
   GitHubReleaseItem,
   GitHubRepoActivity,
 } from './github-activity'
@@ -173,6 +174,35 @@ function shortIsoDate(iso: string, locale: Locale): string {
   }).format(date)
 }
 
+function githubContributionsCitation(
+  username: string,
+  contrib: GitHubContributionsCalendar,
+  ordinal: number,
+  locale: Locale,
+): Citation {
+  const isPt = locale === 'pt'
+  const numLocale = isPt ? 'pt-BR' : 'en-US'
+  const windowFmt = contrib.windowTotal.toLocaleString(numLocale)
+  const yearFmt = contrib.yearTotal.toLocaleString(numLocale)
+  const weeks = Math.max(1, Math.round(contrib.days.length / 7))
+  return {
+    id: `GH·${String(ordinal).padStart(2, '0')}`,
+    kind: 'project',
+    title: isPt
+      ? `GitHub @${username} — ${windowFmt} contribuições (${weeks} sem.)`
+      : `GitHub @${username} — ${windowFmt} contributions (${weeks} wks)`,
+    subtitle: isPt
+      ? `${yearFmt} no último ano · ${contrib.activeDays} dias ativos · sequência máx. ${contrib.longestStreak}d`
+      : `${yearFmt} in the last year · ${contrib.activeDays} active days · ${contrib.longestStreak}d max streak`,
+    excerpt: isPt
+      ? `Mapa real de contribuições obtido ao vivo de github.com/${username} até ${contrib.endDate}: ${windowFmt} contribuições nas últimas ${weeks} semanas (${yearFmt} no último ano, ${contrib.activeDays} dias ativos, maior sequência de ${contrib.longestStreak} dias). O terreno 3D interativo (Activity Terrain) é exibido diretamente abaixo desta resposta.`
+      : `Live GitHub contributions calendar fetched from github.com/${username} through ${contrib.endDate}: ${windowFmt} contributions over the last ${weeks} weeks (${yearFmt} over the past year, ${contrib.activeDays} active days, ${contrib.longestStreak}-day longest streak). The interactive 3D Activity Terrain heatmap is rendered directly below this answer.`,
+    href: `https://github.com/${encodeURIComponent(username)}`,
+    external: true,
+    meta: isPt ? 'Mapa ao vivo' : 'Live heatmap',
+  }
+}
+
 function githubReleaseCitation(
   release: GitHubReleaseItem,
   ordinal: number,
@@ -307,6 +337,7 @@ interface ComposedTurn {
   text: string
   citations: Citation[]
   fitReport?: FitReport
+  githubActivity?: GitHubActivityPayload
   approval?: ApprovalAction
 }
 
@@ -588,9 +619,22 @@ function composeResponse(params: {
     case 'activity': {
       const releases = githubActivity?.releases ?? []
       const recentRepos = githubActivity?.recentRepos ?? []
+      const contrib = githubActivity?.contributions
 
-      if (releases.length > 0 || recentRepos.length > 0) {
+      if (releases.length > 0 || recentRepos.length > 0 || contrib) {
         let ordinal = 1
+        let contribCitId: string | null = null
+        if (contrib) {
+          const contribCit = githubContributionsCitation(
+            githubActivity?.username ?? 'Marcus-Boni',
+            contrib,
+            ordinal++,
+            locale,
+          )
+          contribCitId = contribCit.id
+          citations.push(contribCit)
+        }
+
         const releaseLines: string[] = []
         for (const release of releases.slice(0, 4)) {
           const cit = githubReleaseCitation(release, ordinal++, locale)
@@ -617,11 +661,16 @@ function composeResponse(params: {
           )
         }
 
-        const paragraphs: string[] = [
-          isPt
+        const contribTag = contribCitId ? ` [${contribCitId}]` : ''
+        const intro = contrib
+          ? isPt
+            ? `Atividade pública recente obtida ao vivo no GitHub (**@${githubActivity?.username ?? 'Marcus-Boni'}**) — **${contrib.windowTotal.toLocaleString('pt-BR')} contribuições** nas últimas 26 semanas (${contrib.yearTotal.toLocaleString('pt-BR')} no último ano, ${contrib.activeDays} dias ativos)${contribTag}:`
+            : `Live public GitHub activity for **@${githubActivity?.username ?? 'Marcus-Boni'}** — **${contrib.windowTotal.toLocaleString('en-US')} contributions** over the last 26 weeks (${contrib.yearTotal.toLocaleString('en-US')} over the past year, ${contrib.activeDays} active days)${contribTag}:`
+          : isPt
             ? `Atividade pública recente obtida ao vivo no GitHub (**@${githubActivity?.username ?? 'Marcus-Boni'}**):`
-            : `Live recent public activity from GitHub (**@${githubActivity?.username ?? 'Marcus-Boni'}**):`,
-        ]
+            : `Live recent public activity from GitHub (**@${githubActivity?.username ?? 'Marcus-Boni'}**):`
+
+        const paragraphs: string[] = [intro]
         if (releaseLines.length > 0) {
           paragraphs.push(
             (isPt ? '**Releases recentes:**\n' : '**Recent releases:**\n') +
@@ -638,6 +687,7 @@ function composeResponse(params: {
         return {
           text: paragraphs.join('\n\n'),
           citations: dedupeCitations(citations),
+          githubActivity: githubActivity ?? undefined,
         }
       }
 
@@ -1250,6 +1300,10 @@ export class LocalDeterministicRuntime implements AgentRuntime {
 
     if (plan.composed.fitReport) {
       yield { type: 'fit_report', report: plan.composed.fitReport }
+    }
+
+    if (plan.composed.githubActivity) {
+      yield { type: 'github_activity', activity: plan.composed.githubActivity }
     }
 
     if (plan.composed.approval) {

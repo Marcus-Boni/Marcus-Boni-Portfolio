@@ -181,7 +181,12 @@ export function runGetRecentActivity(
       args: { username: activity?.username ?? 'Marcus-Boni' },
     },
     () => {
-      if (!activity || (activity.releases.length === 0 && activity.recentRepos.length === 0)) {
+      if (
+        !activity ||
+        (activity.releases.length === 0 &&
+          activity.recentRepos.length === 0 &&
+          !activity.contributions)
+      ) {
         return {
           data: {
             live: false,
@@ -195,12 +200,25 @@ export function runGetRecentActivity(
         }
       }
 
+      const contrib = activity.contributions
       return {
         data: {
           live: true,
           username: activity.username,
           fetchedAt: activity.fetchedAt,
           cached: activity.cached,
+          ...(contrib
+            ? {
+                contributions: {
+                  windowDays: contrib.days.length,
+                  windowTotal: contrib.windowTotal,
+                  yearTotal: contrib.yearTotal,
+                  activeDays: contrib.activeDays,
+                  longestStreak: contrib.longestStreak,
+                  endDate: contrib.endDate,
+                },
+              }
+            : {}),
           releases: activity.releases.map((r) => ({
             repo: r.repo,
             tag: r.tag,
@@ -216,9 +234,13 @@ export function runGetRecentActivity(
           })),
         },
         summary:
-          locale === 'pt'
-            ? `${activity.releases.length} release(s) · ${activity.recentRepos.length} repo(s) recentes`
-            : `${activity.releases.length} release(s) · ${activity.recentRepos.length} recent repo(s)`,
+          contrib
+            ? locale === 'pt'
+              ? `${contrib.windowTotal} contribuições (26 sem.) · ${activity.releases.length} release(s)`
+              : `${contrib.windowTotal} contributions (26w) · ${activity.releases.length} release(s)`
+            : locale === 'pt'
+              ? `${activity.releases.length} release(s) · ${activity.recentRepos.length} repo(s) recentes`
+              : `${activity.releases.length} release(s) · ${activity.recentRepos.length} recent repo(s)`,
       }
     },
   )

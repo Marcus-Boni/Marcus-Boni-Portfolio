@@ -252,6 +252,21 @@ export interface Translation {
       noGaps: string
       adjacentPrefix: string
     }
+    terrain: {
+      title: string
+      viewToggleLabel: string
+      flat: string
+      terrain: string
+      less: string
+      more: string
+      dragHint: string
+      latestRelease: string
+      activeDays: (days: number) => string
+      streak: (days: number) => string
+      windowSummary: (total: number, weeks: number) => string
+      dayReadout: (count: number, dayLabel: string) => string
+      canvasAria: (total: number, weeks: number) => string
+    }
     approval: {
       defaultSubject: string
       toLabel: string
@@ -596,6 +611,24 @@ export const translations: Record<Locale, Translation> = {
           'Nenhuma tecnologia fora do stack público foi detectada no texto.',
         adjacentPrefix: 'Adjacente',
       },
+      terrain: {
+        title: 'Terreno de atividade no GitHub',
+        viewToggleLabel: 'Visualização do mapa de contribuições',
+        flat: 'Plano',
+        terrain: 'Terreno',
+        less: 'Menos',
+        more: 'Mais',
+        dragHint: 'Arraste para girar · setas para navegar',
+        latestRelease: 'Última release',
+        activeDays: (days) => `${days} dias ativos`,
+        streak: (days) => `sequência máx. ${days}d`,
+        windowSummary: (total, weeks) =>
+          `${total.toLocaleString('pt-BR')} contribuições nas últimas ${weeks} semanas`,
+        dayReadout: (count, dayLabel) =>
+          `${count} ${count === 1 ? 'contribuição' : 'contribuições'} em ${dayLabel}`,
+        canvasAria: (total, weeks) =>
+          `Mapa 3D de atividade no GitHub: ${total.toLocaleString('pt-BR')} contribuições em ${weeks} semanas. Use as setas para navegar cada dia.`,
+      },
       approval: {
         defaultSubject: 'Contato via dossiê',
         toLabel: 'Para',
@@ -937,6 +970,24 @@ export const translations: Record<Locale, Translation> = {
         noGaps:
           'No technologies outside the public stack were detected in the text.',
         adjacentPrefix: 'Adjacent',
+      },
+      terrain: {
+        title: 'GitHub Activity Terrain',
+        viewToggleLabel: 'Contribution graph view mode',
+        flat: 'Flat',
+        terrain: 'Terrain',
+        less: 'Less',
+        more: 'More',
+        dragHint: 'Drag to rotate · arrows to inspect',
+        latestRelease: 'Latest release',
+        activeDays: (days) => `${days} active days`,
+        streak: (days) => `${days}d max streak`,
+        windowSummary: (total, weeks) =>
+          `${total.toLocaleString('en-US')} contributions in the last ${weeks} weeks`,
+        dayReadout: (count, dayLabel) =>
+          `${count} ${count === 1 ? 'contribution' : 'contributions'} on ${dayLabel}`,
+        canvasAria: (total, weeks) =>
+          `3D GitHub Activity Terrain: ${total.toLocaleString('en-US')} contributions over ${weeks} weeks. Use arrow keys to read each day.`,
       },
       approval: {
         defaultSubject: 'Dossier inquiry',

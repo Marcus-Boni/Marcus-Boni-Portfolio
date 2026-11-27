@@ -46,6 +46,7 @@ import { trackEvent } from '@/lib/analytics'
 import { isFirebaseConfigured } from '@/lib/firebase-config'
 import { cn } from '@/lib/utils'
 
+import { ActivityTerrain } from './ActivityTerrain'
 import { FitReportView } from './FitReportView'
 import { IconCheck, IconCopy, IconLink, IconReset, IconSpark } from './icons'
 import { GroundedProse } from './InlineCitations'
@@ -353,6 +354,9 @@ export function AgentConsole({
                 gaps: event.report.gaps.length,
                 lens: activeLens,
               })
+              break
+            case 'github_activity':
+              patchAssistant((turn) => ({ ...turn, githubActivity: event.activity }))
               break
             case 'approval_request':
               patchAssistant((turn) => ({ ...turn, approval: event.approval }))
@@ -794,6 +798,11 @@ export function AgentConsole({
                               onNavigateInternal={handleNavigateInternal}
                             />
                           )}
+
+                          {turn.githubActivity?.contributions &&
+                            turn.githubActivity.contributions.days.length > 0 && (
+                              <ActivityTerrain activity={turn.githubActivity} />
+                            )}
 
                           {turn.approval && (
                             <ToolApprovalCard

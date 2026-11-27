@@ -42,12 +42,28 @@ export interface GitHubRepoActivity {
   topics: string[]
 }
 
+export interface GitHubContributionsCalendar {
+  /** Daily contribution counts, oldest first (up to last 26 weeks / 182 days). */
+  days: number[]
+  /** ISO date (`YYYY-MM-DD`) of the last day in `days`. */
+  endDate: string
+  /** Total contributions across the `days` window. */
+  windowTotal: number
+  /** Total contributions across the full fetched GitHub calendar (~1 year). */
+  yearTotal: number
+  /** Number of days with >= 1 contribution in the `days` window. */
+  activeDays: number
+  /** Longest consecutive contribution streak (days) in the fetched year. */
+  longestStreak: number
+}
+
 export interface GitHubActivityPayload {
   username: string
   fetchedAt: string
   cached: boolean
   releases: GitHubReleaseItem[]
   recentRepos: GitHubRepoActivity[]
+  contributions?: GitHubContributionsCalendar
 }
 
 export interface GitHubHandlerOptions {
@@ -89,6 +105,92 @@ function summarizeReleaseBody(raw: unknown): string {
     .replace(/`([^`]+)`/g, '$1')
   if (firstMeaningful.length <= 180) return firstMeaningful
   return `${firstMeaningful.slice(0, 177).trimEnd()}…`
+}
+
+const LEVEL_FALLBACK_COUNTS = [0, 1, 3, 6, 10] as const
+const TERRAIN_WINDOW_DAYS = 26 * 7
+
+/**
+ * Parses GitHub's public `/users/{username}/contributions` HTML fragment into
+ * an exact chronological daily contribution calendar (`days`, `endDate`, totals
+ * and longest streak). Pure and regex-safe regardless of attribute order.
+ */
+export function parseGitHubContributionsHtml(
+  html: string,
+  windowDays = TERRAIN_WINDOW_DAYS,
+): GitHubContributionsCalendar | undefined {
+  if (!html) return undefined
+
+  const tipCountById = new Map<string, number>()
+  for (const match of html.matchAll(
+    /<tool-tip\b[^>]*\bfor="([^"]+)"[^>]*>([^<]+)<\/tool-tip>/gi,
+  )) {
+    const targetId = match[1]
+    const label = match[2].trim()
+    if (/^no\s+contributions/i.test(label)) {
+      tipCountById.set(targetId, 0)
+    } else {
+      const countMatch = label.match(/^([\d,]+)\s+contribution/i)
+      if (countMatch) {
+        const parsed = Number.parseInt(countMatch[1].replace(/,/g, ''), 10)
+        if (Number.isFinite(parsed) && parsed >= 0) {
+          tipCountById.set(targetId, parsed)
+        }
+      }
+    }
+  }
+
+  const entries: { date: string; count: number }[] = []
+  const seenDates = new Set<string>()
+
+  for (const match of html.matchAll(/<td\b[^>]*\bdata-date="(\d{4}-\d{2}-\d{2})"[^>]*>/gi)) {
+    const tag = match[0]
+    const date = match[1]
+    if (seenDates.has(date)) continue
+    seenDates.add(date)
+
+    const idMatch = tag.match(/\bid="([^"]+)"/i)
+    const levelMatch = tag.match(/\bdata-level="([0-4])"/i)
+    const level = levelMatch ? Number(levelMatch[1]) : 0
+    const count =
+      (idMatch ? tipCountById.get(idMatch[1]) : undefined) ??
+      LEVEL_FALLBACK_COUNTS[level] ??
+      0
+
+    entries.push({ date, count })
+  }
+
+  if (entries.length < 7) return undefined
+
+  entries.sort((a, b) => a.date.localeCompare(b.date))
+
+  let yearTotal = 0
+  let longestStreak = 0
+  let currentStreak = 0
+  for (const entry of entries) {
+    yearTotal += entry.count
+    if (entry.count > 0) {
+      currentStreak += 1
+      if (currentStreak > longestStreak) longestStreak = currentStreak
+    } else {
+      currentStreak = 0
+    }
+  }
+
+  const slice = entries.slice(-windowDays)
+  const days = slice.map((entry) => entry.count)
+  const windowTotal = days.reduce((sum, n) => sum + n, 0)
+  const activeDays = days.filter((n) => n > 0).length
+  const endDate = slice[slice.length - 1].date
+
+  return {
+    days,
+    endDate,
+    windowTotal,
+    yearTotal,
+    activeDays,
+    longestStreak,
+  }
 }
 
 async function fetchJsonWithTimeout(
@@ -160,13 +262,24 @@ export async function handleGitHubActivity(
   if (token) headers.authorization = `Bearer ${token}`
 
   try {
-    const [reposRes, ...releaseResults] = await Promise.all([
+    const [reposRes, contribCalendar, ...releaseResults] = await Promise.all([
       fetchJsonWithTimeout(
         `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=pushed&per_page=8&type=owner`,
         headers,
         fetchImpl,
         UPSTREAM_TIMEOUT_MS,
       ),
+      fetchJsonWithTimeout(
+        `https://github.com/users/${encodeURIComponent(username)}/contributions`,
+        {
+          accept: 'text/html',
+          'user-agent': 'marcusboni-dossier-edge/1.0',
+        },
+        fetchImpl,
+        UPSTREAM_TIMEOUT_MS,
+      )
+        .then(async (res) => (res.ok ? parseGitHubContributionsHtml(await res.text()) : undefined))
+        .catch(() => undefined),
       ...FEATURED_REPOS.map((repo) =>
         fetchJsonWithTimeout(
           `https://api.github.com/repos/${encodeURIComponent(username)}/${encodeURIComponent(repo)}/releases/latest`,
@@ -231,7 +344,7 @@ export async function handleGitHubActivity(
 
     releases.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
 
-    if (recentRepos.length === 0 && releases.length === 0) {
+    if (recentRepos.length === 0 && releases.length === 0 && !contribCalendar) {
       if (currentCache) {
         const stale = JSON.stringify({ ...currentCache.payload, cached: true })
         return new Response(method === 'HEAD' ? null : stale, {
@@ -259,6 +372,7 @@ export async function handleGitHubActivity(
       cached: false,
       releases,
       recentRepos,
+      ...(contribCalendar ? { contributions: contribCalendar } : {}),
     }
 
     if (!useCustomCache) {

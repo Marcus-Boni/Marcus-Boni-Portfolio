@@ -405,6 +405,10 @@ export class HybridEdgeRuntime implements AgentRuntime {
       yield { type: 'fit_report', report: plan.composed.fitReport }
     }
 
+    if (plan.composed.githubActivity) {
+      yield { type: 'github_activity', activity: plan.composed.githubActivity }
+    }
+
     if (plan.composed.approval && !(edgeOutcome.streamed && isRefinementFollowUp)) {
       yield { type: 'approval_request', approval: plan.composed.approval }
     }

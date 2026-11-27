@@ -166,6 +166,7 @@ export interface AgentTurn {
   tools: ToolCallTrace[]
   citations: Citation[]
   fitReport?: FitReport
+  githubActivity?: GitHubActivityPayload
   approval?: ApprovalAction
   runtimeMeta?: RuntimeMeta
   sourcePrompt?: string
@@ -195,6 +196,7 @@ export type AgentEvent =
   | { type: 'text_delta'; delta: string }
   | { type: 'citations'; citations: Citation[] }
   | { type: 'fit_report'; report: FitReport }
+  | { type: 'github_activity'; activity: GitHubActivityPayload }
   | { type: 'approval_request'; approval: ApprovalAction }
   | { type: 'done'; intent: AgentIntent }
   | { type: 'error'; message: string }
