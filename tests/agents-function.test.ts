@@ -127,6 +127,17 @@ describe('agents — static routes (no Firestore configured)', () => {
     expect(await response.text()).toContain('# Developers')
   })
 
+  it('serves the interactive dossier routes as Markdown in PT and EN', async () => {
+    const pt = await handler(get('https://x/ask', 'text/markdown'), ctx())
+    expect(pt.status).toBe(200)
+    expect(pt.headers.get('content-type')).toBe('text/markdown; charset=utf-8')
+    expect(await pt.text()).toContain('# Dossiê Interativo')
+
+    const en = await handler(get('https://x/en/ask', 'text/markdown'), ctx())
+    expect(en.status).toBe(200)
+    expect(await en.text()).toContain('# Interactive Dossier')
+  })
+
   it('serves the blog index as Markdown even with no database', async () => {
     const response = await handler(get('https://x/blog', 'text/markdown'), ctx())
     expect(response.status).toBe(200)

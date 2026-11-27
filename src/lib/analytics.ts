@@ -20,6 +20,12 @@ export type AnalyticsEventType =
   | 'post_view'
   | 'post_read'
   | 'post_share'
+  // Interactive dossier console (`/ask` and `⌘K` drawer).
+  | 'agent_open'
+  | 'agent_query'
+  | 'agent_fit'
+  | 'agent_handoff'
+  | 'agent_share'
 
 export interface AnalyticsContext {
   visitorId: string

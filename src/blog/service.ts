@@ -35,6 +35,7 @@ import type { Post, PostBody, PostMeta } from './types'
 
 const POSTS = 'posts'
 const BODY_DOC = ['content', 'main'] as const
+const publishedBodyCache = new Map<string, PostBodies>()
 
 function metaRef(slug: string) {
   return doc(requireDb(), POSTS, slug)
@@ -147,6 +148,59 @@ export async function fetchPublishedPosts(max?: number): Promise<PostMeta[]> {
     ),
   )
   return snap.docs.map((d) => normalizeMeta(d.id, d.data() as Partial<PostMeta>))
+}
+
+/**
+ * Fetches Markdown bodies for published posts (used lazily by the Dossier
+ * console to index article sections and `#heading` anchors).
+ *
+ * Results are memoized in memory for the browser session so reopening `⌘K` or
+ * switching routes never bills duplicate Firestore reads.
+ */
+export async function fetchPublishedPostBodies(
+  posts: readonly Pick<PostMeta, 'slug' | 'lang'>[],
+  max = 15,
+): Promise<Record<string, PostBodies>> {
+  const out: Record<string, PostBodies> = {}
+  if (!isFirebaseConfigured || !db) return out
+
+  const target = posts.slice(0, max)
+  const missing: Pick<PostMeta, 'slug' | 'lang'>[] = []
+  for (const post of target) {
+    const cached = publishedBodyCache.get(post.slug)
+    if (cached) out[post.slug] = cached
+    else missing.push(post)
+  }
+
+  if (missing.length === 0) return out
+
+  const settled = await Promise.allSettled(
+    missing.map(async (post) => {
+      const snap = await getDoc(bodyRef(post.slug))
+      if (!snap.exists()) return { slug: post.slug, bodies: {} as PostBodies }
+      const stored = snap.data() as PostBody | undefined
+      const bodies: PostBodies = {}
+      if (stored?.bodies && typeof stored.bodies === 'object') {
+        for (const locale of BLOG_LOCALES) {
+          if (typeof stored.bodies[locale] === 'string') {
+            bodies[locale] = stored.bodies[locale]
+          }
+        }
+      }
+      if (bodies[post.lang] === undefined && typeof stored?.body === 'string') {
+        bodies[post.lang] = stored.body
+      }
+      return { slug: post.slug, bodies }
+    }),
+  )
+
+  for (const result of settled) {
+    if (result.status !== 'fulfilled') continue
+    publishedBodyCache.set(result.value.slug, result.value.bodies)
+    out[result.value.slug] = result.value.bodies
+  }
+
+  return out
 }
 
 /** Every post including drafts — admin only; rules reject this when signed out. */
@@ -324,6 +378,7 @@ export async function savePost(post: Post): Promise<void> {
     }),
   )
   await batch.commit()
+  publishedBodyCache.delete(post.slug)
 }
 
 /** Removes the post and its body document. */
@@ -333,6 +388,7 @@ export async function deletePost(slug: string): Promise<void> {
   batch.delete(doc(database, POSTS, slug, ...BODY_DOC))
   batch.delete(doc(database, POSTS, slug))
   await batch.commit()
+  publishedBodyCache.delete(slug)
 }
 
 /** True when the slug is already taken — the editor checks before a rename. */

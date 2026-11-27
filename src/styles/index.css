@@ -108,6 +108,13 @@
   --heat-2: #984429;
   --heat-3: #c04b21;
   --heat-4: #e95111;
+  /* 3D Activity Terrain ramp (agent/components/ActivityTerrain). */
+  --terrain-0: #24201d;
+  --terrain-1: #743b29;
+  --terrain-2: #984429;
+  --terrain-3: #c04b21;
+  --terrain-4: #e95111;
+  --terrain-accent: #ece7df;
 }
 
 @supports (color: light-dark(#000, #fff)) {
@@ -132,6 +139,12 @@
     --heat-2: light-dark(#c04b21, #984429);
     --heat-3: light-dark(#984429, #c04b21);
     --heat-4: light-dark(#743b29, #e95111);
+    --terrain-0: light-dark(#dcd5c8, #24201d);
+    --terrain-1: light-dark(#dfab93, #743b29);
+    --terrain-2: light-dark(#d17852, #984429);
+    --terrain-3: light-dark(#c2481a, #c04b21);
+    --terrain-4: light-dark(#9e2a06, #e95111);
+    --terrain-accent: light-dark(#14120f, #ece7df);
   }
 
   :root:has(> head > meta[name='color-scheme'][content='dark']) {
@@ -408,10 +421,14 @@ body {
 }
 
 /* Keyboard focus and the text caret are drawn from the palette too — one
-   hairline of ember, the same accent every other state uses. */
-:focus-visible {
-  outline: 1px solid var(--color-ember);
-  outline-offset: 4px;
+   hairline of ember, the same accent every other state uses. Kept inside
+   `@layer base` so Tailwind `focus-visible:*` utilities (e.g. a parent
+   composer owning the rounded focus ring) can cleanly override it. */
+@layer base {
+  :focus-visible {
+    outline: 1px solid var(--color-ember);
+    outline-offset: 4px;
+  }
 }
 
 input,
@@ -1192,5 +1209,18 @@ button.note-ref[aria-expanded='true'] {
   from {
     opacity: 0;
     transform: translateY(10px);
+  }
+}
+
+/* ─── Agent console: Kokonut AI-04 per-letter brightness wave ───────────────
+   Off-main-thread opacity wave across individual characters; neutralised
+   cleanly under prefers-reduced-motion. */
+.kokonut-ai-wave {
+  animation: kokonut-ai-wave 1.6s ease-in-out infinite both;
+}
+
+@keyframes kokonut-ai-wave {
+  50% {
+    opacity: 0.32;
   }
 }

@@ -20,6 +20,11 @@ const AdminApp = lazy(() => import('@/admin/AdminApp'))
 // eslint-disable-next-line react-refresh/only-export-components
 const BlogApp = lazy(() => import('@/blog/BlogApp'))
 
+// The interactive dossier console (`/ask` and `/en/ask`) is code-split so the
+// home page keeps its exact 4 static chunks.
+// eslint-disable-next-line react-refresh/only-export-components
+const AgentPage = lazy(() => import('@/agent/AgentPage'))
+
 const root = document.getElementById('root')!
 liftServerDocument(root)
 
@@ -52,6 +57,30 @@ createRoot(root).render(
               <Suspense fallback={<div className="min-h-svh bg-ink" />}>
                 <BlogApp routeLang="pt" />
               </Suspense>
+            </LanguageProvider>
+          }
+        />
+        <Route
+          path="/en/ask"
+          element={
+            <LanguageProvider>
+              <SiteContentProvider>
+                <Suspense fallback={<div className="min-h-svh bg-ink" />}>
+                  <AgentPage routeLang="en" />
+                </Suspense>
+              </SiteContentProvider>
+            </LanguageProvider>
+          }
+        />
+        <Route
+          path="/ask"
+          element={
+            <LanguageProvider>
+              <SiteContentProvider>
+                <Suspense fallback={<div className="min-h-svh bg-ink" />}>
+                  <AgentPage routeLang="pt" />
+                </Suspense>
+              </SiteContentProvider>
             </LanguageProvider>
           }
         />

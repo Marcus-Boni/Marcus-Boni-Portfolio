@@ -27,6 +27,8 @@
 # it here *and* in netlify/edge-functions/_routes.ts. `tests/routes.test.ts`
 # fails when the three drift.
 /                 /index.html   200
+/ask              /index.html   200
+/en/ask           /index.html   200
 /blog             /index.html   200
 /blog/*           /index.html   200
 /en/blog          /index.html   200

@@ -220,6 +220,98 @@ asserts what makes that work — unique `operationId`s, a description long enoug
 to decide on, typed parameters, a named response schema per operation, and no
 dangling or unused `$ref`.
 
+## 6. Interactive Dossier Console (`/ask` and `/agent/v1/chat`)
+
+The interactive dossier console (`⌘K` drawer and `/ask` / `/en/ask`) uses a
+**hybrid architecture**:
+
+1. **Deterministic grounding first (always on, zero cost).** Every query runs
+   local bilingual retrieval, fuzzy/ontology matching, real timed tools
+   mirroring `/openapi.json`, evidence citations, and the `/fit` ledger before
+   any model is called.
+2. **Optional Edge LLM SSE synthesis (`POST /agent/v1/chat`).**
+   `netlify/edge-functions/agent-chat.ts` (backed by `netlify/lib/agent-chat.ts`)
+   streams grounded prose over `text/event-stream` using pure Web Standard
+   `fetch` + `ReadableStream` (zero SDK dependencies, server-side secrets only).
+   When no key is configured (`503`), rate-limited (`429`), or unreachable, the
+   UI falls back silently to the local deterministic composition with zero error
+   flash.
+
+### Enabling live LLM synthesis in Netlify (Free-First Failover Waterfall)
+
+Set **one or more** server-side API keys in Netlify → Site Configuration →
+Environment Variables (never prefix with `VITE_`, and never add them to
+`SECRETS_SCAN_OMIT_KEYS`).
+
+Free providers are **always prioritized first** in an automatic failover chain
+with a 45-second per-provider cooldown on 429/5xx/timeouts. Paid keys
+(`GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`) are **never called**
+while any free key is present unless `AGENT_ALLOW_PAID_FALLBACK=true` is
+explicitly enabled:
+
+| Priority | Variable | Provider | Tier | Default model |
+| --- | --- | --- | --- | --- |
+| 1 | `GROQ_API_KEY` | Groq | Free | `qwen/qwen3.8-27b` (`AGENT_GROQ_MODEL`) |
+| 2 | `NVIDIA_API_KEY` | NVIDIA NIM | Free | `nvidia/nemotron-3.5-lightning-30b-a3b` (`AGENT_NVIDIA_MODEL`) |
+| 3 | `OPENROUTER_API_KEY` | OpenRouter | Free | `openrouter/free` (`AGENT_OPENROUTER_MODEL`) |
+| 4 (opt-in) | `OPENAI_API_KEY` / `GEMINI_API_KEY` / `ANTHROPIC_API_KEY` | OpenAI / Gemini / Anthropic | Paid | Only used if no free key exists or `AGENT_ALLOW_PAID_FALLBACK=true` |
+| Override | `AGENT_LLM_API_KEY` | Explicit via `AGENT_LLM_PROVIDER` | Manual | Override via `AGENT_LLM_MODEL` + optional `AGENT_LLM_BASE_URL` |
+
+Optional operational controls: `AGENT_FREE_ONLY=true` (hard block on paid keys —
+recommended in production), `AGENT_ALLOW_PAID_FALLBACK=true`,
+`AGENT_LLM_MAX_TOKENS` (default `520`), `AGENT_LLM_TEMPERATURE` (default `0.25`),
+`AGENT_RATE_LIMIT_MAX` (default `10` req/min per IP), `AGENT_RATE_LIMIT_WINDOW_S`
+(default `60`), `AGENT_RATE_LIMIT_HOURLY` (default `45` req/hr per IP),
+`AGENT_GLOBAL_HOURLY_MAX` (default `240` req/hr global instance budget), and
+`AGENT_ALLOWED_ORIGINS` (comma-separated allowlist; same-origin & portfolio
+hosts are enforced by default even when unset, and `Sec-Fetch-Site: cross-site`
+is rejected). The endpoint also enforces a 2-stream/IP concurrency cap, a 28 KB
+streaming body limit, a 6,000-char SSE output cap, strict evidence ID/URL
+allowlisting, and a zero-token prompt-injection/out-of-scope pre-filter. During
+`pnpm dev`, `vite.config.ts` mounts the exact same handler on `/agent/v1/chat`
+using server-side `.env` keys without exposing them to the client bundle.
+
+Inspect live capability (never returns secrets):
+
+```bash
+curl -s https://marcusboni.com.br/agent/v1/chat
+```
+
+### Shareable deep-links, exports & Admin telemetry
+
+- **Deep-linking (`/ask` & `/en/ask`):** Accepts `?q=<prompt>&lens=recruiter|engineer|client&mode=auto|local`
+  (parsed defensively by `src/agent/share.ts`). Every completed answer and `/fit`
+  evidence ledger exposes copyable Markdown, downloadable `.md` briefs, and
+  canonical deep-links so recruiters or engineers can share reproducible runs.
+- **Blog contextual entry:** Every article footer on `/blog/:slug` links directly
+  to `/ask?lens=engineer&q=...` pre-filled with the article title and tags.
+- **Admin Dossier Intelligence (`/admin/analytics`):** Aggregates anonymous
+  `agent_open`, `agent_query`, `agent_fit`, `agent_handoff`, and `agent_share`
+  events into KPI tiles and Signal & Ink single-series breakdowns (intents,
+  audience lenses, and active runtime/provider) plus RFC 4180 CSV export.
+- **Live Editable Dossier CMS (`/admin/dossier` → `content/dossier`):**
+  Editorial notes (availability, client workflow, applied AI philosophy,
+  languages, API summary, contact channels, and custom FAQs) live in Firestore
+  under the existing `match /content/{docId}` rule with automatic static
+  fallback to `src/agent/knowledge.ts` and zero extra payload on Home.
+- **Blog Body Section Indexing (`src/agent/post-index.ts`):** Lazily fetches
+  published Markdown bodies once per session (`fetchPublishedPostBodies`),
+  splits sections using the exact `headingId` rules shared with `rehype-slug`,
+  and emits section-anchored citations (`/blog/{slug}#{heading-id}`) that
+  scroll directly to the matched heading when clicked.
+- **Live GitHub Activity (`GET /agent/v1/github`):** Cached (20 min TTL) Edge
+  Function (`netlify/edge-functions/agent-github.ts` → `netlify/lib/github-activity.ts`)
+  surfacing recent releases, pushed repositories, and the live 26-week GitHub
+  contributions calendar (rendered inline as the interactive 3D Signal & Ink
+  `ActivityTerrain` canvas inside the Dossier console) via `getRecentActivity`
+  with optional server-side `GITHUB_TOKEN` and graceful offline fallback.
+- **Message Queue, Follow-ups, Executive PDF & Blog Directives:** Visitors can
+  queue follow-up prompts while streaming (`MessageQueue`), click zero-token
+  contextual follow-ups (`src/agent/followups.ts`), print a dependency-free A4
+  `/fit` one-pager (`src/agent/print-brief.ts`), and trigger dossier prompts or
+  inspect LLM token distributions directly inside `/blog` posts via
+  `::dossier-ask` and `:::ai-tokens`.
+
 ---
 
 ## Verifying

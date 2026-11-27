@@ -26,6 +26,8 @@ export interface Translation {
     backHome: string
     themeToLight: string
     themeToDark: string
+    ask: string
+    openAsk: string
   }
   hero: {
     portfolio: string
@@ -85,6 +87,7 @@ export interface Translation {
     title: ReactNode
     cta: string
     blurb: string
+    askCta: string
     form: {
       heading: string
       name: string
@@ -141,6 +144,7 @@ export interface Translation {
       share: string
       copyLink: string
       copied: string
+      askDossier: string
       readAlso: string
       translationAvailable: string
       notFound: string
@@ -171,6 +175,141 @@ export interface Translation {
       callout: { info: string; tip: string; warn: string; danger: string }
     }
   }
+  agent: {
+    nav: string
+    pageTitle: string
+    pageHeading: ReactNode
+    pageSubtitle: string
+    drawerHeading: string
+    newChat: string
+    expandFull: string
+    assistantTurnLabel: string
+    stoppedNotice: string
+    copyAnswer: string
+    copiedAnswer: string
+    shareLink: string
+    copiedLink: string
+    followupsLabel: string
+    queue: {
+      heading: (count: number) => string
+      addHint: string
+      sendNow: string
+      remove: string
+      clearAll: string
+    }
+    lenses: {
+      label: string
+      recruiter: string
+      recruiterHint: string
+      engineer: string
+      engineerHint: string
+      client: string
+      clientHint: string
+    }
+    input: {
+      ariaLabel: string
+      placeholder: string
+      fitPlaceholder: string
+      commandsLabel: string
+      slashToggle: string
+      attachFile: string
+      removeCommand: string
+      kbdMove: string
+      kbdPick: string
+      kbdClose: string
+      send: string
+      stop: string
+    }
+    voice: {
+      start: string
+      listening: string
+      discard: string
+      unsupported: string
+    }
+    tools: {
+      running: (count: number) => string
+      summary: (count: number, totalMs: number, evidenceCount: number) => string
+      viewJson: string
+      hideJson: string
+    }
+    citations: {
+      sourcesLabel: string
+      openSource: string
+    }
+    fit: {
+      heading: string
+      verifiedShort: string
+      gapsShort: string
+      copyBrief: string
+      copiedBrief: string
+      downloadBrief: string
+      printPdf: string
+      shareLink: string
+      copiedLink: string
+      verifiedLabel: string
+      gapsLabel: string
+      noMatches: string
+      noGaps: string
+      adjacentPrefix: string
+    }
+    terrain: {
+      title: string
+      viewToggleLabel: string
+      flat: string
+      terrain: string
+      less: string
+      more: string
+      dragHint: string
+      latestRelease: string
+      activeDays: (days: number) => string
+      streak: (days: number) => string
+      windowSummary: (total: number, weeks: number) => string
+      dayReadout: (count: number, dayLabel: string) => string
+      canvasAria: (total: number, weeks: number) => string
+    }
+    approval: {
+      defaultSubject: string
+      toLabel: string
+      subjectLabel: string
+      inboxTag: string
+      confirmSend: string
+      undo: string
+      cancel: string
+      dismissed: string
+      sentSuccess: string
+      sentReceipt: (name: string) => string
+      fillRequired: string
+      sendError: string
+      offlineFallback: string
+      openedMailto: string
+      namePlaceholder: string
+      emailPlaceholder: string
+      downloadPt: string
+      downloadEn: string
+    }
+    meter: {
+      ariaLabel: (total: number) => string
+      sourcesUnit: string
+      popoverTitle: string
+      projects: string
+      clients: string
+      stack: string
+      notes: string
+      posts: string
+      sections: string
+      turns: string
+      runtimeLabel: string
+      verifiedStatus: string
+      liveCms: string
+      staticSeed: string
+      modeLabel: string
+      modeAuto: string
+      modeLocal: string
+      edgeReady: (model: string) => string
+      edgeStandby: string
+      rateLimitNote: string
+    }
+  }
   marquee: string[]
   cursor: { view: string; drag: string }
 }
@@ -194,6 +333,8 @@ export const translations: Record<Locale, Translation> = {
       backHome: 'Voltar ao início',
       themeToLight: 'Mudar para o tema claro',
       themeToDark: 'Mudar para o tema escuro',
+      ask: 'Dossiê',
+      openAsk: 'Abrir dossiê interativo (Ctrl+K)',
     },
     hero: {
       portfolio: 'Portfólio',
@@ -294,6 +435,7 @@ export const translations: Record<Locale, Translation> = {
       cta: 'Escreva para mim',
       blurb:
         'Aberto a projetos, colaborações e boas conversas sobre engenharia de software e IA aplicada — em português ou inglês.',
+      askCta: 'Ou consulte o dossiê / analise uma vaga (/fit) →',
       form: {
         heading: 'Ou mande uma mensagem direto por aqui',
         name: 'Nome',
@@ -373,12 +515,161 @@ export const translations: Record<Locale, Translation> = {
         share: 'Compartilhar',
         copyLink: 'Copiar link',
         copied: 'Link copiado',
+        askDossier: 'Perguntar no Dossiê',
         readAlso: 'Leia também',
         translationAvailable: 'Read in English',
         notFound: 'Registro não encontrado',
         notFoundBody:
           'Este link pode ter mudado de endereço ou o registro ainda não foi publicado.',
         backToIndex: 'Ver todos os registros',
+      },
+    },
+    agent: {
+      nav: 'Dossiê',
+      pageTitle: 'Consulte o dossiê',
+      pageHeading: (
+        <>
+          O que você quer saber sobre o{' '}
+          <em className="font-display-italic pl-[0.02em] pr-[0.09em] text-ember">Marcus</em>?
+        </>
+      ),
+      pageSubtitle:
+        'Respostas ancoradas em projetos e entregas reais — ou cole uma vaga para mapear evidências.',
+      drawerHeading: 'Dossiê interativo',
+      newChat: 'Nova conversa',
+      expandFull: 'Tela cheia',
+      assistantTurnLabel: 'Resposta do dossiê',
+      stoppedNotice: 'Resposta interrompida.',
+      copyAnswer: 'Copiar',
+      copiedAnswer: 'Copiado',
+      shareLink: 'Copiar link',
+      copiedLink: 'Link copiado',
+      followupsLabel: 'Próximas perguntas',
+      queue: {
+        heading: (count) => (count === 1 ? '1 na fila' : `${count} na fila`),
+        addHint: 'Enter para enfileirar enquanto responde…',
+        sendNow: 'Enviar agora',
+        remove: 'Remover da fila',
+        clearAll: 'Limpar fila',
+      },
+      lenses: {
+        label: 'Lente',
+        recruiter: 'Recrutador',
+        recruiterHint: 'Fit de vaga, entregas e disponibilidade',
+        engineer: 'Técnico',
+        engineerHint: 'Arquitetura, stack e decisões de código',
+        client: 'Cliente',
+        clientHint: 'Discovery, escopo e entrega em produção',
+      },
+      input: {
+        ariaLabel: 'Perguntar ao dossiê do Marcus',
+        placeholder: 'Pergunte algo, digite / ou cole uma vaga…',
+        fitPlaceholder: 'Cole a descrição da vaga ou arraste um arquivo .txt/.md…',
+        commandsLabel: 'Comandos',
+        slashToggle: 'Comandos /',
+        attachFile: 'Anexar descrição de vaga (.txt / .md)',
+        removeCommand: 'Remover comando',
+        kbdMove: 'navegar',
+        kbdPick: 'selecionar',
+        kbdClose: 'fechar',
+        send: 'Enviar',
+        stop: 'Parar',
+      },
+      voice: {
+        start: 'Falar pergunta por voz',
+        listening: 'Ouvindo… fale sua pergunta',
+        discard: 'Cancelar',
+        unsupported: 'Reconhecimento de voz indisponível neste navegador.',
+      },
+      tools: {
+        running: (count) =>
+          count === 1 ? 'Consultando 1 fonte…' : `Consultando ${count} fontes…`,
+        summary: (count, totalMs, evidenceCount) =>
+          `${count} ${count === 1 ? 'tool' : 'tools'} · ${totalMs}ms · ${evidenceCount} ${evidenceCount === 1 ? 'fonte' : 'fontes'}`,
+        viewJson: 'JSON',
+        hideJson: 'Fechar',
+      },
+      citations: {
+        sourcesLabel: 'Fontes',
+        openSource: 'Abrir fonte',
+      },
+      fit: {
+        heading: 'Aderência por evidências',
+        verifiedShort: 'comprovados',
+        gapsShort: 'fora do dossiê',
+        copyBrief: 'Copiar .md',
+        copiedBrief: 'Copiado',
+        downloadBrief: 'Baixar .md',
+        printPdf: 'PDF',
+        shareLink: 'Copiar link',
+        copiedLink: 'Link copiado',
+        verifiedLabel: 'Evidências reais',
+        gapsLabel: 'Não registrado no dossiê',
+        noMatches:
+          'Nenhuma tecnologia específica reconhecida — inclua o stack ou responsabilidades da vaga.',
+        noGaps:
+          'Nenhuma tecnologia fora do stack público foi detectada no texto.',
+        adjacentPrefix: 'Adjacente',
+      },
+      terrain: {
+        title: 'Terreno de atividade no GitHub',
+        viewToggleLabel: 'Visualização do mapa de contribuições',
+        flat: 'Plano',
+        terrain: 'Terreno',
+        less: 'Menos',
+        more: 'Mais',
+        dragHint: 'Arraste para girar · setas para navegar',
+        latestRelease: 'Última release',
+        activeDays: (days) => `${days} dias ativos`,
+        streak: (days) => `sequência máx. ${days}d`,
+        windowSummary: (total, weeks) =>
+          `${total.toLocaleString('pt-BR')} contribuições nas últimas ${weeks} semanas`,
+        dayReadout: (count, dayLabel) =>
+          `${count} ${count === 1 ? 'contribuição' : 'contribuições'} em ${dayLabel}`,
+        canvasAria: (total, weeks) =>
+          `Mapa 3D de atividade no GitHub: ${total.toLocaleString('pt-BR')} contribuições em ${weeks} semanas. Use as setas para navegar cada dia.`,
+      },
+      approval: {
+        defaultSubject: 'Contato via dossiê',
+        toLabel: 'Para',
+        subjectLabel: 'Assunto',
+        inboxTag: 'Inbox direto do Marcus',
+        confirmSend: 'Enviar',
+        undo: 'Desfazer',
+        cancel: 'Descartar',
+        dismissed: 'Rascunho descartado.',
+        sentSuccess: 'Mensagem entregue na caixa de entrada do Marcus.',
+        sentReceipt: (name) => `Enviado para ${name} · agora mesmo`,
+        fillRequired: 'Preencha nome, e-mail válido e mensagem antes de enviar.',
+        sendError: 'Não foi possível enviar agora — tente novamente.',
+        offlineFallback: 'Inbox offline no momento — tente por e-mail.',
+        openedMailto: 'Cliente de e-mail aberto com o rascunho.',
+        namePlaceholder: 'Seu nome',
+        emailPlaceholder: 'voce@empresa.com',
+        downloadPt: 'CV (PT-BR)',
+        downloadEn: 'Resume (EN)',
+      },
+      meter: {
+        ariaLabel: (total) => `${total} fontes indexadas. Ver detalhamento`,
+        sourcesUnit: 'fontes',
+        popoverTitle: 'Base indexada',
+        projects: 'Projetos públicos',
+        clients: 'Entregas em clientes',
+        stack: 'Tecnologias',
+        notes: 'Notas do dossiê',
+        posts: 'Registros do Diário',
+        sections: 'Seções do Diário',
+        turns: 'Turnos na sessão',
+        runtimeLabel: 'Local · determinístico',
+        verifiedStatus: 'Dossiê verificado',
+        liveCms: 'CMS ao vivo',
+        staticSeed: 'Base estática',
+        modeLabel: 'Motor',
+        modeAuto: 'Híbrido',
+        modeLocal: 'Local',
+        edgeReady: (model) => `Edge LLM · ${model}`,
+        edgeStandby: 'Local · Edge pronto p/ chave',
+        rateLimitNote: 'Limite de taxa da Edge atingido — respondido pelo motor local determinístico.',
       },
     },
     marquee: ['Construir', 'Aprender', 'Iterar', 'Repetir'],
@@ -403,6 +694,8 @@ export const translations: Record<Locale, Translation> = {
       backHome: 'Back to top',
       themeToLight: 'Switch to the light theme',
       themeToDark: 'Switch to the dark theme',
+      ask: 'Ask',
+      openAsk: 'Open interactive dossier (Ctrl+K)',
     },
     hero: {
       portfolio: 'Portfolio',
@@ -504,6 +797,7 @@ export const translations: Record<Locale, Translation> = {
       cta: 'Write to me',
       blurb:
         'Open to projects, collaborations and sharp conversations on software engineering and applied AI — in Portuguese or English.',
+      askCta: 'Or query the dossier / check role fit (/fit) →',
       form: {
         heading: 'Or send a message right here',
         name: 'Name',
@@ -581,12 +875,161 @@ export const translations: Record<Locale, Translation> = {
         share: 'Share',
         copyLink: 'Copy link',
         copied: 'Link copied',
+        askDossier: 'Ask Dossier',
         readAlso: 'Read next',
         translationAvailable: 'Ler em português',
         notFound: 'Entry not found',
         notFoundBody:
           'This link may have moved, or the entry has not been published yet.',
         backToIndex: 'See all entries',
+      },
+    },
+    agent: {
+      nav: 'Ask',
+      pageTitle: 'Query the dossier',
+      pageHeading: (
+        <>
+          What would you like to know about{' '}
+          <em className="font-display-italic pl-[0.02em] pr-[0.09em] text-ember">Marcus</em>?
+        </>
+      ),
+      pageSubtitle:
+        'Answers grounded in shipped code and client work — or paste a role to map evidence.',
+      drawerHeading: 'Interactive dossier',
+      newChat: 'New thread',
+      expandFull: 'Full page',
+      assistantTurnLabel: 'Dossier response',
+      stoppedNotice: 'Generation stopped.',
+      copyAnswer: 'Copy',
+      copiedAnswer: 'Copied',
+      shareLink: 'Copy link',
+      copiedLink: 'Link copied',
+      followupsLabel: 'Follow-ups',
+      queue: {
+        heading: (count) => (count === 1 ? '1 queued' : `${count} queued`),
+        addHint: 'Press Enter to queue while streaming…',
+        sendNow: 'Send now',
+        remove: 'Remove from queue',
+        clearAll: 'Clear queue',
+      },
+      lenses: {
+        label: 'Lens',
+        recruiter: 'Recruiter',
+        recruiterHint: 'Role fit, impact, and availability',
+        engineer: 'Engineer',
+        engineerHint: 'Architecture, stack, and systems craft',
+        client: 'Client',
+        clientHint: 'Discovery, scoping, and production delivery',
+      },
+      input: {
+        ariaLabel: 'Ask Marcus’s dossier',
+        placeholder: 'Ask anything, type / or paste a job description…',
+        fitPlaceholder: 'Paste a job description or drop a .txt/.md file…',
+        commandsLabel: 'Commands',
+        slashToggle: 'Slash commands',
+        attachFile: 'Attach job description (.txt / .md)',
+        removeCommand: 'Remove command',
+        kbdMove: 'move',
+        kbdPick: 'pick',
+        kbdClose: 'close',
+        send: 'Send',
+        stop: 'Stop',
+      },
+      voice: {
+        start: 'Dictate question by voice',
+        listening: 'Listening… speak your question',
+        discard: 'Discard',
+        unsupported: 'Speech recognition is unavailable in this browser.',
+      },
+      tools: {
+        running: (count) =>
+          count === 1 ? 'Querying 1 source…' : `Querying ${count} sources…`,
+        summary: (count, totalMs, evidenceCount) =>
+          `${count} ${count === 1 ? 'tool' : 'tools'} · ${totalMs}ms · ${evidenceCount} ${evidenceCount === 1 ? 'source' : 'sources'}`,
+        viewJson: 'JSON',
+        hideJson: 'Hide',
+      },
+      citations: {
+        sourcesLabel: 'Sources',
+        openSource: 'Open source',
+      },
+      fit: {
+        heading: 'Evidence-based fit',
+        verifiedShort: 'verified',
+        gapsShort: 'unlisted',
+        copyBrief: 'Copy .md',
+        copiedBrief: 'Copied',
+        downloadBrief: 'Download .md',
+        printPdf: 'PDF',
+        shareLink: 'Copy link',
+        copiedLink: 'Link copied',
+        verifiedLabel: 'Verified evidence',
+        gapsLabel: 'Not listed in public dossier',
+        noMatches:
+          'No specific technologies extracted — include the role’s tech stack or responsibilities.',
+        noGaps:
+          'No technologies outside the public stack were detected in the text.',
+        adjacentPrefix: 'Adjacent',
+      },
+      terrain: {
+        title: 'GitHub Activity Terrain',
+        viewToggleLabel: 'Contribution graph view mode',
+        flat: 'Flat',
+        terrain: 'Terrain',
+        less: 'Less',
+        more: 'More',
+        dragHint: 'Drag to rotate · arrows to inspect',
+        latestRelease: 'Latest release',
+        activeDays: (days) => `${days} active days`,
+        streak: (days) => `${days}d max streak`,
+        windowSummary: (total, weeks) =>
+          `${total.toLocaleString('en-US')} contributions in the last ${weeks} weeks`,
+        dayReadout: (count, dayLabel) =>
+          `${count} ${count === 1 ? 'contribution' : 'contributions'} on ${dayLabel}`,
+        canvasAria: (total, weeks) =>
+          `3D GitHub Activity Terrain: ${total.toLocaleString('en-US')} contributions over ${weeks} weeks. Use arrow keys to read each day.`,
+      },
+      approval: {
+        defaultSubject: 'Dossier inquiry',
+        toLabel: 'To',
+        subjectLabel: 'Subject',
+        inboxTag: 'Direct to Marcus’s inbox',
+        confirmSend: 'Send',
+        undo: 'Undo',
+        cancel: 'Discard',
+        dismissed: 'Draft discarded.',
+        sentSuccess: 'Delivered to Marcus’s inbox.',
+        sentReceipt: (name) => `Sent to ${name} · just now`,
+        fillRequired: 'Please enter your name, valid email, and message first.',
+        sendError: 'Could not send right now — please try again.',
+        offlineFallback: 'Inbox is temporarily offline — please email directly.',
+        openedMailto: 'Opened your email client with the draft.',
+        namePlaceholder: 'Your name',
+        emailPlaceholder: 'you@company.com',
+        downloadPt: 'CV (PT-BR)',
+        downloadEn: 'Resume (EN)',
+      },
+      meter: {
+        ariaLabel: (total) => `${total} indexed sources. Show breakdown`,
+        sourcesUnit: 'sources',
+        popoverTitle: 'Indexed context',
+        projects: 'Public projects',
+        clients: 'Client deliveries',
+        stack: 'Technologies',
+        notes: 'Dossier notes',
+        posts: 'Journal entries',
+        sections: 'Journal sections',
+        turns: 'Session turns',
+        runtimeLabel: 'Local · deterministic',
+        verifiedStatus: 'Verified dossier',
+        liveCms: 'Live CMS',
+        staticSeed: 'Static seed',
+        modeLabel: 'Runtime',
+        modeAuto: 'Hybrid',
+        modeLocal: 'Local',
+        edgeReady: (model) => `Edge LLM · ${model}`,
+        edgeStandby: 'Local · Edge ready for key',
+        rateLimitNote: 'Edge rate limit reached — answered by the local deterministic engine.',
       },
     },
     marquee: ['Build', 'Learn', 'Iterate', 'Repeat'],

@@ -63,6 +63,7 @@ const NAV: NavGroup[] = [
       { to: '/admin/projects', label: 'Projetos', glyph: '▤' },
       { to: '/admin/experience', label: 'Carreira', glyph: '◫' },
       { to: '/admin/profile', label: 'Perfil & Stack', glyph: '◉' },
+      { to: '/admin/dossier', label: 'Dossiê IA', glyph: '◈' },
       { to: '/admin/settings', label: 'Ajustes', glyph: '⚙' },
     ],
   },

@@ -69,8 +69,18 @@ export interface AnalyticsEvent {
   label?: string
   /** Blog events carry the post slug. */
   slug?: string
-  /** `post_share` carries the destination. */
+  /** `post_share` or `agent_handoff` carries the destination channel. */
   channel?: string
+  /** Dossier console metadata (`agent_open`, `agent_query`, `agent_fit`, `agent_share`). */
+  intent?: string
+  lens?: string
+  surface?: string
+  runtime?: string
+  provider?: string
+  fallback?: string
+  matched?: number
+  gaps?: number
+  kind?: string
   createdAt: Date | null
 }
 
@@ -103,6 +113,20 @@ export interface PostPerformance {
   /** Share of openers that reached 75% depth. */
   readRate: number
   shares: number
+}
+
+export interface AgentPerformance {
+  opens: Metric
+  queries: Metric
+  fitRuns: Metric
+  handoffs: Metric
+  shares: Metric
+  avgFitMatched: number
+  avgFitGaps: number
+  byIntent: NamedCount[]
+  byLens: NamedCount[]
+  byProvider: NamedCount[]
+  bySurface: NamedCount[]
 }
 
 export interface AnalyticsSummary {
@@ -141,6 +165,7 @@ export interface AnalyticsSummary {
   /** `[weekday 0–6][hour 0–23]` in `SITE_TZ`. */
   byWeekdayHour: number[][]
   posts: PostPerformance[]
+  agent: AgentPerformance
 }
 
 /* ─── Timezone-correct date helpers ─────────────────────────────────────── */
@@ -232,6 +257,10 @@ const ENGAGEMENT_TYPES = new Set([
   'contact_submit',
   'post_read',
   'post_share',
+  'agent_query',
+  'agent_fit',
+  'agent_handoff',
+  'agent_share',
 ])
 
 /** Section views needed before scrolling alone counts as engagement. */
@@ -260,6 +289,13 @@ interface WindowStats {
   contactSubmits: number
   outboundClicks: number
   postShares: number
+  agentOpens: number
+  agentQueries: number
+  agentFits: number
+  agentHandoffs: number
+  agentShares: number
+  fitMatchedSum: number
+  fitGapsSum: number
   device: Map<string, number>
   browser: Map<string, number>
   os: Map<string, number>
@@ -268,6 +304,10 @@ interface WindowStats {
   section: Map<string, number>
   path: Map<string, number>
   outbound: Map<string, number>
+  agentIntent: Map<string, number>
+  agentLens: Map<string, number>
+  agentProvider: Map<string, number>
+  agentSurface: Map<string, number>
 }
 
 function emptyWindow(): WindowStats {
@@ -283,6 +323,13 @@ function emptyWindow(): WindowStats {
     contactSubmits: 0,
     outboundClicks: 0,
     postShares: 0,
+    agentOpens: 0,
+    agentQueries: 0,
+    agentFits: 0,
+    agentHandoffs: 0,
+    agentShares: 0,
+    fitMatchedSum: 0,
+    fitGapsSum: 0,
     device: new Map(),
     browser: new Map(),
     os: new Map(),
@@ -291,6 +338,10 @@ function emptyWindow(): WindowStats {
     section: new Map(),
     path: new Map(),
     outbound: new Map(),
+    agentIntent: new Map(),
+    agentLens: new Map(),
+    agentProvider: new Map(),
+    agentSurface: new Map(),
   }
 }
 
@@ -358,6 +409,31 @@ function collect(events: AnalyticsEvent[]): WindowStats {
         break
       case 'post_share':
         stats.postShares += 1
+        break
+      case 'agent_open':
+        stats.agentOpens += 1
+        bump(stats.agentSurface, event.surface)
+        break
+      case 'agent_query':
+        stats.agentQueries += 1
+        bump(stats.agentIntent, event.intent)
+        bump(stats.agentLens, event.lens)
+        bump(
+          stats.agentProvider,
+          event.provider ??
+            (event.runtime === 'edge-llm' ? 'edge-llm' : 'local'),
+        )
+        break
+      case 'agent_fit':
+        stats.agentFits += 1
+        if (typeof event.matched === 'number') stats.fitMatchedSum += event.matched
+        if (typeof event.gaps === 'number') stats.fitGapsSum += event.gaps
+        break
+      case 'agent_handoff':
+        stats.agentHandoffs += 1
+        break
+      case 'agent_share':
+        stats.agentShares += 1
         break
     }
   }
@@ -533,6 +609,25 @@ export function summarize(
     topOutbound: rank(cur.outbound, prev.outbound, 6),
     byWeekdayHour,
     posts,
+    agent: {
+      opens: metric(cur.agentOpens, prev.agentOpens),
+      queries: metric(cur.agentQueries, prev.agentQueries),
+      fitRuns: metric(cur.agentFits, prev.agentFits),
+      handoffs: metric(cur.agentHandoffs, prev.agentHandoffs),
+      shares: metric(cur.agentShares, prev.agentShares),
+      avgFitMatched:
+        cur.agentFits > 0
+          ? Math.round((cur.fitMatchedSum / cur.agentFits) * 10) / 10
+          : 0,
+      avgFitGaps:
+        cur.agentFits > 0
+          ? Math.round((cur.fitGapsSum / cur.agentFits) * 10) / 10
+          : 0,
+      byIntent: rank(cur.agentIntent, prev.agentIntent, 8),
+      byLens: rank(cur.agentLens, prev.agentLens, 4),
+      byProvider: rank(cur.agentProvider, prev.agentProvider, 6),
+      bySurface: rank(cur.agentSurface, prev.agentSurface, 4),
+    },
   }
 }
 
@@ -554,6 +649,15 @@ interface EventDoc {
   label?: string
   slug?: string
   channel?: string
+  intent?: string
+  lens?: string
+  surface?: string
+  runtime?: string
+  provider?: string
+  fallback?: string
+  matched?: number
+  gaps?: number
+  kind?: string
   createdAt?: Timestamp | null
 }
 
@@ -575,6 +679,15 @@ function decode(id: string, data: EventDoc): AnalyticsEvent {
     label: data.label,
     slug: data.slug,
     channel: data.channel,
+    intent: data.intent,
+    lens: data.lens,
+    surface: data.surface,
+    runtime: data.runtime,
+    provider: data.provider,
+    fallback: data.fallback,
+    matched: typeof data.matched === 'number' ? data.matched : undefined,
+    gaps: typeof data.gaps === 'number' ? data.gaps : undefined,
+    kind: data.kind,
     createdAt: data.createdAt?.toDate() ?? null,
   }
 }
@@ -644,6 +757,12 @@ export function eventsToCsv(events: AnalyticsEvent[]): string {
     'section',
     'label',
     'channel',
+    'intent',
+    'lens',
+    'surface',
+    'provider',
+    'matched',
+    'gaps',
     'visitorId',
     'sessionId',
     'isNewVisitor',

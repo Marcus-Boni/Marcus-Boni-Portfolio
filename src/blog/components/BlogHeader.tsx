@@ -26,6 +26,7 @@ export function BlogHeader({ routeLang = 'pt' }: { routeLang?: Locale }) {
   const isIndex = normalized === '/blog' || normalized === '/en/blog'
   const activeLocale: Locale = isIndex ? (routeLang === 'en' ? 'en' : locale) : locale
   const indexTo = activeLocale === 'en' ? '/en/blog' : '/blog'
+  const askTo = activeLocale === 'en' ? '/en/ask' : '/ask'
 
   const switchLocale = (next: Locale) => {
     if (isIndex) {
@@ -86,6 +87,12 @@ export function BlogHeader({ routeLang = 'pt' }: { routeLang?: Locale }) {
         </div>
 
         <div className="flex items-center gap-6">
+          <Link
+            to={askTo}
+            className="hidden border border-line px-2.5 py-1 font-mono text-[10px] tracking-[0.18em] text-bone-dim uppercase transition-colors hover:border-ember hover:text-ember sm:inline-block"
+          >
+            {t.header.ask}
+          </Link>
           <Link
             to="/"
             className="hidden font-mono text-[11px] tracking-[0.18em] text-bone-dim uppercase transition-colors hover:text-ember sm:block"

@@ -44,6 +44,7 @@ Lenis e Canvas 2D, do padrão que as bibliotecas demonstram.
 | Notas de margem | Annotated Text (Componentry) | `MarginNote` em `src/blog/components/directives.tsx`, `src/blog/lib/rehype-sidenotes.ts` |
 | Passo a passo com painel fixo | Sticky Scroll Cards, Scroll Choreography (Componentry), Card stack scroll (Skiper `skiper16`) | `src/blog/components/steps.tsx` |
 | Barra sobre o trecho selecionado | Custom tooltip (Skiper `skiper101`) | `src/blog/components/QuoteShare.tsx` |
+| Console de dossiê (`/ask`, `⌘K`) | AI Input Selector (`AI-01`), AI Text Loading (`AI-04`), AI Voice (`AI-05`), AI Tool Calls (`AI-07`), AI Send (`AI-10`), AI Context Meter (`AI-16`), AI Inline Citations (`AI-17`) (KokonutUI) | `src/agent/components/*` |
 
 ## Bibliotecas
 

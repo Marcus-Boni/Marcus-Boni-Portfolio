@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 
+import { buildBlogAskPath } from '@/agent/share'
 import { BlogImage } from '@/blog/components/BlogImage'
 import { PostBody } from '@/blog/components/PostBody'
 import { RelatedCard } from '@/blog/components/PostCard'
@@ -51,7 +52,7 @@ export function BlogPost({ routeLang = 'pt' }: { routeLang?: Locale }) {
   const { locale, setLocale, t } = useLanguage()
   const { post, status, retry } = usePost(slug)
   const { posts } = usePostList()
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
   const navigate = useNavigate()
   const articleRef = useRef<HTMLDivElement>(null)
 
@@ -94,6 +95,26 @@ export function BlogPost({ routeLang = 'pt' }: { routeLang?: Locale }) {
 
   usePostHead(post, status, legacyTranslation, locale, pathname, activeLang)
   useReleaseServerDocument(status === 'ready')
+
+  // Deep-links with `#heading` (e.g. section citations from the Dossier console)
+  // land before Firestore resolves the post body; scroll once the heading mounts.
+  useEffect(() => {
+    if (status !== 'ready' || !hash || hash.length < 2) return
+    let targetId = hash.slice(1)
+    try {
+      targetId = decodeURIComponent(targetId)
+    } catch {
+      /* keep raw id */
+    }
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(targetId)?.scrollIntoView({
+        behavior: reducedMotion ? 'instant' : 'smooth',
+        block: 'start',
+      })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [status, hash, body])
 
   const { setAlternate } = useBlogLocaleSwitch()
   useEffect(() => {
@@ -459,6 +480,12 @@ export function BlogPost({ routeLang = 'pt' }: { routeLang?: Locale }) {
           slug={post.slug}
           url={shareUrl}
           indexPath={indexPath}
+          askPath={buildBlogAskPath({
+            locale: activeLang,
+            title: view.title,
+            tags: view.tags,
+          })}
+          askLabel={t.blog.post.askDossier}
           title={view.title}
           updated={t.blog.post.updated(formatPostDate(post.updatedAt, locale))}
           updatedAt={validDate(post.updatedAt)}
@@ -576,6 +603,8 @@ function PostFooter({
   slug,
   url,
   indexPath,
+  askPath,
+  askLabel,
   title,
   updated,
   updatedAt,
@@ -587,6 +616,8 @@ function PostFooter({
   slug: string
   url: string
   indexPath: string
+  askPath: string
+  askLabel: string
   title: string
   updated: string
   updatedAt?: string
@@ -648,6 +679,15 @@ function PostFooter({
           >
             {copied ? copiedLabel : copyLabel}
           </button>
+          <span aria-hidden className="text-line">
+            /
+          </span>
+          <Link
+            to={askPath}
+            className="font-mono text-[10px] tracking-[0.2em] text-ember uppercase transition-colors hover:text-bone"
+          >
+            {askLabel} ↗
+          </Link>
         </div>
       </div>
 

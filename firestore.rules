@@ -3,6 +3,8 @@ rules_version = '2';
 // Security model for the portfolio admin:
 //  • `content/site` — the editable portfolio content. Public read (the site
 //    hydrates from it), authenticated write (only the admin can edit).
+//  • `content/dossier` — editable AI dossier editorial notes & FAQs (falls back
+//    to static defaults in `src/agent/knowledge.ts`). Public read, admin write.
 //  • `messages` — contact-form submissions. Anyone can create, only the admin
 //    can read / update / delete.
 //  • `analytics` — visit + interaction events. Anyone can create, only the
@@ -40,6 +42,40 @@ service cloud.firestore {
       return resource.data.status in ['published', 'unlisted'];
     }
 
+    function isValidPublicMessage() {
+      let data = request.resource.data;
+      return data.keys().hasOnly([
+          'name', 'email', 'message', 'locale', 'read', 'createdAt',
+          'referrerHost', 'country'
+        ])
+        && data.keys().hasAll(['name', 'email', 'message', 'locale', 'read', 'createdAt'])
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && data.email is string && data.email.size() >= 5 && data.email.size() <= 200
+        && data.email.matches('^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$')
+        && data.message is string && data.message.size() >= 1 && data.message.size() <= 5000
+        && data.locale in ['pt', 'en']
+        && data.read == false
+        && data.createdAt == request.time
+        && (!('referrerHost' in data) || (data.referrerHost is string && data.referrerHost.size() <= 120))
+        && (!('country' in data) || (data.country is string && data.country.size() <= 80));
+    }
+
+    function isValidAnalyticsEvent() {
+      let data = request.resource.data;
+      return data.keys().size() <= 32
+        && data.keys().hasAll(['type', 'path', 'visitorId', 'sessionId', 'createdAt'])
+        && data.type in [
+          'pageview', 'section_view', 'outbound_click', 'cv_download',
+          'contact_submit', 'language_change', 'blog_index_view',
+          'post_view', 'post_read', 'post_share',
+          'agent_open', 'agent_query', 'agent_fit', 'agent_handoff', 'agent_share'
+        ]
+        && data.path is string && data.path.size() >= 1 && data.path.size() <= 240
+        && data.visitorId is string && data.visitorId.size() >= 4 && data.visitorId.size() <= 80
+        && data.sessionId is string && data.sessionId.size() >= 4 && data.sessionId.size() <= 80
+        && data.createdAt == request.time;
+    }
+
     match /content/{docId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -51,12 +87,12 @@ service cloud.firestore {
     }
 
     match /messages/{docId} {
-      allow create: if true;
+      allow create: if isValidPublicMessage();
       allow read, update, delete: if isAdmin();
     }
 
     match /analytics/{docId} {
-      allow create: if true;
+      allow create: if isValidAnalyticsEvent();
       allow read: if isAdmin();
       allow update, delete: if false;
     }

@@ -9,6 +9,7 @@ import {
 } from '../lib/accept.ts'
 import {
   aboutMarkdown,
+  askMarkdown,
   blogIndexMarkdown,
   contactMarkdown,
   developersMarkdown,
@@ -137,6 +138,12 @@ async function buildMarkdown(
     case 'home':
       return { body: homeMarkdown(), status: 200 }
 
+    case 'ask':
+      return {
+        body: askMarkdown(url.pathname.startsWith('/en/') ? 'en' : 'pt'),
+        status: 200,
+      }
+
     case 'developers':
       return { body: developersMarkdown(), status: 200 }
 
@@ -264,6 +271,8 @@ export const config: Config = {
     '/admin/*',
     // `api.ts` owns everything under /api, errors included.
     '/api/*',
+    // `/agent/v1/*` hosts JSON/SSE edge endpoints (`agent-publish`, `agent-chat`).
+    '/agent/*',
     '/*.js',
     '/*.mjs',
     '/*.css',

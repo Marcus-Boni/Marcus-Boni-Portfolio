@@ -27,6 +27,11 @@ cookies, sem fingerprint, sem IP.
 | `cv_download` | Download do currículo |
 | `contact_submit` | Envio do formulário |
 | `language_change` | Troca de idioma |
+| `agent_open` | Abertura do console do dossiê (`⌘K` ou `/ask`) |
+| `agent_query` | Consulta concluída no dossiê (`intent`, `lens`, `surface`, `runtime`, `provider`, `fallback`) |
+| `agent_fit` | Análise de aderência `/fit` (`matched`, `gaps`, `lens`) |
+| `agent_handoff` | Envio de handoff aprovado do dossiê para o inbox |
+| `agent_share` | Cópia de resposta/briefing, download `.md` ou link compartilhável do dossiê (`kind`) |
 
 > **Ao adicionar uma rota nova, garanta que ela dispare `pageview`.** O blog
 > ficou de fora da métrica principal de visitas até isso ser corrigido: ele só
@@ -43,7 +48,7 @@ cookies, sem fingerprint, sem IP.
 | **Visitantes únicos** | `visitorId` distintos. Quem limpa o `localStorage` vira um novo visitante. |
 | **Sessões** | `sessionId` distintos. A sessão morre ao fechar a aba. |
 | **Páginas por sessão** | Visitas ÷ sessões. |
-| **Taxa de rejeição** | Sessões **sem engajamento** ÷ sessões. Uma sessão engaja se tiver ≥2 visitas, **ou** ≥3 `section_view`, **ou** qualquer `outbound_click` / `cv_download` / `contact_submit` / `post_read` / `post_share`. |
+| **Taxa de rejeição** | Sessões **sem engajamento** ÷ sessões. Uma sessão engaja se tiver ≥2 visitas, **ou** ≥3 `section_view`, **ou** qualquer `outbound_click` / `cv_download` / `contact_submit` / `post_read` / `post_share` / `agent_query` / `agent_fit` / `agent_handoff` / `agent_share`. |
 | **Duração média** | Último menos primeiro evento da sessão. Sessões de evento único não entram (não têm duração medível) e sessões acima de **2 horas** também não. |
 | **Taxa de leitura** | `post_read` ÷ `post_view` por post. Separa quem abriu de quem leu. |
 

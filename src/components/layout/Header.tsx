@@ -8,6 +8,7 @@ import { sectionIds } from '@/data/profile'
 import { useMagnetic } from '@/hooks/useMagnetic'
 import { useScrollHeader } from '@/hooks/useScrollHeader'
 import { useLanguage } from '@/i18n/LanguageContext'
+import { triggerAgentDrawer } from '@/lib/agent-trigger'
 import { HoverItalic } from '@/components/ui/HoverItalic'
 import { LanguageToggle } from '@/components/ui/LanguageToggle'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
@@ -47,6 +48,7 @@ export function Header() {
   const lenis = useLenis()
   const { t, locale } = useLanguage()
   const blogTo = locale === 'en' ? '/en/blog' : '/blog'
+  const askTo = locale === 'en' ? '/en/ask' : '/ask'
   const { content } = useSiteContent()
   const { profile, socials } = content
   const { scrolled, hidden } = useScrollHeader(open)
@@ -99,7 +101,17 @@ export function Header() {
             <LiveClock />
           </div>
 
-          <div className="flex items-center gap-6 md:gap-8">
+          <div className="flex items-center gap-5 md:gap-7">
+            <button
+              type="button"
+              onClick={() => triggerAgentDrawer()}
+              aria-label={t.header.openAsk}
+              data-cursor="link"
+              className="hidden items-center gap-2 border border-line px-2.5 py-1 font-mono text-[10px] tracking-[0.18em] text-bone-dim uppercase transition-colors hover:border-ember hover:text-ember sm:inline-flex"
+            >
+              <span>{t.header.ask}</span>
+              <kbd className="font-mono text-[9px] text-smoke">⌘K</kbd>
+            </button>
             <Link
               to={blogTo}
               className="hidden font-mono text-[11px] tracking-[0.18em] text-bone-dim uppercase transition-colors hover:text-ember sm:block"
@@ -210,6 +222,34 @@ export function Header() {
                   </span>
                   <HoverItalic
                     text={t.blog.label}
+                    className="text-[clamp(2.5rem,8vw,5.5rem)] leading-[1.05] text-bone transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-3 lg-short:text-[clamp(2rem,7vh,3.5rem)]"
+                  />
+                </Link>
+              </motion.li>
+              <motion.li
+                initial={{ y: 80, opacity: 0 }}
+                animate={{
+                  y: 0,
+                  opacity: 1,
+                  transition: {
+                    delay: 0.25 + (sectionIds.length + 1) * 0.07,
+                    duration: 0.7,
+                    ease: [0.16, 1, 0.3, 1],
+                  },
+                }}
+                exit={{ opacity: 0, transition: { duration: 0.2 } }}
+              >
+                <Link
+                  to={askTo}
+                  onClick={() => setOpen(false)}
+                  data-cursor="link"
+                  className="group flex items-baseline gap-4 py-1 text-left lg-short:py-0.5"
+                >
+                  <span className="font-mono text-xs text-ember transition-colors duration-300">
+                    ⌘K
+                  </span>
+                  <HoverItalic
+                    text={t.agent.pageTitle}
                     className="text-[clamp(2.5rem,8vw,5.5rem)] leading-[1.05] text-bone transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-3 lg-short:text-[clamp(2rem,7vh,3.5rem)]"
                   />
                 </Link>

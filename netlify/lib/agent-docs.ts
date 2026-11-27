@@ -160,6 +160,41 @@ email is the front door.
 ${footer()}`
 }
 
+/* ─── /ask ──────────────────────────────────────────────────────────────── */
+
+/** The interactive dossier console route, represented as Markdown for crawlers/agents. */
+export function askMarkdown(lang: BlogLocale = 'pt'): string {
+  if (lang === 'en') {
+    return `# Interactive Dossier — Marcus Boni
+
+> Evidence-first local agentic console for recruiters, engineers and clients at [${SITE_URL}/en/ask](${SITE_URL}/en/ask).
+
+This page runs a deterministic local retrieval runtime over the same structured data published by \`/api/v1/*\`:
+
+- \`/fit <job description>\` — cross-checks pasted requirements against verified production engagements and public repositories, listing honest gaps explicitly.
+- \`/stack\`, \`/projects\`, \`/experience\`, \`/posts\` — runs inspectable local tool calls with inline citations.
+- \`/cv\` & \`/contact\` — approval-gated actions to download PT/EN PDF résumés or submit an inquiry to the site inbox.
+
+For programmatic access without a browser, call the OpenAPI 3.1 endpoints directly at [${SITE_URL}/developers](${SITE_URL}/developers) or fetch [${SITE_URL}/llms-full.txt](${SITE_URL}/llms-full.txt).
+
+${footer()}`
+  }
+
+  return `# Dossiê Interativo — Marcus Boni
+
+> Console agêntico local orientado a evidências para recrutadores, engenheiros e clientes em [${SITE_URL}/ask](${SITE_URL}/ask).
+
+Esta página executa um motor determinístico local sobre os mesmos dados publicados em \`/api/v1/*\`:
+
+- \`/fit <descrição da vaga>\` — cruza requisitos colados contra entregas em produção e repositórios públicos, listando lacunas com transparência.
+- \`/stack\`, \`/projects\`, \`/experience\`, \`/posts\` — executa chamadas de ferramentas inspecionáveis com citações inline.
+- \`/cv\` e \`/contact\` — ações com aprovação explícita para baixar currículos em PDF (PT/EN) ou enviar mensagem direto ao inbox.
+
+Para acesso programático sem navegador, use diretamente a API OpenAPI 3.1 em [${SITE_URL}/developers](${SITE_URL}/developers) ou leia [${SITE_URL}/llms-full.txt](${SITE_URL}/llms-full.txt).
+
+${footer()}`
+}
+
 /* ─── /developers ───────────────────────────────────────────────────────── */
 
 /**

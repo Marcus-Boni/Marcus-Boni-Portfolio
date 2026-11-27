@@ -46,6 +46,10 @@ function redirectRules(): Rule[] {
 describe('matchRoute', () => {
   const cases: [pathname: string, expected: ReturnType<typeof matchRoute>][] = [
     ['/', 'home'],
+    ['/ask', 'ask'],
+    ['/ask/', 'ask'],
+    ['/en/ask', 'ask'],
+    ['/en/ask/', 'ask'],
     ['/blog', 'blog-index'],
     ['/blog/', 'blog-index'],
     ['/blog/hello-world', 'blog-post'],

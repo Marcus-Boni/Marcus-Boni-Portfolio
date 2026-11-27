@@ -85,3 +85,15 @@
 [[edge_functions]]
   function = "agent-publish"
   path = "/agent/v1/posts"
+
+# Phase 2 hybrid dossier console SSE synthesis. Optional server-side LLM proxy
+# grounded in retrieved portfolio evidence; returns 503 when unconfigured so the
+# UI falls back cleanly to the local deterministic runtime.
+[[edge_functions]]
+  function = "agent-chat"
+  path = "/agent/v1/chat"
+
+# Phase 4 cached GitHub recent releases & repository activity feed for the dossier console.
+[[edge_functions]]
+  function = "agent-github"
+  path = "/agent/v1/github"

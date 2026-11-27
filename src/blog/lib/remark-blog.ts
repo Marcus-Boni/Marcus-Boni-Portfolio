@@ -41,8 +41,18 @@ import { visit } from 'unist-util-visit'
  * so a typo in the editor never blanks the whole post.
  */
 
-const CONTAINER_DIRECTIVES = new Set(['callout', 'quote', 'gallery', 'takeaways', 'report-comparison', 'steps', 'step'])
-const LEAF_DIRECTIVES = new Set(['youtube', 'video', 'repo'])
+const CONTAINER_DIRECTIVES = new Set([
+  'callout',
+  'quote',
+  'gallery',
+  'takeaways',
+  'report-comparison',
+  'steps',
+  'step',
+  'dossier-ask',
+  'ai-tokens',
+])
+const LEAF_DIRECTIVES = new Set(['youtube', 'video', 'repo', 'dossier-ask'])
 
 interface BlockNode {
   type: string
@@ -129,6 +139,17 @@ function arrangeSteps(node: BlockNode) {
   ]
 }
 
+function collectPlainText(node: BlockNode): string {
+  if (typeof node.value === 'string') return node.value
+  if (!node.children || node.children.length === 0) return ''
+  return node.children
+    .map((child) => {
+      const text = collectPlainText(child)
+      return child.type === 'paragraph' ? `${text}\n` : text
+    })
+    .join('')
+}
+
 export function remarkBlogDirectives() {
   return (tree: Root) => {
     visit(tree, (node) => {
@@ -152,6 +173,12 @@ export function remarkBlogDirectives() {
       // Before the attributes are read: this rewrites them, and the visitor
       // then walks into the regrouped children, steps included.
       if (node.name === 'steps') arrangeSteps(node)
+
+      if (node.name === 'ai-tokens') {
+        const spec = collectPlainText(node).trim()
+        node.attributes = { ...node.attributes, spec }
+        node.children = []
+      }
 
       data.hName = `x-${node.name}`
       data.hProperties = Object.fromEntries(
