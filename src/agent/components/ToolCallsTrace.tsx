@@ -10,6 +10,7 @@ import {
   IconBriefcase,
   IconChevron,
   IconFileText,
+  IconGitBranch,
   IconLayers,
   IconMail,
   IconSearch,
@@ -39,6 +40,8 @@ function iconForTool(name: ToolName) {
       return IconBriefcase
     case 'listProjects':
       return IconSearch
+    case 'getRecentActivity':
+      return IconGitBranch
     case 'listPosts':
       return IconFileText
     case 'matchRole':

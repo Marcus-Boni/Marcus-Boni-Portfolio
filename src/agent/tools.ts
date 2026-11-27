@@ -3,6 +3,7 @@ import type { SiteContent } from '@/content/types'
 import { cvFiles } from '@/data/profile'
 import type { Locale } from '@/i18n/translations'
 
+import type { GitHubActivityPayload } from './github-activity'
 import type { IndexedPostSection } from './post-index'
 import {
   analyzeJobFit,
@@ -162,6 +163,62 @@ export function runListProjects(
             : locale === 'pt'
               ? `${content.projects.length} projetos selecionados`
               : `${content.projects.length} selected projects`,
+      }
+    },
+  )
+}
+
+export function runGetRecentActivity(
+  activity: GitHubActivityPayload | null | undefined,
+  content: SiteContent,
+  locale: Locale,
+) {
+  return measure<Record<string, unknown>>(
+    {
+      name: 'getRecentActivity',
+      endpoint: 'GET /agent/v1/github',
+      label: locale === 'pt' ? 'Consultar atividade recente no GitHub' : 'Fetch live GitHub activity',
+      args: { username: activity?.username ?? 'Marcus-Boni' },
+    },
+    () => {
+      if (!activity || (activity.releases.length === 0 && activity.recentRepos.length === 0)) {
+        return {
+          data: {
+            live: false,
+            repositoryCount: content.profile.repoCount,
+            githubUrl: content.profile.github,
+          },
+          summary:
+            locale === 'pt'
+              ? `Feed ao vivo indisponível · usando ${content.profile.repoCount}+ repos publicados`
+              : `Live feed unavailable · using ${content.profile.repoCount}+ published repos`,
+        }
+      }
+
+      return {
+        data: {
+          live: true,
+          username: activity.username,
+          fetchedAt: activity.fetchedAt,
+          cached: activity.cached,
+          releases: activity.releases.map((r) => ({
+            repo: r.repo,
+            tag: r.tag,
+            publishedAt: r.publishedAt,
+            url: r.url,
+          })),
+          recentRepos: activity.recentRepos.map((repo) => ({
+            name: repo.name,
+            language: repo.language,
+            pushedAt: repo.pushedAt,
+            stars: repo.stars,
+            url: repo.url,
+          })),
+        },
+        summary:
+          locale === 'pt'
+            ? `${activity.releases.length} release(s) · ${activity.recentRepos.length} repo(s) recentes`
+            : `${activity.releases.length} release(s) · ${activity.recentRepos.length} recent repo(s)`,
       }
     },
   )

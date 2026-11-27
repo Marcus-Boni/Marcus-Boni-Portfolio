@@ -378,6 +378,18 @@ export const SLASH_COMMANDS: readonly SlashCommandDef[] = [
     },
   },
   {
+    command: '/activity',
+    label: { pt: 'Atividade no GitHub', en: 'GitHub activity' },
+    description: {
+      pt: 'Consulta releases recentes e repositórios atualizados ao vivo no GitHub',
+      en: 'Fetch live recent releases and pushed repositories from GitHub',
+    },
+    template: {
+      pt: '/activity Quais são as últimas releases e atualizações recentes no GitHub?',
+      en: '/activity What are the latest GitHub releases and recent updates?',
+    },
+  },
+  {
     command: '/experience',
     label: { pt: 'Entregas em clientes', en: 'Client engagements' },
     description: {

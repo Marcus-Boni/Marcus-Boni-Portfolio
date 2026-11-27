@@ -226,3 +226,36 @@ export function IconLink(props: IconProps) {
     </svg>
   )
 }
+
+export function IconPrinter(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4.5 5.5V2.5h7v3" />
+      <rect x="2.2" y="5.5" width="11.6" height="5.2" rx="1.2" />
+      <rect x="4.5" y="9" width="7" height="4.5" rx="0.6" />
+    </svg>
+  )
+}
+
+export function IconGitBranch(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="5" cy="3.8" r="1.6" />
+      <circle cx="5" cy="12.2" r="1.6" />
+      <circle cx="11.4" cy="6.2" r="1.6" />
+      <path d="M5 5.4v5.2" />
+      <path d="M11.4 7.8c0 2.1-1.4 3.4-4.8 3.6" />
+    </svg>
+  )
+}
+
+export function IconQueue(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M2.5 4h11" />
+      <path d="M2.5 8h7.5" />
+      <path d="M2.5 12h6" />
+      <path d="M11 10.5l2.5 1.5-2.5 1.5" />
+    </svg>
+  )
+}

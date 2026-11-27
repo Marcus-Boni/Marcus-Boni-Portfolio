@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 
 import { handleAgentChat } from './netlify/lib/agent-chat.ts'
+import { handleGitHubActivity } from './netlify/lib/github-activity.ts'
 
 /**
  * Dev-only middleware that mounts the exact Netlify Edge Function handler
@@ -75,6 +76,23 @@ function agentChatDevPlugin(env: Record<string, string>): Plugin {
             reader.releaseLock()
             res.end()
           }
+        } catch (err) {
+          next(err)
+        }
+      })
+
+      server.middlewares.use('/agent/v1/github', async (req, res, next) => {
+        try {
+          const host = req.headers.host ?? 'localhost:5173'
+          const url = new URL(req.originalUrl ?? '/agent/v1/github', `http://${host}`)
+          const webReq = new Request(url.toString(), { method: req.method ?? 'GET' })
+          const webRes = await handleGitHubActivity(webReq, {
+            env: (key) => env[key] ?? process.env[key],
+          })
+          res.statusCode = webRes.status
+          webRes.headers.forEach((value, key) => res.setHeader(key, value))
+          const text = await webRes.text()
+          res.end(text)
         } catch (err) {
           next(err)
         }

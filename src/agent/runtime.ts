@@ -4,6 +4,11 @@ import { cvFiles } from '@/data/profile'
 import type { Locale } from '@/i18n/translations'
 
 import { activeKnowledgeNotes } from './dossier-cms'
+import type {
+  GitHubActivityPayload,
+  GitHubReleaseItem,
+  GitHubRepoActivity,
+} from './github-activity'
 import type { KnowledgeNote } from './knowledge'
 import { extractRelevantSnippet, type IndexedPostSection } from './post-index'
 import {
@@ -20,6 +25,7 @@ import {
 import {
   runGetExperience,
   runGetProfile,
+  runGetRecentActivity,
   runListPosts,
   runListProjects,
   runListTechnologies,
@@ -153,6 +159,63 @@ function postSectionCitation(
     excerpt,
     href: section.href,
     meta: shortSectionChipLabel(headingLabel, locale),
+  }
+}
+
+function shortIsoDate(iso: string, locale: Locale): string {
+  if (!iso) return ''
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso.slice(0, 10)
+  return new Intl.DateTimeFormat(locale === 'pt' ? 'pt-BR' : 'en-US', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date)
+}
+
+function githubReleaseCitation(
+  release: GitHubReleaseItem,
+  ordinal: number,
+  locale: Locale,
+): Citation {
+  const when = shortIsoDate(release.publishedAt, locale)
+  return {
+    id: `GH·${String(ordinal).padStart(2, '0')}`,
+    kind: 'project',
+    title: `${release.repo} ${release.tag}`,
+    subtitle: when ? `Release · ${when}` : 'GitHub Release',
+    excerpt:
+      release.summary ||
+      (locale === 'pt'
+        ? `Release ${release.tag} publicada em ${release.repo}.`
+        : `Release ${release.tag} published on ${release.repo}.`),
+    href: release.url,
+    external: true,
+    meta: release.tag,
+  }
+}
+
+function githubRepoCitation(
+  repo: GitHubRepoActivity,
+  ordinal: number,
+  locale: Locale,
+): Citation {
+  const when = shortIsoDate(repo.pushedAt, locale)
+  return {
+    id: `GH·${String(ordinal).padStart(2, '0')}`,
+    kind: 'project',
+    title: repo.name,
+    subtitle: [repo.language, when ? (locale === 'pt' ? `atualizado ${when}` : `updated ${when}`) : '']
+      .filter(Boolean)
+      .join(' · '),
+    excerpt:
+      repo.description ||
+      (locale === 'pt'
+        ? `Repositório público atualizado recentemente no GitHub (${repo.name}).`
+        : `Public GitHub repository updated recently (${repo.name}).`),
+    href: repo.url,
+    external: true,
+    meta: repo.language ?? 'GitHub',
   }
 }
 
@@ -294,6 +357,7 @@ function composeResponse(params: {
   posts: PostMeta[]
   knowledgeNotes?: readonly KnowledgeNote[]
   postSections?: readonly IndexedPostSection[]
+  githubActivity?: GitHubActivityPayload | null
   locale: Locale
   lens: AgentLens
 }): ComposedTurn {
@@ -306,6 +370,7 @@ function composeResponse(params: {
     posts,
     knowledgeNotes,
     postSections = [],
+    githubActivity,
     locale,
     lens,
   } = params
@@ -516,6 +581,84 @@ function composeResponse(params: {
 
       return {
         text: [lead.projectsIntro, items.join('\n'), footerLine].join('\n\n'),
+        citations: dedupeCitations(citations),
+      }
+    }
+
+    case 'activity': {
+      const releases = githubActivity?.releases ?? []
+      const recentRepos = githubActivity?.recentRepos ?? []
+
+      if (releases.length > 0 || recentRepos.length > 0) {
+        let ordinal = 1
+        const releaseLines: string[] = []
+        for (const release of releases.slice(0, 4)) {
+          const cit = githubReleaseCitation(release, ordinal++, locale)
+          citations.push(cit)
+          const when = shortIsoDate(release.publishedAt, locale)
+          releaseLines.push(
+            `- **${release.repo} ${release.tag}**${when ? ` (${when})` : ''} [${cit.id}]${release.summary ? ` — ${release.summary}` : ''}`,
+          )
+        }
+
+        const releaseRepoNames = new Set(releases.map((r) => r.repo.toLowerCase()))
+        const extraRepos = recentRepos
+          .filter((repo) => !releaseRepoNames.has(repo.name.toLowerCase()))
+          .slice(0, 4)
+
+        const repoLines: string[] = []
+        for (const repo of extraRepos) {
+          const cit = githubRepoCitation(repo, ordinal++, locale)
+          citations.push(cit)
+          const when = shortIsoDate(repo.pushedAt, locale)
+          const metaParts = [repo.language, when].filter(Boolean).join(' · ')
+          repoLines.push(
+            `- **${repo.name}**${metaParts ? ` (${metaParts})` : ''} [${cit.id}]${repo.description ? ` — ${repo.description}` : ''}`,
+          )
+        }
+
+        const paragraphs: string[] = [
+          isPt
+            ? `Atividade pública recente obtida ao vivo no GitHub (**@${githubActivity?.username ?? 'Marcus-Boni'}**):`
+            : `Live recent public activity from GitHub (**@${githubActivity?.username ?? 'Marcus-Boni'}**):`,
+        ]
+        if (releaseLines.length > 0) {
+          paragraphs.push(
+            (isPt ? '**Releases recentes:**\n' : '**Recent releases:**\n') +
+              releaseLines.join('\n'),
+          )
+        }
+        if (repoLines.length > 0) {
+          paragraphs.push(
+            (isPt ? '**Repositórios atualizados recentemente:**\n' : '**Recently updated repositories:**\n') +
+              repoLines.join('\n'),
+          )
+        }
+
+        return {
+          text: paragraphs.join('\n\n'),
+          citations: dedupeCitations(citations),
+        }
+      }
+
+      // Graceful offline / rate-limit fallback using verified static project entries
+      for (const proj of content.projects.slice(0, 4)) {
+        citations.push(projectCitation(proj, locale))
+      }
+      const fallbackItems = content.projects
+        .slice(0, 4)
+        .map(
+          (proj) =>
+            `- **${proj.title}** (${proj.year} · ${proj.stack.join(', ')}) [${proj.index}] — ${proj.description[locale]}`,
+        )
+
+      return {
+        text: [
+          isPt
+            ? `Não foi possível consultar o feed ao vivo do GitHub neste instante — aqui estão os projetos mais recentes registrados no dossiê (${content.profile.repoCount}+ repositórios públicos):`
+            : `The live GitHub feed is temporarily unavailable — here are the latest featured projects recorded in the dossier (${content.profile.repoCount}+ public repositories):`,
+          fallbackItems.join('\n'),
+        ].join('\n\n'),
         citations: dedupeCitations(citations),
       }
     }
@@ -901,10 +1044,26 @@ export function prepareGroundedTurn(
   input: string,
   context: Pick<
     AgentRuntimeContext,
-    'content' | 'posts' | 'knowledgeNotes' | 'postSections' | 'locale' | 'lens' | 'history'
+    | 'content'
+    | 'posts'
+    | 'knowledgeNotes'
+    | 'postSections'
+    | 'githubActivity'
+    | 'locale'
+    | 'lens'
+    | 'history'
   >,
 ): GroundedTurnPlan {
-  const { content, posts, knowledgeNotes, postSections, locale, lens, history } = context
+  const {
+    content,
+    posts,
+    knowledgeNotes,
+    postSections,
+    githubActivity,
+    locale,
+    lens,
+    history,
+  } = context
   const effectiveInput = resolveFollowUpInput(input, history, content)
   const { intent, signals, slash } = classifyIntent(effectiveInput, content, {
     knowledgeNotes,
@@ -932,6 +1091,12 @@ export function prepareGroundedTurn(
       break
     case 'projects':
       plannedTools.push(() => runListProjects(query, content, signals, locale))
+      break
+    case 'activity':
+      plannedTools.push(
+        () => runGetRecentActivity(githubActivity, content, locale),
+        () => runListProjects(query, content, signals, locale),
+      )
       break
     case 'experience':
       plannedTools.push(() => runGetExperience(query, content, signals, locale))
@@ -983,6 +1148,7 @@ export function prepareGroundedTurn(
     posts,
     knowledgeNotes,
     postSections,
+    githubActivity,
     locale,
     lens,
   })

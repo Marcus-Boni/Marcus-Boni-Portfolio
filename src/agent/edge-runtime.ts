@@ -31,7 +31,7 @@ const EDGE_CHAT_ENDPOINT = '/agent/v1/chat'
 const PROBE_TIMEOUT_MS = 2_500
 const CONNECT_TIMEOUT_MS = 11_000
 
-const CITATION_BRACKET_RE = /\[(\d{1,2}|EXP·\d{2}|POST·\d{2}|DOC·\d{2})\]/g
+const CITATION_BRACKET_RE = /\[(\d{1,2}|EXP·\d{2}|POST·\d{2}|DOC·\d{2}|GH·\d{2})\]/g
 const REFINEMENT_FOLLOW_UP_RE =
   /\b(resum[aeo]|sintetiz[ae]|simplifi|detalh[ae]|explique|compare|comparar|traduz|em \d+ (?:bullet|linha|ponto|topic)|curto|curtos|objetivo|para um cto|para o cto|para recrutador|summarize|summary|shorten|bullet|bullets|tl;?dr|translate|simplify|elaborate|compare)\b/i
 

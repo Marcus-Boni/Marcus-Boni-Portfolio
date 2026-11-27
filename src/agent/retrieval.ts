@@ -271,6 +271,9 @@ export function classifyIntent(
   if (slash.command === '/fit') return { intent: 'fit', signals, slash }
   if (slash.command === '/stack') return { intent: 'stack', signals, slash }
   if (slash.command === '/projects') return { intent: 'projects', signals, slash }
+  if (slash.command === '/activity' || slash.command === '/releases') {
+    return { intent: 'activity', signals, slash }
+  }
   if (slash.command === '/experience') return { intent: 'experience', signals, slash }
   if (slash.command === '/posts') return { intent: 'posts', signals, slash }
   if (slash.command === '/cv' || slash.command === '/resume') return { intent: 'cv', signals, slash }
@@ -342,6 +345,15 @@ export function classifyIntent(
       return { intent: 'posts', signals, slash }
     }
     return { intent: 'experience', signals, slash }
+  }
+
+  // 8b. Live GitHub activity / recent releases / latest commits
+  if (
+    /\b(ultima release|ultimas releases|latest release|recent release|recent releases|releases recentes|atividade recente|recent activity|recent commits|commits recentes|ultimos commits|construiu recentemente|built recently|shipped recently|atualizacoes recentes|recent updates|novidades no github|github activity)\b/i.test(
+      norm,
+    )
+  ) {
+    return { intent: 'activity', signals, slash }
   }
 
   // 9. Specific projects or portfolio works

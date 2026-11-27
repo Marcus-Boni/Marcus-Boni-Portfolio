@@ -48,6 +48,7 @@ describe('netlify/edge-functions', () => {
   it('holds only real functions — no directories, no stray files', () => {
     expect(files).toEqual([
       'agent-chat.ts',
+      'agent-github.ts',
       'agent-publish.ts',
       'agents.ts',
       'api.ts',

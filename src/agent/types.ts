@@ -2,6 +2,7 @@ import type { PostMeta } from '@/blog/types'
 import type { SiteContent } from '@/content/types'
 import type { Locale } from '@/i18n/translations'
 
+import type { GitHubActivityPayload } from './github-activity'
 import type { KnowledgeNote } from './knowledge'
 import type { IndexedPostSection } from './post-index'
 
@@ -45,6 +46,7 @@ export type AgentIntent =
   | 'fit'
   | 'stack'
   | 'projects'
+  | 'activity'
   | 'experience'
   | 'posts'
   | 'profile'
@@ -61,6 +63,7 @@ export type ToolName =
   | 'listTechnologies'
   | 'getExperience'
   | 'listProjects'
+  | 'getRecentActivity'
   | 'listPosts'
   | 'matchRole'
   | 'prepareHandoff'
@@ -203,6 +206,8 @@ export interface AgentRuntimeContext {
   knowledgeNotes?: readonly KnowledgeNote[]
   /** Indexed Markdown sections from published blog bodies with verified `#heading` anchors. */
   postSections?: readonly IndexedPostSection[]
+  /** Live cached GitHub releases & recent repo pushes from `/agent/v1/github`. */
+  githubActivity?: GitHubActivityPayload | null
   locale: Locale
   lens: AgentLens
   /** Previous turns in the active thread for multi-turn follow-up resolution. */
