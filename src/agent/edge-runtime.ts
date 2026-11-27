@@ -212,8 +212,10 @@ export class HybridEdgeRuntime implements AgentRuntime {
       yield { type: 'citations', citations: effectiveCitations }
     }
 
-    // Pure transactional commands (/cv) need zero LLM round-trip
-    const skipEdgeForIntent = plan.intent === 'cv'
+    // Pure transactional commands (/cv) and off-topic out-of-scope queries need
+    // zero Edge LLM round-trip or token spend.
+    const skipEdgeForIntent =
+      plan.intent === 'cv' || (plan.intent === 'out_of_scope' && !isRefinementFollowUp)
     const knownUnconfigured =
       cachedCapability?.checked === true && !cachedCapability.configured
 

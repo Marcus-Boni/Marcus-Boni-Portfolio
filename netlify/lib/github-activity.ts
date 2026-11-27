@@ -21,6 +21,8 @@ const FEATURED_REPOS = [
 
 const CACHE_TTL_MS = 20 * 60 * 1000
 const UPSTREAM_TIMEOUT_MS = 6_000
+const RATE_LIMIT_MAX = 60
+const RATE_LIMIT_WINDOW_MS = 60_000
 const JSON_TYPE = 'application/json; charset=utf-8'
 
 export interface GitHubReleaseItem {
@@ -71,12 +73,51 @@ export interface GitHubHandlerOptions {
   fetchImpl?: typeof fetch
   now?: () => number
   cache?: { payload: GitHubActivityPayload; expiresAt: number } | null
+  rateStore?: Map<string, number[]>
 }
 
 let defaultCache: { payload: GitHubActivityPayload; expiresAt: number } | null = null
+const defaultRateStore = new Map<string, number[]>()
 
 export function resetGitHubActivityCache(): void {
   defaultCache = null
+  defaultRateStore.clear()
+}
+
+function isSafeGitHubUrl(raw: string): boolean {
+  try {
+    const parsed = new URL(raw)
+    return parsed.protocol === 'https:' && parsed.hostname.toLowerCase() === 'github.com'
+  } catch {
+    return false
+  }
+}
+
+function checkGitHubRateLimit(
+  store: Map<string, number[]>,
+  key: string,
+  nowMs: number,
+): { allowed: boolean; retryAfterSeconds: number } {
+  const cutoff = nowMs - RATE_LIMIT_WINDOW_MS
+  const fresh = (store.get(key) ?? []).filter((ts) => ts > cutoff)
+  if (store.size > 1_000) {
+    for (const [k, stamps] of store.entries()) {
+      const kept = stamps.filter((ts) => ts > cutoff)
+      if (kept.length === 0) store.delete(k)
+      else store.set(k, kept)
+    }
+  }
+  if (fresh.length >= RATE_LIMIT_MAX) {
+    const oldest = fresh[0] ?? nowMs
+    store.set(key, fresh)
+    return {
+      allowed: false,
+      retryAfterSeconds: Math.max(1, Math.ceil((oldest + RATE_LIMIT_WINDOW_MS - nowMs) / 1000)),
+    }
+  }
+  fresh.push(nowMs)
+  store.set(key, fresh)
+  return { allowed: true, retryAfterSeconds: 0 }
 }
 
 const defaultEnv = (key: string): string | undefined => {
@@ -238,6 +279,37 @@ export async function handleGitHubActivity(
   const now = options.now ?? (() => Date.now())
   const env = options.env ?? defaultEnv
   const fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis)
+  const rateStore = options.rateStore ?? defaultRateStore
+  const clientIp =
+    (
+      request.headers.get('x-nf-client-connection-ip')?.trim() ||
+      request.headers.get('cf-connecting-ip')?.trim() ||
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      ''
+    )
+      .replace(/[^a-fA-F0-9.:_-]/g, '')
+      .slice(0, 64) || 'anonymous'
+
+  const rate = checkGitHubRateLimit(rateStore, clientIp, now())
+  if (!rate.allowed) {
+    return new Response(
+      JSON.stringify({
+        type: 'https://marcusboni.com.br/problems/rate-limited',
+        title: 'Too Many Requests',
+        status: 429,
+        detail: 'GitHub activity rate limit exceeded.',
+      }),
+      {
+        status: 429,
+        headers: {
+          'content-type': 'application/problem+json; charset=utf-8',
+          'retry-after': String(rate.retryAfterSeconds),
+          'x-content-type-options': 'nosniff',
+        },
+      },
+    )
+  }
+
   const useCustomCache = 'cache' in options
   const currentCache = useCustomCache ? options.cache : defaultCache
 
@@ -248,6 +320,7 @@ export async function handleGitHubActivity(
       headers: {
         'content-type': JSON_TYPE,
         'cache-control': 'public, max-age=900, stale-while-revalidate=3600',
+        'x-content-type-options': 'nosniff',
       },
     })
   }
@@ -301,7 +374,7 @@ export async function handleGitHubActivity(
           const name = typeof repo.name === 'string' ? repo.name : ''
           const url = typeof repo.html_url === 'string' ? repo.html_url : ''
           const pushedAt = typeof repo.pushed_at === 'string' ? repo.pushed_at : ''
-          if (!name || !url) continue
+          if (!name || !url || !isSafeGitHubUrl(url)) continue
           recentRepos.push({
             name,
             description: typeof repo.description === 'string' ? repo.description : '',
@@ -331,7 +404,7 @@ export async function handleGitHubActivity(
           : typeof data.created_at === 'string'
             ? data.created_at
             : ''
-      if (!tag || !url) continue
+      if (!tag || !url || !isSafeGitHubUrl(url)) continue
       releases.push({
         repo: entry.repo,
         tag,
@@ -384,6 +457,7 @@ export async function handleGitHubActivity(
       headers: {
         'content-type': JSON_TYPE,
         'cache-control': 'public, max-age=900, stale-while-revalidate=3600',
+        'x-content-type-options': 'nosniff',
       },
     })
   } catch {

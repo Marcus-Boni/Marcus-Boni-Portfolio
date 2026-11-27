@@ -34,8 +34,17 @@ function agentChatDevPlugin(env: Record<string, string>): Plugin {
           let body: string | undefined
           if (method !== 'GET' && method !== 'HEAD') {
             const chunks: Buffer[] = []
+            let totalBytes = 0
             for await (const chunk of req) {
-              chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk)
+              const buf = typeof chunk === 'string' ? Buffer.from(chunk) : chunk
+              totalBytes += buf.byteLength
+              if (totalBytes > 32_768) {
+                res.statusCode = 413
+                res.setHeader('content-type', 'application/problem+json; charset=utf-8')
+                res.end(JSON.stringify({ status: 413, title: 'Payload too large' }))
+                return
+              }
+              chunks.push(buf)
             }
             body = Buffer.concat(chunks).toString('utf8')
           }

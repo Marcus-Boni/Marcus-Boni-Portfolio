@@ -309,6 +309,7 @@ export function ToolApprovalCard({
                     <input
                       id={nameId}
                       type="text"
+                      maxLength={120}
                       value={name}
                       readOnly={status !== 'draft'}
                       onChange={(event) => {
@@ -329,6 +330,7 @@ export function ToolApprovalCard({
                     <input
                       id={emailId}
                       type="email"
+                      maxLength={200}
                       value={email}
                       readOnly={status !== 'draft'}
                       onChange={(event) => {
@@ -348,6 +350,7 @@ export function ToolApprovalCard({
               <textarea
                 id={bodyId}
                 rows={4}
+                maxLength={4000}
                 readOnly={status !== 'draft'}
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}

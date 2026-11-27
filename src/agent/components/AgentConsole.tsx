@@ -459,16 +459,20 @@ export function AgentConsole({
   }
 
   const handleQueuePrompt = (prompt: string) => {
-    const clean = prompt.trim()
+    const clean = prompt.trim().slice(0, 4_000)
     if (!clean) return
     userStoppedRef.current = false
-    setQueuedPrompts((prev) => [
-      ...prev,
-      {
-        id: `queue-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
-        text: clean,
-      },
-    ])
+    setQueuedPrompts((prev) =>
+      prev.length >= 5
+        ? prev
+        : [
+            ...prev,
+            {
+              id: `queue-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+              text: clean,
+            },
+          ],
+    )
   }
 
   const handleRemoveQueued = (id: string) => {

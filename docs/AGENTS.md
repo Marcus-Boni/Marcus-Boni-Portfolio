@@ -257,13 +257,19 @@ explicitly enabled:
 | 4 (opt-in) | `OPENAI_API_KEY` / `GEMINI_API_KEY` / `ANTHROPIC_API_KEY` | OpenAI / Gemini / Anthropic | Paid | Only used if no free key exists or `AGENT_ALLOW_PAID_FALLBACK=true` |
 | Override | `AGENT_LLM_API_KEY` | Explicit via `AGENT_LLM_PROVIDER` | Manual | Override via `AGENT_LLM_MODEL` + optional `AGENT_LLM_BASE_URL` |
 
-Optional operational controls: `AGENT_FREE_ONLY=true` (hard block on paid keys),
-`AGENT_ALLOW_PAID_FALLBACK=true`, `AGENT_LLM_MAX_TOKENS` (default `520`),
-`AGENT_LLM_TEMPERATURE` (default `0.25`), `AGENT_RATE_LIMIT_MAX` (default `15`),
-`AGENT_RATE_LIMIT_WINDOW_S` (default `60`), and `AGENT_ALLOWED_ORIGINS`
-(comma-separated allowlist). During `pnpm dev`, `vite.config.ts` mounts the
-exact same handler on `/agent/v1/chat` using server-side `.env` keys without
-exposing them to the client bundle.
+Optional operational controls: `AGENT_FREE_ONLY=true` (hard block on paid keys —
+recommended in production), `AGENT_ALLOW_PAID_FALLBACK=true`,
+`AGENT_LLM_MAX_TOKENS` (default `520`), `AGENT_LLM_TEMPERATURE` (default `0.25`),
+`AGENT_RATE_LIMIT_MAX` (default `10` req/min per IP), `AGENT_RATE_LIMIT_WINDOW_S`
+(default `60`), `AGENT_RATE_LIMIT_HOURLY` (default `45` req/hr per IP),
+`AGENT_GLOBAL_HOURLY_MAX` (default `240` req/hr global instance budget), and
+`AGENT_ALLOWED_ORIGINS` (comma-separated allowlist; same-origin & portfolio
+hosts are enforced by default even when unset, and `Sec-Fetch-Site: cross-site`
+is rejected). The endpoint also enforces a 2-stream/IP concurrency cap, a 28 KB
+streaming body limit, a 6,000-char SSE output cap, strict evidence ID/URL
+allowlisting, and a zero-token prompt-injection/out-of-scope pre-filter. During
+`pnpm dev`, `vite.config.ts` mounts the exact same handler on `/agent/v1/chat`
+using server-side `.env` keys without exposing them to the client bundle.
 
 Inspect live capability (never returns secrets):
 

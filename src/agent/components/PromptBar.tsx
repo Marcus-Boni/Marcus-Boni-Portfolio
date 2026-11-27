@@ -206,7 +206,7 @@ export function PromptBar({
       }
     }
     if (next.length > 0) {
-      setAttachments((prev) => [...prev, ...next])
+      setAttachments((prev) => [...prev, ...next].slice(0, 3))
       // Auto-select /fit pill if user drops a job description document
       if (!selectedCmd) {
         const fitCmd = SLASH_COMMANDS.find((c) => c.command === '/fit') ?? null
@@ -243,7 +243,7 @@ export function PromptBar({
     if (attachments.length > 0) {
       parts.push(attachments.map((doc) => doc.text).join('\n\n'))
     }
-    const finalPrompt = parts.join(' ').trim()
+    const finalPrompt = parts.join(' ').trim().slice(0, 4_000)
     if (!finalPrompt) return
     lastSentRef.current = value
     onChange('')

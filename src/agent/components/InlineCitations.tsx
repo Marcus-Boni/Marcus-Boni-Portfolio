@@ -560,6 +560,27 @@ export function GroundedProse({
   )
 }
 
+function sanitizeSafeHref(raw: string): string {
+  const trimmed = raw.trim()
+  if (!trimmed) return '#'
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//') && !trimmed.startsWith('/\\')) {
+    return trimmed
+  }
+  try {
+    const parsed = new URL(trimmed)
+    if (
+      parsed.protocol === 'https:' ||
+      parsed.protocol === 'http:' ||
+      parsed.protocol === 'mailto:'
+    ) {
+      return parsed.href
+    }
+  } catch {
+    /* malformed URL */
+  }
+  return '#'
+}
+
 function SourceActionLink({
   citation,
   label,
@@ -571,18 +592,19 @@ function SourceActionLink({
 }) {
   const cls =
     'inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.12em] text-ember uppercase transition-colors hover:text-bone'
+  const safeHref = sanitizeSafeHref(citation.href)
 
   if (
     citation.external ||
-    citation.href.startsWith('/developers') ||
-    citation.href.startsWith('/about') ||
-    citation.href.startsWith('/contact')
+    safeHref.startsWith('/developers') ||
+    safeHref.startsWith('/about') ||
+    safeHref.startsWith('/contact')
   ) {
     return (
       <a
-        href={citation.href}
+        href={safeHref}
         target={citation.external ? '_blank' : undefined}
-        rel={citation.external ? 'noreferrer' : undefined}
+        rel={citation.external ? 'noopener noreferrer' : undefined}
         className={cls}
       >
         <span>{label}</span>
@@ -591,11 +613,11 @@ function SourceActionLink({
     )
   }
 
-  if (citation.href.startsWith('/#') && onNavigateInternal) {
+  if (safeHref.startsWith('/#') && onNavigateInternal) {
     return (
       <button
         type="button"
-        onClick={() => onNavigateInternal(citation.href)}
+        onClick={() => onNavigateInternal(safeHref)}
         className={cls}
       >
         <span>{label}</span>
@@ -606,8 +628,8 @@ function SourceActionLink({
 
   return (
     <Link
-      to={citation.href}
-      onClick={() => onNavigateInternal?.(citation.href)}
+      to={safeHref}
+      onClick={() => onNavigateInternal?.(safeHref)}
       className={cls}
     >
       <span>{label}</span>
@@ -629,6 +651,7 @@ function SourceRow({
 }) {
   const rowCls =
     'group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-left transition-colors hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember'
+  const safeHref = sanitizeSafeHref(citation.href)
 
   const inner = (
     <>
@@ -655,15 +678,15 @@ function SourceRow({
 
   if (
     citation.external ||
-    citation.href.startsWith('/developers') ||
-    citation.href.startsWith('/about') ||
-    citation.href.startsWith('/contact')
+    safeHref.startsWith('/developers') ||
+    safeHref.startsWith('/about') ||
+    safeHref.startsWith('/contact')
   ) {
     return (
       <a
-        href={citation.href}
+        href={safeHref}
         target={citation.external ? '_blank' : undefined}
-        rel={citation.external ? 'noreferrer' : undefined}
+        rel={citation.external ? 'noopener noreferrer' : undefined}
         className={rowCls}
         {...commonHandlers}
       >
@@ -672,11 +695,11 @@ function SourceRow({
     )
   }
 
-  if (citation.href.startsWith('/#') && onNavigateInternal) {
+  if (safeHref.startsWith('/#') && onNavigateInternal) {
     return (
       <button
         type="button"
-        onClick={() => onNavigateInternal(citation.href)}
+        onClick={() => onNavigateInternal(safeHref)}
         className={rowCls}
         {...commonHandlers}
       >
@@ -687,8 +710,8 @@ function SourceRow({
 
   return (
     <Link
-      to={citation.href}
-      onClick={() => onNavigateInternal?.(citation.href)}
+      to={safeHref}
+      onClick={() => onNavigateInternal?.(safeHref)}
       className={rowCls}
       {...commonHandlers}
     >

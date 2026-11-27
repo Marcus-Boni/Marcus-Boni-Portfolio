@@ -34,14 +34,38 @@ export interface MessageDraft {
   country?: string
 }
 
-/** Public submit from the contact form. Returns false if Firebase is off. */
+const SUBMIT_COOLDOWN_MS = 10_000
+let lastSubmitAt = 0
+
+/** Public submit from the contact form. Returns false if Firebase is off or throttled. */
 export async function submitMessage(draft: MessageDraft): Promise<boolean> {
   if (!isFirebaseConfigured || !db) return false
-  await addDoc(collection(db, 'messages'), {
-    ...draft,
+  const now = Date.now()
+  if (now - lastSubmitAt < SUBMIT_COOLDOWN_MS) return false
+
+  const name = draft.name.trim().slice(0, 120)
+  const email = draft.email.trim().slice(0, 200)
+  const message = draft.message.trim().slice(0, 5000)
+  const locale = draft.locale === 'en' ? 'en' : 'pt'
+  if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !message) return false
+
+  const payload: Record<string, unknown> = {
+    name,
+    email,
+    message,
+    locale,
     read: false,
     createdAt: serverTimestamp(),
-  })
+  }
+  if (typeof draft.referrerHost === 'string' && draft.referrerHost.trim()) {
+    payload.referrerHost = draft.referrerHost.trim().slice(0, 120)
+  }
+  if (typeof draft.country === 'string' && draft.country.trim()) {
+    payload.country = draft.country.trim().slice(0, 80)
+  }
+
+  await addDoc(collection(db, 'messages'), payload)
+  lastSubmitAt = now
   return true
 }
 

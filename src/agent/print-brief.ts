@@ -346,6 +346,8 @@ export function printFitBrief(
 
     const iframe = document.createElement('iframe')
     iframe.setAttribute('aria-hidden', 'true')
+    // Never allow scripts inside the print iframe (defense-in-depth alongside HTML escaping)
+    iframe.setAttribute('sandbox', 'allow-modals allow-same-origin')
     iframe.style.position = 'fixed'
     iframe.style.right = '0'
     iframe.style.bottom = '0'

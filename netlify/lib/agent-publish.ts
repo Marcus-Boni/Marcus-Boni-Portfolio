@@ -9,6 +9,7 @@ const SITE_URL = 'https://marcusboni.com.br'
 const JSON_TYPE = 'application/json; charset=utf-8'
 const PROBLEM_TYPE = 'application/problem+json; charset=utf-8'
 const FIRESTORE_SCOPE = 'https://www.googleapis.com/auth/datastore'
+const MAX_PUBLISH_BODY_BYTES = 262_144
 
 const PROJECT_ID =
   Deno.env.get('FIREBASE_PROJECT_ID') ?? Deno.env.get('VITE_FIREBASE_PROJECT_ID') ?? ''
@@ -115,7 +116,7 @@ export async function handleAgentPublish(request: Request): Promise<Response> {
   }
 
   const auth = request.headers.get('authorization') ?? ''
-  if (auth !== `Bearer ${AGENT_TOKEN}`) {
+  if (!timingSafeEqualStr(auth, `Bearer ${AGENT_TOKEN}`)) {
     return problemResponse(
       'unauthorized',
       401,
@@ -233,9 +234,75 @@ function isConfigured(): boolean {
   return Boolean(PROJECT_ID && AGENT_TOKEN && SERVICE_ACCOUNT_EMAIL && SERVICE_ACCOUNT_PRIVATE_KEY)
 }
 
+function timingSafeEqualStr(actual: string, expected: string): boolean {
+  const encoder = new TextEncoder()
+  const a = encoder.encode(actual)
+  const b = encoder.encode(expected)
+  const maxLen = Math.max(a.length, b.length)
+  let diff = a.length ^ b.length
+  for (let i = 0; i < maxLen; i += 1) {
+    diff |= (a[i] ?? 0) ^ (b[i] ?? 0)
+  }
+  return diff === 0
+}
+
 async function parsePayload(request: Request, path: string): Promise<AgentRequest | Response> {
+  const declaredLen = Number(request.headers.get('content-length') ?? '0')
+  if (Number.isFinite(declaredLen) && declaredLen > MAX_PUBLISH_BODY_BYTES) {
+    return problemResponse(
+      'payload_too_large',
+      413,
+      `Request body exceeds the ${MAX_PUBLISH_BODY_BYTES}-byte limit.`,
+      path,
+      'Trim post body or split media uploads before publishing.',
+      false,
+    )
+  }
+
+  let rawText = ''
   try {
-    return (await request.json()) as AgentRequest
+    if (request.body) {
+      const reader = request.body.getReader()
+      const decoder = new TextDecoder()
+      let total = 0
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          if (value) {
+            total += value.byteLength
+            if (total > MAX_PUBLISH_BODY_BYTES) {
+              void reader.cancel()
+              return problemResponse(
+                'payload_too_large',
+                413,
+                `Request body exceeds the ${MAX_PUBLISH_BODY_BYTES}-byte limit.`,
+                path,
+                'Trim post body or split media uploads before publishing.',
+                false,
+              )
+            }
+            rawText += decoder.decode(value, { stream: true })
+          }
+        }
+        rawText += decoder.decode()
+      } finally {
+        reader.releaseLock()
+      }
+    } else {
+      rawText = await request.text()
+      if (new TextEncoder().encode(rawText).byteLength > MAX_PUBLISH_BODY_BYTES) {
+        return problemResponse(
+          'payload_too_large',
+          413,
+          `Request body exceeds the ${MAX_PUBLISH_BODY_BYTES}-byte limit.`,
+          path,
+          'Trim post body or split media uploads before publishing.',
+          false,
+        )
+      }
+    }
+    return JSON.parse(rawText) as AgentRequest
   } catch {
     return problemResponse(
       'bad_request',
@@ -1118,6 +1185,7 @@ function titleFor(status: number): string {
   if (status === 404) return 'Not found'
   if (status === 405) return 'Method not allowed'
   if (status === 409) return 'Conflict'
+  if (status === 413) return 'Payload too large'
   return 'Upstream unavailable'
 }
 

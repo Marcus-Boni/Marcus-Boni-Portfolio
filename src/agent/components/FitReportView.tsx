@@ -23,6 +23,15 @@ import {
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const
 
+function safeExternalHref(raw: string): string {
+  try {
+    const parsed = new URL(raw)
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.href : '#'
+  } catch {
+    return '#'
+  }
+}
+
 /**
  * Refined Signal & Ink evidence ledger for `/fit` role matching.
  *
@@ -202,9 +211,9 @@ export function FitReportView({
                       proof.external ? (
                         <a
                           key={idx}
-                          href={proof.href}
+                          href={safeExternalHref(proof.href)}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 underline decoration-line underline-offset-4 transition-colors hover:text-ember hover:decoration-ember"
                         >
                           <span>{proof.label}</span>
