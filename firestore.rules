@@ -62,7 +62,7 @@ service cloud.firestore {
 
     function isValidAnalyticsEvent() {
       let data = request.resource.data;
-      return data.keys().size() <= 24
+      return data.keys().size() <= 32
         && data.keys().hasAll(['type', 'path', 'visitorId', 'sessionId', 'createdAt'])
         && data.type in [
           'pageview', 'section_view', 'outbound_click', 'cv_download',
