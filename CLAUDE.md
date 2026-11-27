@@ -88,7 +88,10 @@ pnpm test     # vitest run
    padrões têm cópias que os testes conferem: o texto estático de
    `index.html`, `public/llms-full.txt`, `netlify/lib/agent-docs.ts` e
    `public/api/v1/*.json` (este último se regenera com
-   `pnpm exec vitest run tests/api-payloads.test.ts -u`).
+   `pnpm exec vitest run tests/api-payloads.test.ts -u`). Entrega com
+   `home: false` fica fora da seção Experiência da home, mas continua no
+   dossiê, no `/fit`, na API e nessas cópias; o dossiê só enxerga como
+   evidência o que está em `projects` e `experience.projects`, não as notas.
 
 8. **Tema claro e escuro.** Cada token é um par `light-dark()` em "Colour
    scheme" de `src/styles/index.css`; `ink` é sempre a página e `bone` o texto,

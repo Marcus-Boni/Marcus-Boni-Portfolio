@@ -134,10 +134,10 @@ describe('Phase 3 (Live Knowledge CMS) — dossier-cms schema & merge', () => {
 
   it('generates sequential DOC·NN IDs and excludes disabled notes from activeKnowledgeNotes', () => {
     const defaults = cloneDefaultKnowledgeNotes()
-    expect(nextKnowledgeNoteId(defaults)).toBe('DOC·07')
+    expect(nextKnowledgeNoteId(defaults)).toBe('DOC·09')
 
     const created = createEmptyKnowledgeNote(defaults)
-    expect(created.id).toBe('DOC·07')
+    expect(created.id).toBe('DOC·09')
     expect(created.topic).toBe('faq')
 
     const withDisabled = defaults.map((n) =>

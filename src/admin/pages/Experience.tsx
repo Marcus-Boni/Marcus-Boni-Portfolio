@@ -288,6 +288,11 @@ export function Experience() {
                           {entry.sector.pt}
                         </span>
                       )}
+                      {entry.home === false && (
+                        <Badge title="Fora da seção Experiência da home; o dossiê e a API continuam usando.">
+                          só dossiê
+                        </Badge>
+                      )}
                       {issues.length > 0 && (
                         <Badge tone="warn" title={issues.join(' · ')}>
                           {issues.length} pendência(s)
@@ -343,6 +348,16 @@ export function Experience() {
                       multiline
                       value={entry.scope}
                       onChange={(scope) => setEntry(entry.id, { scope })}
+                    />
+                  </div>
+
+                  <div className="mt-4">
+                    <Toggle
+                      checked={entry.home !== false}
+                      // A boolean, never undefined: Firestore's setDoc rejects undefined fields.
+                      onChange={(on) => setEntry(entry.id, { home: on })}
+                      label="Mostrar na seção Experiência da home"
+                      hint="Desligado, a entrega continua no dossiê com IA, no /fit e na API."
                     />
                   </div>
                 </Collapsible>

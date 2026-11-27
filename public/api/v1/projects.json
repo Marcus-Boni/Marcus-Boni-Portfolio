@@ -1,5 +1,5 @@
 {
-  "count": 5,
+  "count": 7,
   "items": [
     {
       "id": "01",
@@ -83,6 +83,40 @@
         "Firebase"
       ],
       "repositoryUrl": "https://github.com/Marcus-Boni/Ferramenta-Estimativa-Horas"
+    },
+    {
+      "id": "06",
+      "title": "Opt Suporte",
+      "year": "2026",
+      "description": {
+        "pt": "Central de suporte dos clientes Optsolv — portal do cliente, backoffice, API REST e servidor MCP sobre a mesma camada de regras e acesso, com login da equipe via Microsoft Entra ID (OIDC + PKCE) e a IA de captura avaliada contra um conjunto rotulado.",
+        "en": "Optsolv customer-support hub — client portal, back office, REST API and MCP server over one business and access layer, with team sign-in through Microsoft Entra ID (OIDC + PKCE) and the AI intake evaluated against a labelled set."
+      },
+      "stack": [
+        "TypeScript",
+        "React",
+        "Fastify",
+        "PostgreSQL",
+        "MCP"
+      ],
+      "repositoryUrl": "https://github.com/Marcus-Boni/Opt-suporte"
+    },
+    {
+      "id": "07",
+      "title": "Opt News",
+      "year": "2026",
+      "description": {
+        "pt": "Plataforma interna de inteligência tecnológica que coleta fontes oficiais e de imprensa, resume em português com IA marcada como IA e liga cada notícia à discussão e ao aprendizado que ela gerou no time, com proveniência de ponta a ponta.",
+        "en": "Internal tech-intelligence platform that collects official and press sources, summarizes them in Portuguese with AI clearly labelled as AI, and links each story to the team discussion and learning it sparked, with end-to-end provenance."
+      },
+      "stack": [
+        "TypeScript",
+        "React",
+        "Fastify",
+        "PostgreSQL",
+        "AI"
+      ],
+      "repositoryUrl": "https://github.com/Marcus-Boni/Opt-news"
     }
   ]
 }

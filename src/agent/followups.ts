@@ -30,7 +30,7 @@ export function buildContextualFollowups(
   switch (lastTurn.intent) {
     case 'fit':
       candidates.push(
-        isPt ? 'Entregas em produção na Optsolv' : 'Production deliveries at Optsolv',
+        isPt ? 'Entregas na Optsolv' : 'Deliveries at Optsolv',
         isPt ? 'Disponibilidade e formatos de atuação' : 'Availability and engagement formats',
         isPt ? 'Baixar currículo PDF' : 'Download PDF résumé',
       )
@@ -84,7 +84,7 @@ export function buildContextualFollowups(
     case 'stack':
       candidates.push(
         isPt ? 'Projetos públicos que comprovam esse stack' : 'Public projects proving this stack',
-        isPt ? 'Entregas em produção na Optsolv' : 'Production deliveries at Optsolv',
+        isPt ? 'Entregas na Optsolv' : 'Deliveries at Optsolv',
         isPt ? 'Últimas releases no GitHub' : 'Latest GitHub releases',
       )
       break

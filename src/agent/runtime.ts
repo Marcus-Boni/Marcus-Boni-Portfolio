@@ -311,7 +311,7 @@ function lensLead(lens: AgentLens, locale: Locale): {
 
   if (lens === 'engineer') {
     return {
-      fitIntro: 'Cross-checked the technical requirements against the published stack, public repositories, and production deliveries:',
+      fitIntro: 'Cross-checked the technical requirements against the published stack, public repositories, and Optsolv deliveries:',
       stackIntro: 'Direct technical breakdown by layer and where each tool is proven in code or production:',
       projectsIntro: 'These repositories show concrete architecture decisions across native systems, MCP, and RAG:',
       experienceIntro: 'In production at Optsolv (since Jun 2024), the work centers on end-to-end architecture and enterprise integrations:',
@@ -319,7 +319,7 @@ function lensLead(lens: AgentLens, locale: Locale): {
   }
   if (lens === 'client') {
     return {
-      fitIntro: 'Mapped your scope against real production deliveries and shipped reference products:',
+      fitIntro: 'Mapped your scope against real Optsolv deliveries and shipped reference products:',
       stackIntro: 'These technologies support end-to-end delivery from UI to production — chosen around the business problem:',
       projectsIntro: 'Shipped products demonstrating operational tools, applied AI, and native desktop software:',
       experienceIntro: 'At Optsolv, Marcus works directly with clients from discovery through production across seven industries:',
@@ -514,13 +514,17 @@ function composeResponse(params: {
           .map((p) => `**${p.title}** [${p.index}]`)
           .join(', ')
         const clientRefs = matchedEngagements
-          .map((e) => `**${e.client.split(' - ')[0]}** [EXP·${String(engOrdinal(e.id)).padStart(2, '0')}]`)
+          .map((e) => {
+            // Internal products name the product, not "Optsolv" again.
+            const name = e.client === content.experience.company ? e.title[locale] : e.client.split(' - ')[0]
+            return `**${name}** [EXP·${String(engOrdinal(e.id)).padStart(2, '0')}]`
+          })
           .join(', ')
 
         const proofParts: string[] = []
         if (clientRefs) {
           proofParts.push(
-            isPt ? `em produção nos clientes ${clientRefs}` : `in production for ${clientRefs}`,
+            isPt ? `em entregas na Optsolv (${clientRefs})` : `in Optsolv deliveries (${clientRefs})`,
           )
         }
         if (projectRefs) {
@@ -565,8 +569,13 @@ function composeResponse(params: {
       }
 
       if (signals.externalTechs.length > 0) {
+        if (signals.externalTechs.some((ext) => ext.academic)) addNote('DOC·07')
         const gapLines = signals.externalTechs.map((ext) =>
-          ext.adjacent.length > 0
+          ext.academic
+            ? isPt
+              ? `- **${ext.name}**: só em trabalhos acadêmicos no Instituto Infnet, sem entrega profissional registrada [DOC·07] (experiência adjacente: ${ext.adjacent.join(', ')}).`
+              : `- **${ext.name}**: coursework only at Instituto Infnet, with no recorded professional delivery [DOC·07] (adjacent experience: ${ext.adjacent.join(', ')}).`
+            : ext.adjacent.length > 0
             ? isPt
               ? `- **${ext.name}**: não consta no dossiê público (experiência adjacente registrada: ${ext.adjacent.join(', ')}).`
               : `- **${ext.name}**: not listed in the public dossier (recorded adjacent experience: ${ext.adjacent.join(', ')}).`
@@ -576,8 +585,8 @@ function composeResponse(params: {
         )
         paragraphs.push(
           (isPt
-            ? 'Sobre itens que **não** constam no dossiê público:\n'
-            : 'Regarding items **not** listed in the public dossier:\n') + gapLines.join('\n'),
+            ? 'Sobre itens **sem entrega profissional** registrada no dossiê:\n'
+            : 'Regarding items with **no professional delivery** in the dossier:\n') + gapLines.join('\n'),
         )
       }
 
@@ -737,7 +746,7 @@ function composeResponse(params: {
         /MCP|RAG|AI|whisper|Copilot/i.test(`${p.stack.join(' ')} ${p.description.en}`),
       )
       const aiClients = content.experience.projects.filter((e) =>
-        /\bAI\b|N8N/i.test(`${e.stack.join(' ')} ${e.scope.en}`),
+        /\bAI\b|N8N|\bMCP\b|Claude|OpenAI|Foundry|\bRAG\b/i.test(`${e.stack.join(' ')} ${e.scope.en}`),
       )
       for (const proj of aiProjects) citations.push(projectCitation(proj, locale))
       for (const eng of aiClients) citations.push(engagementCitation(eng, engOrdinal(eng.id), locale))
@@ -932,11 +941,11 @@ function composeResponse(params: {
         text: isPt
           ? [
               `**${content.profile.fullName}** (${content.profile.name}) é engenheiro de software baseado no ${content.profile.location} e **${content.experience.role} na ${content.experience.company}** desde junho de 2024 [DOC·01].`,
-              `Constrói aplicações full-stack (TypeScript, React, Next.js, Node.js, C#, PostgreSQL), sistemas nativos locais (**ISPer** em Rust/Tauri 2 [01]) e fluxos de IA aplicada (**OptTime** com servidor MCP de 16 ferramentas [02] e pipelines RAG sobre pgvector) — com ${content.experience.projects.length} entregas corporativas em produção e ${content.profile.repoCount}+ repositórios públicos [DOC·03].`,
+              `Constrói aplicações full-stack (TypeScript, React, Next.js, Node.js, C#, PostgreSQL), sistemas nativos locais (**ISPer** em Rust/Tauri 2 [01]) e fluxos de IA aplicada (**OptTime** com servidor MCP de 16 ferramentas [02] e pipelines RAG sobre pgvector) — com ${content.experience.projects.length} entregas registradas na Optsolv, entre clientes e produtos internos, e ${content.profile.repoCount}+ repositórios públicos [DOC·03].`,
             ].join('\n\n')
           : [
               `**${content.profile.fullName}** (${content.profile.name}) is a Brazilian software engineer based in ${content.profile.location} and **${content.experience.role} at ${content.experience.company}** since June 2024 [DOC·01].`,
-              `He builds full-stack software (TypeScript, React, Next.js, Node.js, C#, PostgreSQL), native local systems (**ISPer** in Rust/Tauri 2 [01]), and applied AI workflows (**OptTime** with a 16-tool MCP server [02] and pgvector RAG pipelines) — backed by ${content.experience.projects.length} production client deliveries and ${content.profile.repoCount}+ public repositories [DOC·03].`,
+              `He builds full-stack software (TypeScript, React, Next.js, Node.js, C#, PostgreSQL), native local systems (**ISPer** in Rust/Tauri 2 [01]), and applied AI workflows (**OptTime** with a 16-tool MCP server [02] and pgvector RAG pipelines) — backed by ${content.experience.projects.length} recorded Optsolv deliveries across client work and internal products, and ${content.profile.repoCount}+ public repositories [DOC·03].`,
             ].join('\n\n'),
         citations: dedupeCitations(citations),
       }
@@ -1016,8 +1025,8 @@ function composeResponse(params: {
         addNote('DOC·01')
         parts.push(
           isPt
-            ? 'Posso consultar o stack completo (`/stack`), os 5 projetos em destaque (`/projects`), as 7 entregas corporativas na Optsolv (`/experience`), o Diário (`/posts`) ou analisar a descrição completa de uma vaga (`/fit`) [DOC·01].'
-            : 'I can inspect the full stack (`/stack`), 5 featured projects (`/projects`), 7 production engagements at Optsolv (`/experience`), journal notes (`/posts`), or match a full job description (`/fit`) [DOC·01].',
+            ? 'Posso consultar o stack completo (`/stack`), os ' + content.projects.length + ' projetos em destaque (`/projects`), as ' + content.experience.projects.length + ' entregas na Optsolv (`/experience`), o Diário (`/posts`) ou analisar a descrição completa de uma vaga (`/fit`) [DOC·01].'
+            : 'I can inspect the full stack (`/stack`), ' + content.projects.length + ' featured projects (`/projects`), ' + content.experience.projects.length + ' Optsolv deliveries (`/experience`), journal notes (`/posts`), or match a full job description (`/fit`) [DOC·01].',
         )
       }
 

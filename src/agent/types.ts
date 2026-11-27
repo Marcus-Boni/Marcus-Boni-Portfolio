@@ -113,6 +113,8 @@ export interface FitEvidenceItem {
 export interface FitGapItem {
   term: string
   adjacent: string[]
+  /** Seen only in coursework (DOC·07), never in a professional delivery. */
+  academic?: boolean
 }
 
 export interface FitReport {
