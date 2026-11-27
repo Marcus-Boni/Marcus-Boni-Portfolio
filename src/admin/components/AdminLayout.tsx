@@ -16,6 +16,7 @@ import {
   focusRing,
 } from '@/admin/components/ui'
 import { useHotkey } from '@/admin/hooks'
+import { isOwnTrafficIgnored } from '@/lib/analytics'
 import { isFirebaseConfigured } from '@/lib/firebase'
 import { cn } from '@/lib/utils'
 
@@ -387,6 +388,18 @@ function SidebarFooter({
         />
         {saving ? 'salvando…' : dirty ? 'alterações não salvas' : 'conteúdo sincronizado'}
       </span>
+
+      <Link
+        to="/admin/settings"
+        className={cn(
+          'flex items-center gap-2 font-mono text-[9px] tracking-[0.16em] text-smoke uppercase transition-colors hover:text-bone-dim',
+          focusRing,
+        )}
+        title="Controle se suas próprias visitas entram nas métricas"
+      >
+        <StatusDot tone={isOwnTrafficIgnored() ? 'live' : 'idle'} />
+        {isOwnTrafficIgnored() ? 'seus acessos ignorados' : 'rastreando este navegador'}
+      </Link>
 
       <a
         href="/"

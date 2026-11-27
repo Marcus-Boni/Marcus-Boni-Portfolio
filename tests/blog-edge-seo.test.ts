@@ -59,7 +59,71 @@ describe('delivered blog HTML', () => {
     const json = JSON.parse(html.match(/<script id="blog-jsonld" type="application\/ld\+json">(.*?)<\/script>/s)![1])
     expect(json['@graph'][0]['@type']).toBe('BlogPosting')
     expect(json['@graph'][0].author.url).toBe('https://marcusboni.com.br/about')
+    expect(json['@graph'][0].wordCount).toBeGreaterThan(0)
+    expect(json['@graph'][0].timeRequired).toBe('PT1M')
+    expect(json['@graph'][0].isAccessibleForFree).toBe(true)
     expect(json['@graph'][1]['@type']).toBe('BreadcrumbList')
+    expect(html).toContain('<meta http-equiv="content-language" content="pt-BR">')
+  })
+
+  it('serves dedicated edge SEO, hreflang, and semantic HTML for /ask and /en/ask', async () => {
+    const ptRes = await handler(request('/ask'), context())
+    const ptHtml = await ptRes.text()
+    expect(ptRes.status).toBe(200)
+    expect(ptHtml).toContain('<html lang="pt-BR">')
+    expect(ptHtml).toContain('<link rel="canonical" href="https://marcusboni.com.br/ask">')
+    expect(ptHtml).toContain('hreflang="en" href="https://marcusboni.com.br/en/ask"')
+    expect(ptHtml).toContain('hreflang="x-default" href="https://marcusboni.com.br/ask"')
+    expect(ptHtml).toContain('<h1>Dossiê interativo</h1>')
+    expect(ptHtml).not.toContain('Portfolio shell')
+
+    const enRes = await handler(request('/en/ask'), context())
+    const enHtml = await enRes.text()
+    expect(enRes.status).toBe(200)
+    expect(enHtml).toContain('<html lang="en">')
+    expect(enHtml).toContain('<link rel="canonical" href="https://marcusboni.com.br/en/ask">')
+    expect(enHtml).toContain('<h1>Interactive dossier</h1>')
+
+    const slashRes = await handler(request('/ask/'), context())
+    expect(slashRes.status).toBe(301)
+    expect(slashRes.headers.get('location')).toBe('https://preview.netlify.app/ask')
+  })
+
+  it('emits custom cover dimensions, MIME type, and ImageObject schema when a post has a cover', async () => {
+    fetchMock.mockImplementation(async (input: unknown) => {
+      const url = String(input)
+      if (url.endsWith('/content/main')) return Response.json(bodyFields())
+      return Response.json(
+        document('metodo', {
+          cover: {
+            mapValue: {
+              fields: {
+                src: { stringValue: 'https://firebasestorage.googleapis.com/v0/b/demo/o/cover.webp?alt=media' },
+                alt: { stringValue: 'Capa técnica' },
+                width: { integerValue: '1600' },
+                height: { integerValue: '900' },
+              },
+            },
+          },
+          tags: { arrayValue: { values: [{ stringValue: 'arquitetura' }] } },
+        }),
+      )
+    })
+    const html = await (await handler(request('/blog/metodo'), context())).text()
+    expect(html).toContain('<meta property="og:image:type" content="image/webp">')
+    expect(html).toContain('<meta property="og:image:width" content="1600">')
+    expect(html).toContain('<meta property="og:image:height" content="900">')
+    expect(html).toContain('<meta property="article:section" content="arquitetura">')
+    expect(html).toContain('width="1600" height="900"')
+    const json = JSON.parse(html.match(/<script id="blog-jsonld" type="application\/ld\+json">(.*?)<\/script>/s)![1])
+    expect(json['@graph'][0].image).toEqual({
+      '@type': 'ImageObject',
+      url: 'https://firebasestorage.googleapis.com/v0/b/demo/o/cover.webp?alt=media',
+      width: 1600,
+      height: 900,
+      caption: 'Capa técnica',
+    })
+    expect(json['@graph'][0].articleSection).toBe('arquitetura')
   })
 
   it('redirects trailing-slash duplicates to the canonical URL before any lookup', async () => {
@@ -247,8 +311,49 @@ describe('publication feeds', () => {
     })
     const xml = await (await feeds(request('/sitemap.xml'), context())).text()
     expect(xml).toContain('/blog/post-1000')
-    expect((xml.match(/<loc>/g) ?? []).length).toBe(1010) // 1001 posts + 9 static routes
+    expect((xml.match(/<loc>/g) ?? []).length).toBe(1012) // 1001 posts + 11 static routes
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('includes hreflang for /ask and /kit/front-end, sitemap image tags, and serves /en/rss.xml', async () => {
+    fetchMock.mockImplementation(async () =>
+      Response.json([
+        {
+          document: document('wifi-ia', {
+            cover: {
+              mapValue: {
+                fields: {
+                  src: { stringValue: 'https://cdn.example/wifi.webp' },
+                  alt: { stringValue: 'Mapa Wi-Fi' },
+                  width: { integerValue: '1200' },
+                  height: { integerValue: '630' },
+                },
+              },
+            },
+            locales: {
+              mapValue: {
+                fields: {
+                  pt: { mapValue: { fields: { title: { stringValue: 'Wi-Fi PT' }, excerpt: { stringValue: 'Resumo PT' } } } },
+                  en: { mapValue: { fields: { title: { stringValue: 'Wi-Fi EN' }, excerpt: { stringValue: 'Summary EN' } } } },
+                },
+              },
+            },
+          }),
+        },
+      ]),
+    )
+    const sitemap = await (await feeds(request('/sitemap.xml'), context())).text()
+    expect(sitemap).toContain('xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"')
+    expect(sitemap).toContain('<image:loc>https://cdn.example/wifi.webp</image:loc>')
+    expect(sitemap).toContain('<loc>https://marcusboni.com.br/ask</loc>')
+    expect(sitemap).toContain('hreflang="en" href="https://marcusboni.com.br/en/ask"')
+    expect(sitemap).toContain('hreflang="en" href="https://marcusboni.com.br/en/kit/front-end"')
+
+    const enRss = await (await feeds(request('/en/rss.xml'), context())).text()
+    expect(enRss).toContain('<language>en-us</language>')
+    expect(enRss).toContain('<title>Wi-Fi EN</title>')
+    expect(enRss).toContain('<link>https://marcusboni.com.br/en/blog/wifi-ia</link>')
+    expect(enRss).toContain('<media:content url="https://cdn.example/wifi.webp" medium="image" width="1200" height="630"/>')
   })
 
   it('omits non-reciprocal translation hints and invalid dates', async () => {

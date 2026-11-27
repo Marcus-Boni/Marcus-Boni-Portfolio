@@ -2,12 +2,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
   eventsToCsv,
+  isNoiseEvent,
   subscribeAnalytics,
   summarize,
   type AnalyticsEvent,
   type AnalyticsSummary,
   type RangeKey,
 } from '@/admin/services/analytics'
+import {
+  saveExcludedVisitorIds,
+  subscribeAnalyticsSettings,
+} from '@/admin/services/analytics-settings'
+import { getOwnVisitorId } from '@/lib/analytics'
 
 /** Surfaced verbatim: a Firestore `failed-precondition` message carries the
  *  console URL that creates the missing index, so hiding it hides the fix. */
@@ -23,12 +29,20 @@ export interface UseAnalyticsResult {
   error: AnalyticsError | null
   range: RangeKey
   setRange: (next: RangeKey) => void
-  /** Downloads the raw events for the current window as CSV. */
+  /** True when owner devices, `/admin`, and local preview noise are excluded. */
+  excludeOwner: boolean
+  setExcludeOwner: (next: boolean) => void
+  /** All visitor IDs flagged as owner devices (synced with Firestore + this browser). */
+  excludedVisitorIds: string[]
+  ownVisitorId: string | null
+  excludeVisitor: (visitorId: string) => Promise<void>
+  unexcludeVisitor: (visitorId: string) => Promise<void>
+  /** Downloads the active (filtered when `excludeOwner` is on) events as CSV. */
   exportCsv: () => void
 }
 
 /**
- * Live analytics for the selected window.
+ * Live analytics for the selected window, with owner-device hygiene built in.
  *
  * The subscription is re-created when the range changes, because the range is
  * part of the Firestore query rather than a client-side filter — that is what
@@ -39,6 +53,21 @@ export function useAnalytics(initialRange: RangeKey = '30d'): UseAnalyticsResult
   const [events, setEvents] = useState<AnalyticsEvent[] | null>(null)
   const [truncated, setTruncated] = useState(false)
   const [error, setError] = useState<AnalyticsError | null>(null)
+  const [excludeOwner, setExcludeOwner] = useStoredState('mb-admin-exclude-owner', true)
+  const [storedExcludedIds, setStoredExcludedIds] = useState<string[]>([])
+  const ownVisitorId = useMemo(() => getOwnVisitorId(), [])
+
+  useEffect(() => {
+    return subscribeAnalyticsSettings((settings) => {
+      setStoredExcludedIds(settings.excludedVisitorIds)
+    })
+  }, [])
+
+  const excludedSet = useMemo(() => {
+    const set = new Set(storedExcludedIds)
+    if (ownVisitorId) set.add(ownVisitorId)
+    return set
+  }, [storedExcludedIds, ownVisitorId])
 
   useEffect(() => {
     let cancelled = false
@@ -56,8 +85,6 @@ export function useAnalytics(initialRange: RangeKey = '30d'): UseAnalyticsResult
           code: (cause as { code?: string }).code ?? 'unknown',
           message: cause.message,
         })
-        // Resolve the loading state too, or the page shows the error banner
-        // *and* an endless spinner — which is what it did the first time.
         setEvents([])
       },
     )
@@ -69,13 +96,45 @@ export function useAnalytics(initialRange: RangeKey = '30d'): UseAnalyticsResult
 
   const loaded = useMemo(() => events ?? [], [events])
 
+  const visibleEvents = useMemo(
+    () =>
+      excludeOwner
+        ? loaded.filter((event) => !isNoiseEvent(event, excludedSet))
+        : loaded,
+    [loaded, excludeOwner, excludedSet],
+  )
+
   const summary = useMemo(
-    () => summarize(loaded, range, { truncated }),
-    [loaded, range, truncated],
+    () =>
+      summarize(loaded, range, {
+        truncated,
+        excludeOwner,
+        excludedVisitorIds: excludedSet,
+      }),
+    [loaded, range, truncated, excludeOwner, excludedSet],
+  )
+
+  const excludeVisitor = useCallback(
+    async (visitorId: string) => {
+      if (!visitorId.trim()) return
+      const next = await saveExcludedVisitorIds([...storedExcludedIds, visitorId])
+      setStoredExcludedIds(next)
+    },
+    [storedExcludedIds],
+  )
+
+  const unexcludeVisitor = useCallback(
+    async (visitorId: string) => {
+      const next = await saveExcludedVisitorIds(
+        storedExcludedIds.filter((id) => id !== visitorId),
+      )
+      setStoredExcludedIds(next)
+    },
+    [storedExcludedIds],
   )
 
   const exportCsv = useCallback(() => {
-    const csv = eventsToCsv(loaded)
+    const csv = eventsToCsv(visibleEvents)
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -85,15 +144,21 @@ export function useAnalytics(initialRange: RangeKey = '30d'): UseAnalyticsResult
       .slice(0, 10)}.csv`
     link.click()
     URL.revokeObjectURL(url)
-  }, [loaded, range])
+  }, [visibleEvents, range])
 
   return {
-    events: loaded,
+    events: visibleEvents,
     summary,
     loading: events === null,
     error,
     range,
     setRange,
+    excludeOwner,
+    setExcludeOwner,
+    excludedVisitorIds: [...excludedSet],
+    ownVisitorId,
+    excludeVisitor,
+    unexcludeVisitor,
     exportCsv,
   }
 }
@@ -108,22 +173,11 @@ export interface HotkeySpec {
   shift?: boolean
 }
 
-/**
- * Window-level shortcut.
- *
- * Two details matter. The handler lives in a ref so a shortcut registered with
- * an inline closure does not tear down and re-bind on every render. And typing
- * inside a field never triggers a bare letter shortcut — only modified ones —
- * so `?` in a message body stays a question mark.
- */
 export function useHotkey(
   spec: HotkeySpec,
   handler: (event: KeyboardEvent) => void,
   enabled = true,
 ): void {
-  // The handler lives in a ref, written in its own effect: assigning during
-  // render is what `react-hooks/refs` forbids, and re-binding the listener on
-  // every render is what the ref exists to avoid.
   const latest = useRef(handler)
   useEffect(() => {
     latest.current = handler
@@ -160,14 +214,6 @@ export function useHotkey(
 
 /* ─── Small utilities ───────────────────────────────────────────────────── */
 
-/**
- * State mirrored into `localStorage`.
- *
- * Used for the preferences that are annoying to re-set on every visit — the
- * remembered login e-mail, whether editor cards start collapsed, the last
- * analytics window. Reads are wrapped because Safari's private mode throws on
- * access rather than returning null.
- */
 export function useStoredState<T>(
   key: string,
   initial: T,

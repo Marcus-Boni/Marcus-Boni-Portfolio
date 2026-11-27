@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { afterAll, describe, expect, it } from 'vitest'
 
 import { SeoPreview } from '../src/admin/components/SeoPreview'
-import { postIssues, publishChecklist } from '../src/admin/lib/health'
+import { blogSeoSummary, postIssues, publishChecklist } from '../src/admin/lib/health'
 import { emptyPost, type MediaRef, type Post } from '../src/blog/types'
 
 function article(changes: Partial<Post> = {}): Post {
@@ -65,6 +65,27 @@ describe('editor SEO guidance', () => {
     const post = article({ status: 'published', cover: { ...image, alt: '' } })
     expect(check(post, 'Imagem de compartilhamento disponível').ok).toBe(false)
     expect(postIssues([post])[0]?.label).toContain('capa sem texto alternativo')
+  })
+
+  it('audits both PT and EN metadata on bilingual published posts and summarizes catalog SEO health', () => {
+    const bilingual = article({
+      status: 'published',
+      locales: {
+        pt: { title: 'Artigo PT', excerpt: 'Resumo PT.', tags: ['react'], readingMinutes: 3 },
+        en: { title: 'Article EN', excerpt: '', tags: [], readingMinutes: 3 },
+      },
+    })
+    const issues = postIssues([bilingual])
+    expect(issues).toHaveLength(1)
+    expect(issues[0].label).toContain('sem resumo (EN)')
+    expect(issues[0].label).toContain('sem tags (EN)')
+    expect(blogSeoSummary([bilingual, article({ slug: 'clean', status: 'published' })])).toEqual({
+      published: 2,
+      bilingual: 1,
+      withCover: 0,
+      withCompleteMeta: 1,
+      issueCount: 1,
+    })
   })
 
   it.each(['# Outro título', 'Outro título\n===', '   # Outro título'])('warns about a body H1: %s', (body) => {

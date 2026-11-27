@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 
 import { Sparkline } from '@/admin/components/charts'
-import { AdminButton, Segmented, StatusDot } from '@/admin/components/ui'
+import { AdminButton, Segmented, StatusDot, focusRing } from '@/admin/components/ui'
 import {
   RANGES,
   deltaPercent,
@@ -10,23 +10,28 @@ import {
 } from '@/admin/services/analytics'
 import { cn } from '@/lib/utils'
 
-/* ─── Range filter ──────────────────────────────────────────────────────── */
+/* ─── Range & hygiene filter ────────────────────────────────────────────── */
 
 /**
- * The single filter row. It sits above everything it scopes — never inside a
- * card, never per chart — so every number on the page describes the same slice
- * and they always agree with each other.
+ * The single scope row. Sits above every KPI and chart so every figure on the
+ * page reflects the exact same time window and owner-filtering setting.
  */
 export function RangeFilter({
   value,
   onChange,
   onExport,
   live,
+  excludeOwner,
+  onToggleExcludeOwner,
+  filteredCount = 0,
 }: {
   value: RangeKey
   onChange: (next: RangeKey) => void
   onExport: () => void
   live: boolean
+  excludeOwner?: boolean
+  onToggleExcludeOwner?: (next: boolean) => void
+  filteredCount?: number
 }) {
   return (
     <div className="sticky top-14 z-10 mb-6 flex flex-wrap items-center gap-x-4 gap-y-3 border-y border-line bg-ink/95 py-3 backdrop-blur lg:top-0">
@@ -39,6 +44,32 @@ export function RangeFilter({
           label: RANGES[key].label,
         }))}
       />
+
+      {onToggleExcludeOwner && excludeOwner !== undefined && (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={excludeOwner}
+          onClick={() => onToggleExcludeOwner(!excludeOwner)}
+          title="Oculta visitas dos seus dispositivos cadastrados, acessos em /admin e testes em localhost"
+          className={cn(
+            'inline-flex items-center gap-2 border px-2.5 py-1.5 font-mono text-[10px] tracking-[0.16em] uppercase transition-colors duration-200',
+            focusRing,
+            excludeOwner
+              ? 'border-ember/50 bg-ember/10 text-ember'
+              : 'border-line text-smoke hover:border-bone/40 hover:text-bone-dim',
+          )}
+        >
+          <span
+            aria-hidden
+            className={cn('size-1.5 rounded-full', excludeOwner ? 'bg-ember' : 'bg-smoke')}
+          />
+          <span>Ocultar meus acessos</span>
+          {excludeOwner && filteredCount > 0 && (
+            <span className="tabular-nums opacity-75">· {filteredCount}</span>
+          )}
+        </button>
+      )}
 
       <span className="flex items-center gap-2 font-mono text-[10px] tracking-[0.16em] text-smoke uppercase">
         <StatusDot tone={live ? 'live' : 'off'} pulse={live} />
@@ -104,8 +135,6 @@ export function MetricTile({
 
       <div>
         <div className="flex items-baseline gap-2.5">
-          {/* Proportional figures: `tabular-nums` makes a large standalone
-              number look loose. Tabular is for columns, not headlines. */}
           <span
             className={cn(
               'font-display text-4xl leading-none md:text-5xl',
@@ -133,8 +162,6 @@ export function MetricTile({
           </div>
         )}
 
-        {/* Not uppercased: this line carries values, and `1m 35s` becomes the
-            unreadable `1M 35S` under a blanket text-transform. */}
         <p className="mt-2 font-mono text-[10px] tracking-[0.12em] text-smoke">
           {hint ??
             (delta === null
@@ -219,7 +246,6 @@ export function ChartCard({
                       key={cellIndex}
                       className={cn(
                         'py-2 pr-4',
-                        // Tabular figures here — these are columns that must align.
                         typeof cell === 'number' && 'font-mono text-xs tabular-nums',
                       )}
                     >

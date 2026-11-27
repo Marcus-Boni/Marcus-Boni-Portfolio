@@ -163,14 +163,41 @@ export function renderArticle(
   const altLink = alternate
     ? ` · <a href="${escapeHtml(alternate.href)}" hreflang="${alternate.lang === 'pt' ? 'pt-BR' : 'en'}">${alternate.lang === 'en' ? 'Read in English' : 'Ler em português'}</a>`
     : ''
+  const readingLabel = view.readingMinutes > 0
+    ? ` · ${activeLang === 'en' ? `${view.readingMinutes} min read` : `${view.readingMinutes} min de leitura`}`
+    : ''
+  const coverDims = `${post.coverWidth ? ` width="${post.coverWidth}"` : ''}${post.coverHeight ? ` height="${post.coverHeight}"` : ''}`
+  const tagLinks = view.tags.length > 0
+    ? `<p>${view.tags.map((tag) => `<a href="${indexHref}?tag=${encodeURIComponent(tag)}">${escapeHtml(tag)}</a>`).join(' · ')}</p>`
+    : ''
   return `${fallbackStyle}<div class="blog-document">${navigation(activeLang)}<main id="main-content">
     <nav aria-label="Breadcrumb"><a href="/">Marcus Boni</a> / <a href="${indexHref}">Blog</a> / <span aria-current="page">${escapeHtml(view.title)}</span></nav>
     <article class="post-prose"><header>
     <h1>${escapeHtml(view.title)}</h1>
     ${view.subtitle ? `<p>${escapeHtml(view.subtitle)}</p>` : ''}
-    <p><a rel="author" href="/about">Marcus Boni</a>${dateLine(post, activeLang)}${altLink}</p>
-    ${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(view.coverAlt || view.title)}" fetchpriority="high" />` : ''}
+    <p><a rel="author" href="/about">Marcus Boni</a>${dateLine(post, activeLang)}${readingLabel}${altLink}</p>
+    ${tagLinks}
+    ${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(view.coverAlt || view.title)}"${coverDims} fetchpriority="high" />` : ''}
     </header>${renderMarkdown(body, media, activeLang)}</article><a href="${indexHref}">${activeLang === 'en' ? 'All articles' : 'Todos os artigos'}</a></main></div>`
+}
+
+export function renderAskPage(lang: BlogLocale = 'pt'): string {
+  const en = lang === 'en'
+  const otherHref = en ? '/ask' : '/en/ask'
+  return `${fallbackStyle}<div class="blog-document ask-document">${navigation(lang)}<main id="main-content">
+    <nav aria-label="Breadcrumb"><a href="/">Marcus Boni</a> / <span aria-current="page">${en ? 'Interactive dossier' : 'Dossiê interativo'}</span></nav>
+    <h1>${en ? 'Interactive dossier' : 'Dossiê interativo'}</h1>
+    <p>${en
+      ? 'Ask grounded questions about Marcus Boni’s stack, public repositories, production client deliveries at Optsolv, or paste a job description (/fit) to compare requirements against real evidence.'
+      : 'Consulte com evidências reais a stack, repositórios públicos e entregas em produção de Marcus Boni na Optsolv, ou cole uma vaga (/fit) para avaliar aderência.'}</p>
+    <ul>
+      <li><a href="/about">${en ? 'About Marcus Boni' : 'Sobre Marcus Boni'}</a></li>
+      <li><a href="${blogIndexPath(lang)}">${en ? 'Software engineering journal' : 'Blog de engenharia de software'}</a></li>
+      <li><a href="/developers">${en ? 'JSON API & Markdown endpoints' : 'API JSON e endpoints em Markdown'}</a></li>
+      <li><a href="/contact">${en ? 'Contact' : 'Contato'}</a></li>
+      <li><a href="${otherHref}" hreflang="${en ? 'pt-BR' : 'en'}">${en ? 'Versão em português' : 'English version'}</a></li>
+    </ul>
+  </main></div>`
 }
 
 export function renderBlogIndex(posts: EdgePost[], lang: BlogLocale = 'pt'): string {

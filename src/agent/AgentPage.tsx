@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
+import { useAskHead } from '@/agent/ask-seo'
 import { AgentConsole } from '@/agent/components/AgentConsole'
 import { parseAskQueryParams } from '@/agent/share'
+import { useReleaseServerDocument } from '@/blog/lib/server-document'
 import { LanguageToggle } from '@/components/ui/LanguageToggle'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { useLanguage } from '@/i18n/LanguageContext'
@@ -10,45 +12,6 @@ import type { Locale } from '@/i18n/translations'
 import { trackEvent } from '@/lib/analytics'
 import { transitionLocale } from '@/lib/locale-transition'
 import { cn } from '@/lib/utils'
-
-const SITE_URL = 'https://marcusboni.com.br'
-
-function useAskHead(locale: Locale) {
-  useEffect(() => {
-    const isPt = locale === 'pt'
-    const title = isPt
-      ? 'Dossiê interativo — Marcus Boni'
-      : 'Interactive dossier — Marcus Boni'
-    const description = isPt
-      ? 'Consulte a trajetória, projetos, stack e entregas em produção de Marcus Boni ou cole uma vaga (/fit) para mapear evidências reais.'
-      : 'Query Marcus Boni’s stack, repositories, and production client work, or paste a job description (/fit) for an evidence-based role brief.'
-    const path = isPt ? '/ask' : '/en/ask'
-    const url = `${SITE_URL}${path}`
-
-    document.title = title
-    document.documentElement.lang = isPt ? 'pt-BR' : 'en'
-
-    const setMeta = (selector: string, attr: 'name' | 'property', key: string, content: string) => {
-      document.head.querySelectorAll(selector).forEach((node) => node.remove())
-      const meta = document.createElement('meta')
-      meta.setAttribute(attr, key)
-      meta.setAttribute('content', content)
-      document.head.appendChild(meta)
-    }
-
-    setMeta('meta[name="description"]', 'name', 'description', description)
-    setMeta('meta[name="title"]', 'name', 'title', title)
-    setMeta('meta[property="og:title"]', 'property', 'og:title', title)
-    setMeta('meta[property="og:description"]', 'property', 'og:description', description)
-    setMeta('meta[property="og:url"]', 'property', 'og:url', url)
-
-    document.head.querySelectorAll('link[rel="canonical"]').forEach((node) => node.remove())
-    const canonical = document.createElement('link')
-    canonical.setAttribute('rel', 'canonical')
-    canonical.setAttribute('href', url)
-    document.head.appendChild(canonical)
-  }, [locale])
-}
 
 /**
  * Dedicated `/ask` and `/en/ask` full-canvas workspace.
@@ -70,6 +33,7 @@ export default function AgentPage({ routeLang = 'pt' }: { routeLang?: Locale }) 
 
   const activeLocale = routeLang
   useAskHead(activeLocale)
+  useReleaseServerDocument(true)
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })

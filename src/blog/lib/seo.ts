@@ -5,9 +5,24 @@ import { profile, socials } from '@/data/profile'
 import type { Locale } from '@/i18n/translations'
 import { blogIndexPath, localizedMeta } from '../../../netlify/lib/blog-locale'
 import {
-  articleSchema, blogDescription, blogIndexUrl, blogSchema, blogTitle, breadcrumbSchema,
-  DEFAULT_OG, DEFAULT_OG_META, postAlternates, postCanonicalUrl, postDescription, safeImage,
-  SITE_NAME, SITE_URL, validDate,
+  articleSchema,
+  blogDescription,
+  blogIndexUrl,
+  blogSchema,
+  blogTitle,
+  breadcrumbSchema,
+  countMarkdownWords,
+  DEFAULT_OG,
+  DEFAULT_OG_META,
+  defaultOgAlt,
+  imageMimeType,
+  postAlternates,
+  postCanonicalUrl,
+  postDescription,
+  safeImage,
+  SITE_NAME,
+  SITE_URL,
+  validDate,
 } from '../../../netlify/lib/blog-seo'
 
 import { formatPostDate } from './text'
@@ -18,7 +33,7 @@ function removeHead(selector: string) {
   document.head.querySelectorAll(selector).forEach((node) => node.remove())
 }
 
-function setMeta(attr: 'name' | 'property', key: string, content: string) {
+function setMeta(attr: 'name' | 'property' | 'http-equiv', key: string, content: string) {
   removeHead(`meta[${attr}="${key}"]`)
   const tag = document.createElement('meta')
   tag.setAttribute(attr, key)
@@ -55,6 +70,9 @@ interface HeadInput {
   description: string
   path: string
   image?: string
+  imageWidth?: number
+  imageHeight?: number
+  imageType?: string
   imageAlt?: string
   type?: 'website' | 'article'
   locale?: Locale
@@ -63,17 +81,32 @@ interface HeadInput {
   jsonLd?: object | null
 }
 
-function applyHead({ title, description, path, image = DEFAULT_OG, imageAlt = SITE_NAME,
-  type = 'website', locale = 'pt', noindex = false, canonical = true, jsonLd = null,
+function applyHead({
+  title,
+  description,
+  path,
+  image = DEFAULT_OG,
+  imageWidth,
+  imageHeight,
+  imageType,
+  imageAlt,
+  type = 'website',
+  locale = 'pt',
+  noindex = false,
+  canonical = true,
+  jsonLd = null,
 }: HeadInput) {
   const url = `${SITE_URL}${path}`
+  const contentLang = locale === 'pt' ? 'pt-BR' : 'en'
+  const resolvedAlt = imageAlt || defaultOgAlt(locale)
   document.title = title
-  document.documentElement.lang = locale === 'pt' ? 'pt-BR' : 'en'
+  document.documentElement.lang = contentLang
   removeHead('meta[property^="article:"]')
   removeHead('meta[property="og:locale:alternate"]')
   removeHead('link[rel="canonical"]')
   removeHead('link[rel="alternate"][hreflang]')
   removeHead('link[rel="alternate"][type="text/markdown"]')
+  removeHead('link[rel="alternate"][href="/en/rss.xml"]')
   removeHead('meta[name^="twitter:"]')
   removeHead('meta[property^="twitter:"]')
   removeHead('meta[property="og:image:width"]')
@@ -81,20 +114,37 @@ function applyHead({ title, description, path, image = DEFAULT_OG, imageAlt = SI
   removeHead('meta[property="og:image:type"]')
   setMeta('name', 'description', description)
   setMeta('name', 'title', title)
+  setMeta('http-equiv', 'content-language', contentLang)
   setMeta('name', 'robots', noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large')
   if (canonical) {
     setLink('canonical', url)
     setLink('alternate', url, { type: 'text/markdown' })
   }
   for (const [key, value] of Object.entries({
-    title, description, url, image, type, site_name: SITE_NAME,
-    locale: locale === 'pt' ? 'pt_BR' : 'en_US', 'image:alt': imageAlt,
+    title,
+    description,
+    url,
+    image,
+    type,
+    site_name: SITE_NAME,
+    locale: locale === 'pt' ? 'pt_BR' : 'en_US',
+    'image:alt': resolvedAlt,
   })) setMeta('property', `og:${key}`, value)
   if (image === DEFAULT_OG) {
     for (const [key, value] of Object.entries(DEFAULT_OG_META)) setMeta('property', `og:image:${key}`, value)
+  } else {
+    const typeVal = imageType ?? imageMimeType(image)
+    if (typeVal) setMeta('property', 'og:image:type', typeVal)
+    if (imageWidth && imageWidth > 0) setMeta('property', 'og:image:width', String(imageWidth))
+    if (imageHeight && imageHeight > 0) setMeta('property', 'og:image:height', String(imageHeight))
   }
   for (const [key, value] of Object.entries({
-    card: 'summary_large_image', title, description, image, url, 'image:alt': imageAlt,
+    card: 'summary_large_image',
+    title,
+    description,
+    image,
+    url,
+    'image:alt': resolvedAlt,
   })) setMeta('name', `twitter:${key}`, value)
   setJsonLd(jsonLd)
 }
@@ -113,6 +163,12 @@ export function applyBlogIndexHead(posts: PostMeta[] = [], locale: Locale = 'pt'
   setLink('alternate', ptHref, { hreflang: 'pt-BR' })
   setLink('alternate', enHref, { hreflang: 'en' })
   setLink('alternate', ptHref, { hreflang: 'x-default' })
+  if (locale === 'en') {
+    setLink('alternate', '/en/rss.xml', {
+      type: 'application/rss+xml',
+      title: `${SITE_NAME} — Field notes (EN)`,
+    })
+  }
   setMeta('property', 'og:locale:alternate', locale === 'pt' ? 'en_US' : 'pt_BR')
 }
 
@@ -120,22 +176,31 @@ export function useBlogIndexHead(posts: PostMeta[], locale: Locale) {
   useEffect(() => applyBlogIndexHead(posts, locale), [posts, locale])
 }
 
-export function applyPostHead(post: PostMeta, translation?: PostMeta | null, lang?: Locale) {
+export function applyPostHead(
+  post: PostMeta,
+  translation?: PostMeta | null,
+  lang?: Locale,
+  markdownBody?: string,
+) {
   const view = localizedMeta(post, lang ?? post.lang)
   const activeLang = view.lang
   const url = postCanonicalUrl(post, activeLang)
+  const coverImage = safeImage(post.cover?.src)
+  const wordCount = markdownBody ? countMarkdownWords(markdownBody) : undefined
   applyHead({
     title: `${view.title} — ${SITE_NAME}`,
     description: postDescription(post, activeLang),
     path: new URL(url).pathname,
-    image: safeImage(post.cover?.src) ?? DEFAULT_OG,
+    image: coverImage ?? DEFAULT_OG,
+    imageWidth: coverImage ? post.cover?.width : undefined,
+    imageHeight: coverImage ? post.cover?.height : undefined,
     imageAlt: view.coverAlt || view.title,
     type: 'article',
     locale: activeLang,
     noindex: post.status !== 'published',
     jsonLd: {
       '@context': 'https://schema.org',
-      '@graph': [articleSchema(post, activeLang), breadcrumbSchema(post, activeLang)],
+      '@graph': [articleSchema(post, activeLang, { wordCount }), breadcrumbSchema(post, activeLang)],
     },
   })
   const published = validDate(post.publishedAt)
@@ -143,6 +208,7 @@ export function applyPostHead(post: PostMeta, translation?: PostMeta | null, lan
   if (published) setMeta('property', 'article:published_time', published)
   if (modified) setMeta('property', 'article:modified_time', modified)
   setMeta('property', 'article:author', `${SITE_URL}/about`)
+  if (view.tags[0]) setMeta('property', 'article:section', view.tags[0])
   for (const tag of view.tags) {
     const meta = document.createElement('meta')
     meta.setAttribute('property', 'article:tag')
@@ -155,6 +221,12 @@ export function applyPostHead(post: PostMeta, translation?: PostMeta | null, lan
       setLink('alternate', entry.href, { hreflang: entry.hreflang })
     }
     setMeta('property', 'og:locale:alternate', activeLang === 'pt' ? 'en_US' : 'pt_BR')
+  }
+  if (activeLang === 'en') {
+    setLink('alternate', '/en/rss.xml', {
+      type: 'application/rss+xml',
+      title: `${SITE_NAME} — Field notes (EN)`,
+    })
   }
 }
 
@@ -173,11 +245,12 @@ export function usePostHead(
   locale: Locale,
   path: string,
   activeLang?: Locale,
+  markdownBody?: string,
 ) {
   useEffect(() => {
-    if (post) applyPostHead(post, translation, activeLang)
+    if (post) applyPostHead(post, translation, activeLang, markdownBody)
     else if (status === 'ready') applyMissingPostHead(locale, path)
-  }, [post, status, translation, locale, path, activeLang])
+  }, [post, status, translation, locale, path, activeLang, markdownBody])
 }
 
 /** Restores the portfolio metadata after client-side navigation. */

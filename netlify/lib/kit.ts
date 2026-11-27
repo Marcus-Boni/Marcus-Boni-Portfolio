@@ -673,7 +673,8 @@ export function kitPage(locale: KitLocale): string {
 
     <title>${escapeHtml(c.title)}</title>
     <meta name="description" content="${escapeHtml(c.description)}" />
-    <meta name="robots" content="index, follow" />
+    <meta http-equiv="content-language" content="${c.htmlLang}" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
     <link rel="canonical" href="${url}" />
     <link rel="alternate" hreflang="pt-BR" href="${SITE_URL}${KIT_PATH.pt}" />
     <link rel="alternate" hreflang="en" href="${SITE_URL}${KIT_PATH.en}" />
@@ -691,9 +692,16 @@ export function kitPage(locale: KitLocale): string {
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:site_name" content="Marcus Boni — Portfolio" />
+    <meta property="og:image:alt" content="${escapeHtml(c.title)}" />
+    <meta property="og:site_name" content="Marcus Boni" />
     <meta property="og:locale" content="${c.ogLocale}" />
+    <meta property="og:locale:alternate" content="${COPY[other].ogLocale}" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="${url}" />
+    <meta name="twitter:title" content="${escapeHtml(c.title)}" />
+    <meta name="twitter:description" content="${escapeHtml(c.description)}" />
+    <meta name="twitter:image" content="${SITE_URL}/og-image.jpg" />
+    <meta name="twitter:image:alt" content="${escapeHtml(c.title)}" />
 
     <link rel="preload" href="/kit/fonts/instrument-serif-400.woff2" as="font" type="font/woff2" crossorigin />
     <style>${FONT_FACES}
