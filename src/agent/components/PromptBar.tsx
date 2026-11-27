@@ -28,6 +28,7 @@ import {
   IconFileText,
   IconMic,
   IconPlus,
+  IconQueue,
   IconSlash,
 } from './icons'
 import { VoiceRecorder } from './VoiceRecorder'
@@ -79,6 +80,7 @@ export function PromptBar({
   value,
   onChange,
   onSubmit,
+  onQueue,
   onStop,
   streaming,
   lens,
@@ -100,6 +102,7 @@ export function PromptBar({
   value: string
   onChange: (value: string) => void
   onSubmit: (prompt: string) => void
+  onQueue?: (prompt: string) => void
   onStop: () => void
   streaming: boolean
   lens: AgentLens
@@ -227,12 +230,13 @@ export function PromptBar({
     window.requestAnimationFrame(() => textareaRef.current?.focus())
   }
 
-  const canSend =
-    (value.trim().length > 0 || attachments.length > 0 || selectedCmd !== null) &&
-    !streaming
+  const hasDraft =
+    value.trim().length > 0 || attachments.length > 0 || selectedCmd !== null
+  const canSend = hasDraft && !streaming
+  const canQueue = hasDraft && streaming && Boolean(onQueue)
 
   const commitSend = () => {
-    if (!canSend) return
+    if (!canSend && !canQueue) return
     const parts: string[] = []
     if (selectedCmd) parts.push(selectedCmd.command)
     if (value.trim()) parts.push(value.trim())
@@ -245,7 +249,11 @@ export function PromptBar({
     onChange('')
     setSelectedCmd(null)
     setAttachments([])
-    onSubmit(finalPrompt)
+    if (streaming && onQueue) {
+      onQueue(finalPrompt)
+    } else {
+      onSubmit(finalPrompt)
+    }
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -523,9 +531,11 @@ export function PromptBar({
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder={
-                  selectedCmd?.command === '/fit'
-                    ? t.agent.input.fitPlaceholder
-                    : t.agent.input.placeholder
+                  streaming && onQueue
+                    ? t.agent.queue.addHint
+                    : selectedCmd?.command === '/fit'
+                      ? t.agent.input.fitPlaceholder
+                      : t.agent.input.placeholder
                 }
                 className="block max-h-44 min-h-[52px] w-full resize-none bg-transparent px-4 pt-3.5 pb-2 text-[15px] leading-relaxed text-bone placeholder:text-smoke focus:outline-none focus-visible:outline-none"
               />
@@ -681,6 +691,18 @@ export function PromptBar({
                       className="flex size-8 items-center justify-center rounded-full text-smoke transition-colors hover:bg-ink hover:text-ember focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember"
                     >
                       <IconMic className="size-4" />
+                    </button>
+                  )}
+
+                  {canQueue && (
+                    <button
+                      type="button"
+                      onClick={commitSend}
+                      aria-label={t.agent.queue.addHint}
+                      title={t.agent.queue.addHint}
+                      className="flex size-8 items-center justify-center rounded-full border border-ember/50 bg-ember/12 text-ember transition-colors hover:bg-ember hover:text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember"
+                    >
+                      <IconQueue className="size-4" />
                     </button>
                   )}
 

@@ -334,19 +334,9 @@ export function ContextMeter({
               <span className="truncate">
                 {runtimePreference === 'local'
                   ? t.agent.meter.runtimeLabel
-                  : edgeCapability?.configured && edgeCapability.model
-                    ? t.agent.meter.edgeReady(
-                        edgeCapability.provider
-                          ? `${edgeCapability.provider}${
-                              edgeCapability.fallbackCount && edgeCapability.fallbackCount > 1
-                                ? ` (+${edgeCapability.fallbackCount - 1})`
-                                : ''
-                            } · ${edgeCapability.model}`
-                          : edgeCapability.model,
-                      )
-                    : edgeCapability?.checked
-                      ? t.agent.meter.edgeStandby
-                      : t.agent.meter.runtimeLabel}
+                  : edgeCapability?.configured
+                    ? t.agent.meter.verifiedStatus
+                    : t.agent.meter.runtimeLabel}
               </span>
               <a
                 href="/developers"

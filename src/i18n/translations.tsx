@@ -189,6 +189,14 @@ export interface Translation {
     copiedAnswer: string
     shareLink: string
     copiedLink: string
+    followupsLabel: string
+    queue: {
+      heading: (count: number) => string
+      addHint: string
+      sendNow: string
+      remove: string
+      clearAll: string
+    }
     lenses: {
       label: string
       recruiter: string
@@ -235,6 +243,7 @@ export interface Translation {
       copyBrief: string
       copiedBrief: string
       downloadBrief: string
+      printPdf: string
       shareLink: string
       copiedLink: string
       verifiedLabel: string
@@ -275,6 +284,7 @@ export interface Translation {
       sections: string
       turns: string
       runtimeLabel: string
+      verifiedStatus: string
       liveCms: string
       staticSeed: string
       modeLabel: string
@@ -519,6 +529,14 @@ export const translations: Record<Locale, Translation> = {
       copiedAnswer: 'Copiado',
       shareLink: 'Copiar link',
       copiedLink: 'Link copiado',
+      followupsLabel: 'Próximas perguntas',
+      queue: {
+        heading: (count) => (count === 1 ? '1 na fila' : `${count} na fila`),
+        addHint: 'Enter para enfileirar enquanto responde…',
+        sendNow: 'Enviar agora',
+        remove: 'Remover da fila',
+        clearAll: 'Limpar fila',
+      },
       lenses: {
         label: 'Lente',
         recruiter: 'Recrutador',
@@ -567,6 +585,7 @@ export const translations: Record<Locale, Translation> = {
         copyBrief: 'Copiar .md',
         copiedBrief: 'Copiado',
         downloadBrief: 'Baixar .md',
+        printPdf: 'PDF',
         shareLink: 'Copiar link',
         copiedLink: 'Link copiado',
         verifiedLabel: 'Evidências reais',
@@ -609,6 +628,7 @@ export const translations: Record<Locale, Translation> = {
         sections: 'Seções do Diário',
         turns: 'Turnos na sessão',
         runtimeLabel: 'Local · determinístico',
+        verifiedStatus: 'Dossiê verificado',
         liveCms: 'CMS ao vivo',
         staticSeed: 'Base estática',
         modeLabel: 'Motor',
@@ -851,6 +871,14 @@ export const translations: Record<Locale, Translation> = {
       copiedAnswer: 'Copied',
       shareLink: 'Copy link',
       copiedLink: 'Link copied',
+      followupsLabel: 'Follow-ups',
+      queue: {
+        heading: (count) => (count === 1 ? '1 queued' : `${count} queued`),
+        addHint: 'Press Enter to queue while streaming…',
+        sendNow: 'Send now',
+        remove: 'Remove from queue',
+        clearAll: 'Clear queue',
+      },
       lenses: {
         label: 'Lens',
         recruiter: 'Recruiter',
@@ -899,6 +927,7 @@ export const translations: Record<Locale, Translation> = {
         copyBrief: 'Copy .md',
         copiedBrief: 'Copied',
         downloadBrief: 'Download .md',
+        printPdf: 'PDF',
         shareLink: 'Copy link',
         copiedLink: 'Link copied',
         verifiedLabel: 'Verified evidence',
@@ -941,6 +970,7 @@ export const translations: Record<Locale, Translation> = {
         sections: 'Journal sections',
         turns: 'Session turns',
         runtimeLabel: 'Local · deterministic',
+        verifiedStatus: 'Verified dossier',
         liveCms: 'Live CMS',
         staticSeed: 'Static seed',
         modeLabel: 'Runtime',

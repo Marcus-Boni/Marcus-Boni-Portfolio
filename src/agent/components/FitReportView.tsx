@@ -1,12 +1,14 @@
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 
+import { printFitBrief } from '@/agent/print-brief'
 import {
   buildShareableAskUrl,
   downloadMarkdownFile,
   slugifyBriefFilename,
 } from '@/agent/share'
 import type { AgentLens, FitReport } from '@/agent/types'
+import { useSiteContent } from '@/content/SiteContentContext'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { trackEvent } from '@/lib/analytics'
 
@@ -16,6 +18,7 @@ import {
   IconCopy,
   IconDownload,
   IconLink,
+  IconPrinter,
 } from './icons'
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const
@@ -40,6 +43,7 @@ export function FitReportView({
   onNavigateInternal?: (href: string) => void
 }) {
   const { locale, t } = useLanguage()
+  const { content } = useSiteContent()
   const [copied, setCopied] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
 
@@ -58,6 +62,19 @@ export function FitReportView({
     const filename = slugifyBriefFilename(report.roleHint)
     if (downloadMarkdownFile(filename, report.markdownBrief)) {
       trackEvent('agent_share', { kind: 'fit_download' })
+    }
+  }
+
+  const handlePrintPdf = () => {
+    const ok = printFitBrief(report, {
+      locale,
+      profileName: content.profile.name,
+      role: content.profile.role,
+      location: content.profile.location,
+      email: content.profile.email,
+    })
+    if (ok) {
+      trackEvent('agent_share', { kind: 'fit_print' })
     }
   }
 
@@ -125,6 +142,17 @@ export function FitReportView({
           >
             <IconDownload className="size-3.5" />
             <span className="hidden sm:inline">{t.agent.fit.downloadBrief}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handlePrintPdf}
+            aria-label={t.agent.fit.printPdf}
+            title={t.agent.fit.printPdf}
+            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line bg-ink px-3 font-mono text-[11px] text-bone-dim transition-colors hover:border-ember hover:text-bone focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember"
+          >
+            <IconPrinter className="size-3.5" />
+            <span className="hidden sm:inline">{t.agent.fit.printPdf}</span>
           </button>
 
           {sourcePrompt && (

@@ -7,6 +7,11 @@ import {
   defaultHybridRuntime,
   probeEdgeCapability,
 } from '@/agent/edge-runtime'
+import { buildContextualFollowups } from '@/agent/followups'
+import {
+  fetchLiveGitHubActivity,
+  type GitHubActivityPayload,
+} from '@/agent/github-activity'
 import {
   KNOWLEDGE_NOTES,
   SAMPLE_JOB_DESCRIPTIONS,
@@ -14,6 +19,7 @@ import {
   type KnowledgeNote,
 } from '@/agent/knowledge'
 import { buildPostSectionIndex, type IndexedPostSection } from '@/agent/post-index'
+import { classifyIntent } from '@/agent/retrieval'
 import {
   clearAgentSession,
   getAgentSession,
@@ -43,6 +49,7 @@ import { cn } from '@/lib/utils'
 import { FitReportView } from './FitReportView'
 import { IconCheck, IconCopy, IconLink, IconReset, IconSpark } from './icons'
 import { GroundedProse } from './InlineCitations'
+import { MessageQueue, type QueuedPrompt } from './MessageQueue'
 import { PromptBar } from './PromptBar'
 import { TextLoading } from './TextLoading'
 import { ToolApprovalCard } from './ToolApprovalCard'
@@ -84,9 +91,11 @@ export function AgentConsole({
 
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
+  const [queuedPrompts, setQueuedPrompts] = useState<QueuedPrompt[]>([])
   const [posts, setPosts] = useState<PostMeta[]>([])
   const [postSections, setPostSections] = useState<IndexedPostSection[]>([])
   const [knowledgeNotes, setKnowledgeNotes] = useState<readonly KnowledgeNote[]>(KNOWLEDGE_NOTES)
+  const [githubActivity, setGithubActivity] = useState<GitHubActivityPayload | null>(null)
   const [copiedTurnId, setCopiedTurnId] = useState<string | null>(null)
   const [sharedTurnId, setSharedTurnId] = useState<string | null>(null)
   const [edgeCapability, setEdgeCapability] = useState<EdgeCapability>({
@@ -96,6 +105,7 @@ export function AgentConsole({
     model: null,
   })
   const abortRef = useRef<AbortController | null>(null)
+  const userStoppedRef = useRef(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const prevTurnCountRef = useRef(turns.length)
@@ -113,6 +123,9 @@ export function AgentConsole({
     let cancelled = false
     void probeEdgeCapability().then((cap) => {
       if (!cancelled) setEdgeCapability(cap)
+    })
+    void fetchLiveGitHubActivity().then((activity) => {
+      if (!cancelled && activity) setGithubActivity(activity)
     })
     return () => {
       cancelled = true
@@ -203,6 +216,7 @@ export function AgentConsole({
 
       const activeLens = overrides?.lens ?? lens
       const activePreference = overrides?.preference ?? runtimePreference
+      userStoppedRef.current = false
 
       abortRef.current?.abort()
       const controller = new AbortController()
@@ -256,13 +270,25 @@ export function AgentConsole({
       }
 
       let observedRuntime: RuntimeMeta | undefined
+      let resolvedGithub = githubActivity
 
       try {
+        // Ensure cold `/activity` deep-links still receive live GitHub data
+        if (
+          !resolvedGithub &&
+          classifyIntent(trimmed, content, { knowledgeNotes, postSections, locale }).intent ===
+            'activity'
+        ) {
+          resolvedGithub = await fetchLiveGitHubActivity()
+          if (resolvedGithub) setGithubActivity(resolvedGithub)
+        }
+
         for await (const event of defaultHybridRuntime.streamTurn(trimmed, {
           content,
           posts,
           knowledgeNotes,
           postSections,
+          githubActivity: resolvedGithub,
           locale,
           lens: activeLens,
           history,
@@ -369,7 +395,18 @@ export function AgentConsole({
         setStreaming(false)
       }
     },
-    [content, posts, knowledgeNotes, postSections, locale, lens, runtimePreference, reduced, variant],
+    [
+      content,
+      posts,
+      knowledgeNotes,
+      postSections,
+      githubActivity,
+      locale,
+      lens,
+      runtimePreference,
+      reduced,
+      variant,
+    ],
   )
 
   useEffect(() => {
@@ -400,9 +437,49 @@ export function AgentConsole({
     }
   }, [initialPrompt, initialLens, initialMode, runPrompt])
 
+  // Kokonut AI-24: automatically dispatch the next queued prompt when the active turn completes
+  useEffect(() => {
+    if (streaming || userStoppedRef.current || queuedPrompts.length === 0) return
+    const next = queuedPrompts[0]
+    const timer = window.setTimeout(() => {
+      setQueuedPrompts((prev) => prev.filter((item) => item.id !== next.id))
+      void runPrompt(next.text)
+    }, 60)
+    return () => window.clearTimeout(timer)
+  }, [streaming, queuedPrompts, runPrompt])
+
   const handleStop = () => {
+    userStoppedRef.current = true
     abortRef.current?.abort()
     setStreaming(false)
+  }
+
+  const handleQueuePrompt = (prompt: string) => {
+    const clean = prompt.trim()
+    if (!clean) return
+    userStoppedRef.current = false
+    setQueuedPrompts((prev) => [
+      ...prev,
+      {
+        id: `queue-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+        text: clean,
+      },
+    ])
+  }
+
+  const handleRemoveQueued = (id: string) => {
+    setQueuedPrompts((prev) => prev.filter((item) => item.id !== id))
+  }
+
+  const handleSendQueuedNow = (id: string) => {
+    const target = queuedPrompts.find((item) => item.id === id)
+    if (!target) return
+    setQueuedPrompts((prev) => prev.filter((item) => item.id !== id))
+    userStoppedRef.current = false
+    abortRef.current?.abort()
+    window.setTimeout(() => {
+      void runPrompt(target.text)
+    }, 30)
   }
 
   const handleLensChange = (nextLens: AgentLens) => {
@@ -416,8 +493,10 @@ export function AgentConsole({
   }
 
   const handleReset = () => {
+    userStoppedRef.current = false
     abortRef.current?.abort()
     setStreaming(false)
+    setQueuedPrompts([])
     clearAgentSession()
   }
 
@@ -479,13 +558,22 @@ export function AgentConsole({
   const starters = STARTER_PROMPTS[locale][lens]
   const sampleJd = SAMPLE_JOB_DESCRIPTIONS[locale]
   const isEmpty = turns.length === 0
+  const followups = buildContextualFollowups(lastTurn, turns, locale, lens)
 
   const composer = (
-    <PromptBar
-      value={input}
-      onChange={setInput}
-      onSubmit={(prompt) => void runPrompt(prompt)}
-      onStop={handleStop}
+    <>
+      <MessageQueue
+        items={queuedPrompts}
+        onSendNow={handleSendQueuedNow}
+        onRemove={handleRemoveQueued}
+        onClear={() => setQueuedPrompts([])}
+      />
+      <PromptBar
+        value={input}
+        onChange={setInput}
+        onSubmit={(prompt) => void runPrompt(prompt)}
+        onQueue={handleQueuePrompt}
+        onStop={handleStop}
       streaming={streaming}
       lens={lens}
       onLensChange={handleLensChange}
@@ -500,9 +588,10 @@ export function AgentConsole({
       runtimePreference={runtimePreference}
       onRuntimePreferenceChange={setRuntimePreference}
       edgeCapability={edgeCapability}
-      menuSide={isEmpty ? 'bottom' : 'top'}
-      autoFocus={variant === 'drawer'}
-    />
+        menuSide={isEmpty ? 'bottom' : 'top'}
+        autoFocus={variant === 'drawer'}
+      />
+    </>
   )
 
   return (
@@ -651,22 +740,7 @@ export function AgentConsole({
 
                           {!turn.streaming && turn.text && (
                             <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] tracking-[0.06em] text-smoke">
-                              {turn.runtimeMeta?.mode === 'edge-llm' &&
-                                turn.runtimeMeta.model && (
-                                  <span>
-                                    {t.agent.meter.edgeReady(
-                                      turn.runtimeMeta.provider
-                                        ? `${turn.runtimeMeta.provider} · ${turn.runtimeMeta.model}`
-                                        : turn.runtimeMeta.model,
-                                    )}
-                                  </span>
-                                )}
-
-                              {turn.runtimeMeta?.fallbackReason === 'rate_limited' && (
-                                <span>{t.agent.meter.rateLimitNote}</span>
-                              )}
-
-                              <span className="inline-flex items-center gap-2">
+                              <span className="inline-flex items-center gap-2.5">
                                 <button
                                   type="button"
                                   onClick={() => void handleCopyAnswer(turn)}
@@ -732,6 +806,28 @@ export function AgentConsole({
                     )}
                     <div ref={bottomRef} />
                   </div>
+
+                  {/* Deterministic zero-token contextual follow-ups after latest answer */}
+                  {!streaming && followups.length > 0 && (
+                    <div
+                      aria-label={t.agent.followupsLabel}
+                      className="mt-6 flex flex-wrap items-center gap-2 border-t border-line/60 pt-4"
+                    >
+                      <span className="font-mono text-[10px] tracking-[0.14em] text-smoke uppercase">
+                        {t.agent.followupsLabel}
+                      </span>
+                      {followups.map((prompt) => (
+                        <button
+                          key={prompt}
+                          type="button"
+                          onClick={() => void runPrompt(prompt)}
+                          className="rounded-full border border-line bg-ink-soft/60 px-3 py-1 text-xs text-bone-dim transition-colors hover:border-ember hover:text-bone focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ember"
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
