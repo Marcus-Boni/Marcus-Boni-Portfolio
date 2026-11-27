@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { useAdminContent } from '@/admin/AdminContentContext'
 import { useAuth } from '@/admin/AuthContext'
@@ -13,24 +13,30 @@ import {
   Card,
   CopyButton,
   Field,
+  IconButton,
   PageHeader,
   SectionHeader,
   Spinner,
   StatusDot,
   TextArea,
+  Toggle,
 } from '@/admin/components/ui'
 import { exportContentJson, parseContentJson, type ImportPreview } from '@/admin/lib/backup'
+import {
+  saveExcludedVisitorIds,
+  subscribeAnalyticsSettings,
+} from '@/admin/services/analytics-settings'
+import {
+  ensureOwnVisitorId,
+  getOwnVisitorId,
+  getTrackingBlockReason,
+  isOwnTrafficIgnored,
+  setIgnoreOwnTraffic,
+} from '@/lib/analytics'
 import { isFirebaseConfigured } from '@/lib/firebase'
 import { firebaseConfig } from '@/lib/firebase-config'
 import { cn } from '@/lib/utils'
 
-/**
- * Every env var the admin reads.
- *
- * Read through `firebaseConfig` rather than indexing `import.meta.env` with a
- * variable: Vite inlines only *static* `import.meta.env.VITE_X` accesses, so a
- * computed lookup works in dev and silently returns undefined in the build.
- */
 const ENV_KEYS: {
   key: string
   required: boolean
@@ -48,16 +54,8 @@ const ENV_KEYS: {
   { key: 'VITE_FIREBASE_APP_ID', required: true, field: 'appId' },
 ]
 
-/**
- * Diagnostics, backup and the one destructive button.
- *
- * The old page could tell you Firebase was "modo demo" but not *why*; now every
- * variable is listed with its state, so a missing `VITE_FIREBASE_APP_ID` is a
- * line you can read instead of a mystery. Import gained a file picker, a drop
- * zone and a diff preview — pasting a JSON blob and hoping was the only option
- * before — and the reset button now asks you to type the word, because it
- * overwrites what is published the moment it is pressed.
- */
+const MOBILE_OPT_OUT_URL = 'https://marcusboni.com.br/?ignore_me=1'
+
 export function Settings() {
   const { draft, loading, replace, resetToDefaults, saving } = useAdminContent()
   const { user } = useAuth()
@@ -71,6 +69,17 @@ export function Settings() {
   const [dragging, setDragging] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  const [browserIgnored, setBrowserIgnored] = useState(() => isOwnTrafficIgnored())
+  const [ownVisitorId, setOwnVisitorId] = useState(() => getOwnVisitorId())
+  const [excludedIds, setExcludedIds] = useState<string[]>([])
+  const [savingExclusion, setSavingExclusion] = useState(false)
+
+  useEffect(() => {
+    return subscribeAnalyticsSettings((settings) => {
+      setExcludedIds(settings.excludedVisitorIds)
+    })
+  }, [])
+
   if (loading) return <Spinner label="Carregando" />
 
   const env = ENV_KEYS.map((entry) => ({
@@ -78,6 +87,48 @@ export function Settings() {
     present: Boolean(firebaseConfig[entry.field]),
   }))
   const missingRequired = env.filter((entry) => entry.required && !entry.present)
+  const blockReason = getTrackingBlockReason()
+  const ownSynced = Boolean(ownVisitorId && excludedIds.includes(ownVisitorId))
+
+  const toggleBrowserIgnore = (next: boolean) => {
+    setIgnoreOwnTraffic(next)
+    setBrowserIgnored(next)
+    toast.success(
+      next
+        ? 'Suas visitas neste navegador não serão mais registradas.'
+        : 'Rastreamento reativado neste navegador (modo teste).',
+    )
+  }
+
+  const syncThisDeviceToFirestore = async () => {
+    setSavingExclusion(true)
+    try {
+      const id = ensureOwnVisitorId()
+      setOwnVisitorId(id)
+      const next = await saveExcludedVisitorIds([...excludedIds, id])
+      setExcludedIds(next)
+      setIgnoreOwnTraffic(true)
+      setBrowserIgnored(true)
+      toast.success('Dispositivo salvo na lista de exclusão — histórico filtrado.')
+    } catch {
+      toast.error('Não foi possível salvar o dispositivo no Firestore.')
+    } finally {
+      setSavingExclusion(false)
+    }
+  }
+
+  const removeExcludedDevice = async (id: string) => {
+    setSavingExclusion(true)
+    try {
+      const next = await saveExcludedVisitorIds(excludedIds.filter((item) => item !== id))
+      setExcludedIds(next)
+      toast.info('Dispositivo removido da lista de exclusão.')
+    } catch {
+      toast.error('Não foi possível remover o dispositivo.')
+    } finally {
+      setSavingExclusion(false)
+    }
+  }
 
   const readFile = async (file: File | undefined) => {
     if (!file) return
@@ -127,7 +178,7 @@ export function Settings() {
     <>
       <PageHeader
         title="Ajustes"
-        subtitle="Conexão, conta, backup do conteúdo e ações destrutivas."
+        subtitle="Higiene de métricas, diagnóstico de SEO, conexão Firebase e backup."
         meta={
           <span className="flex items-center gap-2 font-mono text-[10px] tracking-[0.16em] text-smoke uppercase">
             <StatusDot tone={isFirebaseConfigured ? 'live' : 'off'} />
@@ -137,6 +188,140 @@ export function Settings() {
       />
 
       <div className="flex flex-col gap-6">
+        {/* ─── Higiene de visitas (Meus acessos) ──────────────── */}
+        <Card>
+          <SectionHeader
+            label="Higiene de visitas (Meus acessos)"
+            hint="Impede que seus próprios acessos, pré-visualizações de posts, testes em localhost e deploy previews distorçam os números da Audiência."
+            action={
+              <Badge tone={browserIgnored || blockReason === 'local' ? 'ember' : 'warn'}>
+                {browserIgnored
+                  ? 'navegador excluído'
+                  : blockReason === 'local'
+                    ? 'localhost ignorado'
+                    : 'rastreando'}
+              </Badge>
+            }
+          />
+
+          <div className="flex flex-col gap-5">
+            <Toggle
+              checked={browserIgnored}
+              onChange={toggleBrowserIgnore}
+              label="Ignorar visitas deste navegador"
+              hint="Ativado automaticamente ao entrar no /admin. Desative apenas quando quiser testar o disparo de eventos."
+            />
+
+            <div className="border-t border-line pt-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-mono text-[10px] tracking-[0.2em] text-smoke uppercase">
+                    ID anônimo deste navegador
+                  </p>
+                  <p className="mt-1 font-mono text-xs text-bone-dim">
+                    {ownVisitorId ?? 'nenhum ID gerado ainda (bom sinal)'}
+                  </p>
+                </div>
+                <AdminButton
+                  size="sm"
+                  variant={ownSynced ? 'subtle' : 'outline'}
+                  disabled={savingExclusion || ownSynced}
+                  loading={savingExclusion}
+                  onClick={() => void syncThisDeviceToFirestore()}
+                >
+                  {ownSynced ? '✓ Histórico já filtrado' : 'Excluir histórico deste navegador'}
+                </AdminButton>
+              </div>
+              <p className="mt-2 text-xs text-smoke">
+                Salvar este ID no Firestore oculta também visitas antigas que você fez antes de
+                ativar o filtro, e sincroniza a exclusão entre computador e celular.
+              </p>
+            </div>
+
+            {excludedIds.length > 0 && (
+              <div className="border-t border-line pt-4">
+                <p className="mb-2 font-mono text-[10px] tracking-[0.2em] text-smoke uppercase">
+                  Dispositivos próprios excluídos ({excludedIds.length})
+                </p>
+                <ul className="flex flex-col divide-y divide-line border border-line bg-ink">
+                  {excludedIds.map((id) => (
+                    <li
+                      key={id}
+                      className="flex items-center justify-between gap-3 px-3 py-2 font-mono text-xs text-bone-dim"
+                    >
+                      <span className="truncate">
+                        {id}
+                        {id === ownVisitorId && (
+                          <span className="ml-2 text-[10px] text-ember uppercase">(este)</span>
+                        )}
+                      </span>
+                      <IconButton
+                        size="sm"
+                        label="Remover da exclusão"
+                        variant="ghost"
+                        disabled={savingExclusion}
+                        onClick={() => void removeExcludedDevice(id)}
+                      >
+                        ✕
+                      </IconButton>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="border-t border-line pt-4">
+              <p className="font-mono text-[10px] tracking-[0.2em] text-smoke uppercase">
+                Excluir celular ou outro aparelho sem fazer login
+              </p>
+              <p className="mt-1 mb-3 text-xs text-smoke">
+                Abra este link uma única vez no navegador do seu celular. Ele ativa a proteção local
+                e limpa o parâmetro da URL automaticamente.
+              </p>
+              <div className="flex flex-wrap items-center justify-between gap-3 border border-line bg-ink px-3 py-2.5">
+                <code className="font-mono text-xs break-all text-bone-dim">
+                  {MOBILE_OPT_OUT_URL}
+                </code>
+                <CopyButton value={MOBILE_OPT_OUT_URL} label="Copiar link" />
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* ─── SEO & Descoberta ───────────────────────────────── */}
+        <Card>
+          <SectionHeader
+            label="SEO & Descoberta"
+            hint="Endpoints públicos de indexação, feeds dinâmicos e validadores externos para conferência após cada deploy."
+          />
+          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { href: '/sitemap.xml', label: 'Sitemap XML', desc: 'Dinâmico (inclui hreflang + imagens)' },
+              { href: '/rss.xml', label: 'RSS Português', desc: 'Feed principal do Diário' },
+              { href: '/en/rss.xml', label: 'RSS English', desc: 'Feed dedicado para artigos em EN' },
+              { href: '/robots.txt', label: 'robots.txt', desc: 'Diretivas de rastreamento' },
+              { href: '/llms.txt', label: 'llms.txt', desc: 'Índice para agentes e LLMs' },
+              {
+                href: 'https://search.google.com/test/rich-results?url=https%3A%2F%2Fmarcusboni.com.br%2Fblog',
+                label: 'Rich Results Test ↗',
+                desc: 'Validar JSON-LD no Google',
+              },
+            ].map((item) => (
+              <li key={item.href}>
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex flex-col gap-0.5 border border-line p-3 transition-colors hover:border-ember"
+                >
+                  <span className="font-mono text-[11px] text-bone">{item.label}</span>
+                  <span className="text-xs text-smoke">{item.desc}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Card>
+
         {/* ─── Conexão ─────────────────────────────────────────── */}
         <Card>
           <SectionHeader
@@ -210,8 +395,8 @@ export function Settings() {
                   {missingRequired.map((entry) => entry.key).join(', ')}
                 </span>{' '}
                 o painel roda em modo demo. O passo a passo está em{' '}
-                <span className="font-mono">docs/ADMIN_SETUP.md</span>; depois
-                publique as regras de <span className="font-mono">firestore.rules</span> e{' '}
+                <span className="font-mono">docs/ADMIN_SETUP.md</span>; depois publique as regras de{' '}
+                <span className="font-mono">firestore.rules</span> e{' '}
                 <span className="font-mono">storage.rules</span>.
               </Banner>
             </div>
@@ -256,9 +441,8 @@ export function Settings() {
               Restaurar de um export
             </p>
             <p className="max-w-sm text-xs leading-relaxed text-smoke">
-              Arraste o arquivo <span className="font-mono">.json</span> aqui, escolha
-              do computador ou cole o conteúdo abaixo. Nada é publicado até você
-              conferir o resumo e salvar.
+              Arraste o arquivo <span className="font-mono">.json</span> aqui, escolha do computador
+              ou cole o conteúdo abaixo. Nada é publicado até você conferir o resumo e salvar.
             </p>
             <AdminButton variant="subtle" onClick={() => fileRef.current?.click()}>
               Escolher arquivo
@@ -340,9 +524,9 @@ export function Settings() {
           <ul className="grid gap-2 sm:grid-cols-2">
             {[
               { file: 'docs/ADMIN_SETUP.md', what: 'Firebase, regras, primeiro acesso' },
-              { file: 'docs/ANALYTICS.md', what: 'Definição de cada métrica' },
-              { file: 'docs/BLOG.md', what: 'Modelo de dados e SEO do blog' },
-              { file: 'docs/AGENTS.md', what: 'Como o site responde a crawlers' },
+              { file: 'docs/ANALYTICS.md', what: 'Definição de cada métrica e higiene de visitas' },
+              { file: 'docs/SEO.md', what: 'Auditoria e contrato de SEO ponta a ponta' },
+              { file: 'docs/BLOG.md', what: 'Modelo de dados, sintaxe e publicação' },
             ].map((doc) => (
               <li key={doc.file} className="flex flex-col gap-0.5 border border-line p-3">
                 <span className="font-mono text-[11px] text-bone-dim">{doc.file}</span>
@@ -359,8 +543,8 @@ export function Settings() {
             hint="Exporte um backup antes. Esta ação publica na hora, sem passar pelo botão Salvar."
           />
           <p className="mb-4 max-w-lg text-sm text-bone-dim">
-            Restaura todo o conteúdo (perfil, projetos, carreira, stack e redes)
-            para os valores originais do código e publica imediatamente.
+            Restaura todo o conteúdo (perfil, projetos, carreira, stack e redes) para os valores
+            originais do código e publica imediatamente.
           </p>
           <AdminButton
             variant="danger"

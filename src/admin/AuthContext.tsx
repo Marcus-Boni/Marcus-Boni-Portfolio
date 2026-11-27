@@ -14,6 +14,7 @@ import {
   type User,
 } from 'firebase/auth'
 
+import { markAdminBrowserExcluded } from '@/lib/analytics'
 import { auth, isFirebaseConfigured, requireAuth } from '@/lib/firebase'
 
 interface AuthValue {
@@ -37,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // so there is nothing to synchronize here.
     if (!isFirebaseConfigured || !auth) return
     return onAuthStateChanged(auth, (next) => {
+      if (next) markAdminBrowserExcluded()
       setUser(next)
       setLoading(false)
     })

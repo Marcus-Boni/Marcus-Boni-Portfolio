@@ -15,56 +15,74 @@ import {
   Card,
   PageHeader,
   SectionHeader,
+  Segmented,
   Skeleton,
   StatusDot,
   focusRing,
 } from '@/admin/components/ui'
 import { useAnalytics } from '@/admin/hooks'
 import { exportContentJson } from '@/admin/lib/backup'
-import { postIssues, siteIssues, type Issue } from '@/admin/lib/health'
+import { blogSeoSummary, postIssues, siteIssues, type Issue } from '@/admin/lib/health'
+import { isOwnTrafficIgnored } from '@/lib/analytics'
 import { isFirebaseConfigured } from '@/lib/firebase'
 import { cn } from '@/lib/utils'
 
 /**
- * The at-a-glance view.
+ * The at-a-glance operational view.
  *
- * It answers two questions in order. First "preciso fazer algo?" — unread
- * messages, open drafts, and every content gap that would reach a visitor, each
- * row a link to the field that fixes it. Only then the numbers: the seven-day
- * window and the two breakdowns worth acting on. Anything needing a filter row
- * lives on the Audiência page.
+ * Answers two questions in order:
+ *  1. "Preciso agir em algo agora?" — unread messages, open drafts, and
+ *     content/SEO gaps that reach visitors.
+ *  2. "Como o portfólio e o blog foram nos últimos 7 dias?" — four coherent
+ *     7-day KPIs (all sharing the same window and owner-exclusion filter), the
+ *     daily curve, acquisition channels by session, top pages, and SEO health.
  */
 export function Dashboard() {
-  const { summary, loading, error } = useAnalytics('7d')
+  const { summary, loading, error, excludeOwner } = useAnalytics('7d')
   const { sorted: messages, unread } = useInbox()
   const { posts, counts, loading: postsLoading } = usePosts()
   const { draft, savedAt, loading: contentLoading } = useAdminContent()
   const toast = useToast()
   const [showAllIssues, setShowAllIssues] = useState(false)
+  const [chartMetric, setChartMetric] = useState<'sessions' | 'views'>('sessions')
 
-  const viewsTrend = useMemo(() => summary.byDay.map((d) => d.views), [summary.byDay])
+  const sessionsTrend = useMemo(() => summary.byDay.map((d) => d.sessions), [summary.byDay])
+  const visitorsTrend = useMemo(() => summary.byDay.map((d) => d.visitors), [summary.byDay])
 
   const issues = useMemo<Issue[]>(() => {
     if (contentLoading) return []
     return [...siteIssues(draft), ...postIssues(posts)]
   }, [draft, posts, contentLoading])
 
+  const seoSummary = useMemo(() => blogSeoSummary(posts), [posts])
+
   const blockers = issues.filter((issue) => issue.severity === 'blocker').length
   const visibleIssues = showAllIssues ? issues : issues.slice(0, 5)
-
   const lastUpdated = draft.updatedAt ? new Date(draft.updatedAt) : null
+  const browserIgnored = isOwnTrafficIgnored()
 
   return (
     <>
       <PageHeader
         title="Painel"
-        subtitle="Os últimos 7 dias, comparados com os 7 anteriores — e o que está pendente."
+        subtitle="Os últimos 7 dias comparados com os 7 anteriores — com seus próprios acessos filtrados e o que pede atenção."
         meta={
           <>
             <span className="flex items-center gap-2 font-mono text-[10px] tracking-[0.16em] text-smoke uppercase">
               <StatusDot tone={isFirebaseConfigured ? 'live' : 'off'} pulse={isFirebaseConfigured} />
               {isFirebaseConfigured ? 'dados ao vivo' : 'modo demo'}
             </span>
+            <Link
+              to="/admin/settings"
+              className={cn(
+                'flex items-center gap-2 font-mono text-[10px] tracking-[0.16em] uppercase transition-colors hover:text-bone-dim',
+                browserIgnored ? 'text-smoke' : 'text-ember',
+                focusRing,
+              )}
+            >
+              <StatusDot tone={browserIgnored ? 'live' : 'idle'} />
+              {browserIgnored ? 'seus acessos ignorados' : 'rastreando este navegador'}
+            </Link>
             <span className="font-mono text-[10px] tracking-[0.16em] text-smoke uppercase">
               conteúdo ·{' '}
               {savedAt
@@ -106,8 +124,8 @@ export function Dashboard() {
       {!isFirebaseConfigured && (
         <div className="mb-8">
           <Banner tone="warn" title="Modo demonstração">
-            Firebase não configurado. As métricas, as mensagens e o blog aparecem
-            assim que você conectar um projeto —{' '}
+            Firebase não configurado. As métricas, as mensagens e o blog aparecem assim que você
+            conectar um projeto —{' '}
             <Link to="/admin/settings" className="text-ember hover:underline">
               conferir em Ajustes
             </Link>
@@ -138,7 +156,7 @@ export function Dashboard() {
             hint={
               issues.length === 0 && unread === 0 && counts.draft === 0
                 ? undefined
-                : 'Cada linha leva direto ao campo que resolve.'
+                : 'Mensagens, rascunhos e lacunas de conteúdo ou SEO — cada linha abre o campo certo.'
             }
             action={
               issues.length > 5 && (
@@ -182,14 +200,13 @@ export function Dashboard() {
 
             {issues.length === 0 && unread === 0 && counts.draft === 0 && (
               <p className="py-3 text-sm text-bone-dim">
-                Nada pendente. Conteúdo completo, caixa vazia e nenhum rascunho
-                parado — o site está exatamente como você deixou.
+                Nada pendente. Conteúdo e SEO completos, caixa vazia e nenhum rascunho parado.
               </p>
             )}
           </div>
         </Card>
 
-        {/* ─── Números ────────────────────────────────────────── */}
+        {/* ─── Números (7 dias coerentes entre si) ────────────── */}
         {loading ? (
           <div className="grid grid-cols-2 gap-px bg-line lg:grid-cols-4">
             {Array.from({ length: 4 }, (_, index) => (
@@ -202,58 +219,133 @@ export function Dashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-px bg-line lg:grid-cols-4">
-            <MetricTile label="Visitas" metric={summary.pageviews} trend={viewsTrend} accent />
             <MetricTile
-              label="Visitantes únicos"
+              label="Visitantes únicos (7d)"
               metric={summary.visitors}
+              trend={visitorsTrend}
               hint={`${summary.newVisitors} novos · ${summary.returningVisitors} recorrentes`}
             />
             <MetricTile
-              label="Taxa de rejeição"
-              metric={summary.bounceRate}
-              unit="percent"
-              higherIsBetter={false}
+              label="Sessões / visitas (7d)"
+              metric={summary.sessions}
+              trend={sessionsTrend}
+              hint={
+                excludeOwner && summary.filteredEvents > 0
+                  ? `${summary.filteredEvents} evento(s) próprio(s) oculto(s)`
+                  : `média ${summary.viewsPerSession.current} pág./sessão`
+              }
+              accent
             />
             <MetricTile
-              label="Mensagens"
-              metric={{ current: messages.length, previous: messages.length }}
-              hint={unread > 0 ? `${unread} não lida(s)` : 'tudo lido'}
-              accent={unread > 0}
+              label="Visualizações (7d)"
+              metric={summary.pageviews}
+              hint={`CV ${summary.cvDownloads.current}× · contato ${summary.contactSubmits.current}×`}
+            />
+            <MetricTile
+              label="Engajamento (7d)"
+              metric={summary.engagementRate}
+              unit="percent"
+              hint={`rejeição ${summary.bounceRate.current}% · dossiê ${summary.agent.queries.current}×`}
             />
           </div>
         )}
 
         {!loading && (
           <ChartCard
-            title="Visitas por dia — 7 dias"
+            title={`${chartMetric === 'sessions' ? 'Sessões (visitas)' : 'Visualizações'} por dia — 7 dias`}
             hint="A linha cinza é a semana anterior."
+            action={
+              <div className="flex items-center gap-3">
+                <Segmented
+                  size="sm"
+                  label="Série"
+                  value={chartMetric}
+                  onChange={setChartMetric}
+                  options={[
+                    { value: 'sessions', label: 'Sessões' },
+                    { value: 'views', label: 'Visualizações' },
+                  ]}
+                />
+                <Link
+                  to="/admin/analytics"
+                  className={cn(
+                    'font-mono text-[10px] tracking-[0.16em] text-ember uppercase hover:underline',
+                    focusRing,
+                  )}
+                >
+                  Abrir Audiência →
+                </Link>
+              </div>
+            }
             table={{
-              columns: ['Dia', 'Visitas', 'Visitantes', 'Semana anterior'],
-              rows: summary.byDay.map((d) => [d.date, d.views, d.visitors, d.previousViews]),
+              columns: ['Dia', 'Sessões', 'Visualizações', 'Visitantes', 'Semana anterior'],
+              rows: summary.byDay.map((d) => [
+                d.date,
+                d.sessions,
+                d.views,
+                d.visitors,
+                chartMetric === 'sessions' ? d.previousSessions : d.previousViews,
+              ]),
             }}
           >
-            <TimeSeries data={summary.byDay} />
+            <TimeSeries data={summary.byDay} metric={chartMetric} />
           </ChartCard>
         )}
 
         <div className="grid gap-6 lg:grid-cols-3">
-          <ChartCard title="Páginas mais vistas">
+          <ChartCard
+            title="De onde vêm as visitas (7d)"
+            hint="Agrupado por canal de entrada da sessão."
+            action={
+              <Link
+                to="/admin/analytics"
+                className={cn(
+                  'font-mono text-[10px] tracking-[0.16em] text-smoke uppercase hover:text-ember',
+                  focusRing,
+                )}
+              >
+                UTM →
+              </Link>
+            }
+          >
+            <BarList
+              data={summary.byChannel}
+              max={5}
+              emptyLabel="Sem sessões externas nos últimos 7 dias"
+            />
+          </ChartCard>
+
+          <ChartCard
+            title="Páginas mais vistas (7d)"
+            hint="Portfólio, blog e dossiê."
+          >
             <BarList
               data={summary.byPath}
               max={5}
               formatName={(name) => (name === '/' ? '/ (home)' : name)}
+              emptyLabel="Sem visualizações nos últimos 7 dias"
             />
           </ChartCard>
-          <ChartCard title="Origem do tráfego">
-            <BarList data={summary.byReferrer} max={5} />
-          </ChartCard>
-          <ChartCard title="Conteúdo publicado">
+
+          <ChartCard title="Conteúdo & saúde de SEO">
             <ul className="flex flex-col divide-y divide-line">
               <ContentRow
                 to="/admin/blog"
-                label="Posts publicados"
-                value={counts.published}
-                hint={counts.draft > 0 ? `+${counts.draft} rascunho(s)` : undefined}
+                label="Artigos publicados"
+                value={seoSummary.published}
+                hint={
+                  seoSummary.bilingual > 0
+                    ? `${seoSummary.bilingual} bilíngue(s)`
+                    : counts.draft > 0
+                      ? `+${counts.draft} rascunho(s)`
+                      : undefined
+                }
+              />
+              <ContentRow
+                to="/admin/blog"
+                label="SEO completo no blog"
+                value={seoSummary.withCompleteMeta}
+                hint={`de ${seoSummary.published}`}
               />
               <ContentRow to="/admin/projects" label="Projetos" value={draft.projects.length} />
               <ContentRow
@@ -261,12 +353,18 @@ export function Dashboard() {
                 label="Experiências"
                 value={draft.experience.projects.length}
               />
-              <ContentRow to="/admin/profile" label="Tecnologias" value={draft.techStack.length} />
             </ul>
-            <p className="mt-4 font-mono text-[10px] tracking-[0.16em] text-smoke uppercase">
-              CV baixado {summary.cvDownloads.current}× · contato{' '}
-              {summary.contactSubmits.current}×
-            </p>
+            <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1 border-t border-line pt-3 font-mono text-[10px] tracking-[0.14em] text-smoke uppercase">
+              <a href="/sitemap.xml" target="_blank" rel="noreferrer" className="hover:text-ember">
+                sitemap.xml ↗
+              </a>
+              <a href="/rss.xml" target="_blank" rel="noreferrer" className="hover:text-ember">
+                rss.xml ↗
+              </a>
+              <a href="/en/rss.xml" target="_blank" rel="noreferrer" className="hover:text-ember">
+                en/rss.xml ↗
+              </a>
+            </div>
           </ChartCard>
         </div>
 
@@ -274,7 +372,7 @@ export function Dashboard() {
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <SectionHeader
-              label="Últimas mensagens"
+              label={unread > 0 ? `Últimas mensagens · ${unread} nova(s)` : 'Últimas mensagens'}
               action={
                 <Link
                   to="/admin/messages"
@@ -423,7 +521,7 @@ function ContentRow({
         className={cn('text-sm text-bone-dim transition-colors hover:text-ember', focusRing)}
       >
         {label}
-        {hint && <span className="ml-1 text-xs text-smoke">{hint}</span>}
+        {hint && <span className="ml-1.5 font-mono text-[10px] text-smoke">{hint}</span>}
       </Link>
       <span className="font-display text-2xl text-bone">{value}</span>
     </li>

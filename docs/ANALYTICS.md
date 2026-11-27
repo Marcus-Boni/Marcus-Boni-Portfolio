@@ -15,6 +15,46 @@ Cada interação vira um documento em `analytics`. O visitante é identificado p
 um id aleatório em `localStorage` e a sessão por um id em `sessionStorage` — sem
 cookies, sem fingerprint, sem IP.
 
+### Higiene de coleta (evitar visitas falsas e próprios acessos)
+
+Antes de gravar qualquer evento, `src/lib/analytics.ts` aplica cinco guardas:
+
+1. **Rotas administrativas (`/admin*`)** nunca disparam eventos.
+2. **Ambientes locais e previews** (`localhost`, `127.0.0.1`, LAN privada,
+   `*.netlify.app`, `*.web.app`) são ignorados automaticamente (apenas o domínio
+   de produção coleta; `?track_dev=1` libera testes temporários na aba).
+3. **Navegador do proprietário (`mb-analytics-ignore`)**: ativado
+   automaticamente ao autenticar em `/admin` e alternável em **Audiência** e
+   **Ajustes**. Em outro aparelho (como celular), abrir `/?ignore_me=1` ativa a
+   exclusão com um toque e limpa a URL.
+4. **Bots e navegadores automatizados**: `navigator.webdriver` e crawlers
+   conhecidos (Googlebot, Lighthouse, HeadlessChrome, scrapers sociais e bots de
+   IA) são descartados.
+5. **Deduplicação**: `pageview` repetida para a mesma rota em menos de 5 s e
+   troca de idioma dentro do mesmo artigo (`/blog/slug` ↔ `/en/blog/slug`) não
+   geram visualizações duplicadas.
+
+Para visitas antigas já gravadas antes da proteção, `settings/analytics` guarda
+os `visitorId` anônimos dos seus dispositivos (sem PII) e o painel filtra esses
+eventos por padrão (**Ocultar meus acessos**).
+
+### Atribuição de origem por sessão (Canais, Fontes e UTM)
+
+A origem é persistida na `sessionStorage` no início da sessão
+(`mb-session-attribution`) e agregada **uma vez por sessão** — nunca duplicada
+por visualização nem poluída por navegação `Internal`:
+
+- **Parâmetros UTM / `ref`**: `utm_source`, `utm_medium`, `utm_campaign` e
+  `ref` têm prioridade sobre `document.referrer` (essencial para apps como
+  WhatsApp, LinkedIn mobile, Instagram e PDFs de currículo que removem o
+  referrer). Um gerador rápido de links UTM vive em **Audiência → Origens & UTM**.
+- **Normalização**: subdomínios e apps (`lnkd.in`, `com.linkedin.android`,
+  `l.instagram.com`, `t.co`, `google.com.br`, `chatgpt.com`, `perplexity.ai`)
+  são unificados em **Fontes** legíveis e agrupados em **Canais** (*Busca
+  orgânica*, *Redes sociais*, *IA & Assistentes*, *Comunidade & Código*,
+  *Campanha / Link marcado*, *Referência externa* e *Acesso direto*). Eventos
+  históricos são normalizados retroativamente na leitura.
+
 | Evento | Quando dispara |
 | --- | --- |
 | `pageview` | Em toda rota, no portfólio **e** no blog |

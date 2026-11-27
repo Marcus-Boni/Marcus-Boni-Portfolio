@@ -11,7 +11,8 @@
       name="description"
       content="O que marcusboni.com.br coleta, por quê, por quanto tempo guarda e como exercer seus direitos sob a LGPD. Sem cookies, sem rastreadores de terceiros, sem publicidade."
     />
-    <meta name="robots" content="index, follow" />
+    <meta http-equiv="content-language" content="pt-BR" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
     <link rel="canonical" href="https://marcusboni.com.br/privacy" />
     <link rel="alternate" type="text/markdown" href="https://marcusboni.com.br/privacy" />
     <meta name="color-scheme" content="light dark" />
@@ -29,9 +30,19 @@
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta property="og:site_name" content="Marcus Boni — Portfolio" />
+    <meta property="og:image:alt" content="Marcus Boni — engenharia de software, sistemas e IA aplicada" />
+    <meta property="og:site_name" content="Marcus Boni" />
     <meta property="og:locale" content="pt_BR" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://marcusboni.com.br/privacy" />
+    <meta name="twitter:title" content="Privacidade — Marcus Boni" />
+    <meta
+      name="twitter:description"
+      content="O que este site coleta, por quê e por quanto tempo. Sem cookies e sem rastreadores de terceiros."
+    />
+    <meta name="twitter:image" content="https://marcusboni.com.br/og-image.jpg" />
+    <meta name="twitter:image:alt" content="Marcus Boni — engenharia de software, sistemas e IA aplicada" />
 
     <!--
       Escrita a partir do código, não de um modelo genérico. Cada afirmação
@@ -50,6 +61,18 @@
            relevante, e apagadas a pedido.
     -->
     <link rel="stylesheet" href="/page.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "@id": "https://marcusboni.com.br/privacy#webpage",
+        "url": "https://marcusboni.com.br/privacy",
+        "name": "Privacidade — Marcus Boni",
+        "inLanguage": "pt-BR",
+        "isPartOf": { "@id": "https://marcusboni.com.br/#website" },
+        "about": { "@id": "https://marcusboni.com.br/about#person" }
+      }
+    </script>
   </head>
   <body>
     <div class="wrap">
@@ -138,7 +161,10 @@
             idioma do navegador.
           </li>
           <li>
-            O <strong>site de origem</strong>, quando você chega por um link.
+            O <strong>site de origem</strong> (ou parâmetros de campanha
+            <code>utm_*</code> / <code>ref</code> presentes no link), mantidos
+            apenas na <code>sessionStorage</code> da aba para atribuir a visita
+            à origem real sem rastreamento entre sites.
           </li>
           <li>
             Seu <strong>fuso horário</strong>, do qual estimo um país. É uma
@@ -149,6 +175,8 @@
         <p>
           <strong>Base legal:</strong> legítimo interesse em entender se o site
           funciona e o que as pessoas leem. <strong>Retenção:</strong> 12 meses.
+          Acessos do próprio administrador e ambientes de desenvolvimento são
+          excluídos (<code>mb-analytics-ignore</code>).
         </p>
         <p>
           Também guardo no seu navegador a preferência de idioma

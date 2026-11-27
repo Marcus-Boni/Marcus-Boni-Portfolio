@@ -98,10 +98,13 @@ function Tooltip({ state, hostWidth }: { state: TooltipState; hostWidth: number 
 
 export function TimeSeries({
   data,
+  metric = 'sessions',
   compare = true,
   className,
 }: {
   data: DayPoint[]
+  /** Plot sessions (visits) or pageviews as the primary line. */
+  metric?: 'sessions' | 'views'
   /** Overlay the preceding window as a recessive baseline. */
   compare?: boolean
   className?: string
@@ -160,10 +163,13 @@ export function TimeSeries({
   const innerW = W - pad.left - pad.right
   const innerH = H - pad.top - pad.bottom
 
-  const showCompare = compare && data.some((d) => d.previousViews > 0)
+  const curKey = metric === 'sessions' ? 'sessions' : 'views'
+  const prevKey = metric === 'sessions' ? 'previousSessions' : 'previousViews'
+
+  const showCompare = compare && data.some((d) => d[prevKey] > 0)
   const rawMax = Math.max(
     1,
-    ...data.map((d) => (showCompare ? Math.max(d.views, d.previousViews) : d.views)),
+    ...data.map((d) => (showCompare ? Math.max(d[curKey], d[prevKey]) : d[curKey])),
   )
   // Round the ceiling to a clean tick so the axis reads 0 / 5 / 10, not 0 / 3 / 7.
   const step = Math.max(1, Math.ceil(rawMax / 4))
@@ -173,12 +179,12 @@ export function TimeSeries({
     pad.left + (data.length > 1 ? (i / (data.length - 1)) * innerW : innerW / 2)
   const yAt = (v: number) => pad.top + innerH - (v / max) * innerH
 
-  const path = (key: 'views' | 'previousViews') =>
+  const path = (key: 'views' | 'previousViews' | 'sessions' | 'previousSessions') =>
     data
       .map((d, i) => `${i === 0 ? 'M' : 'L'} ${xAt(i)} ${yAt(d[key])}`)
       .join(' ')
 
-  const areaPath = `${path('views')} L ${xAt(data.length - 1)} ${pad.top + innerH} L ${xAt(0)} ${pad.top + innerH} Z`
+  const areaPath = `${path(curKey)} L ${xAt(data.length - 1)} ${pad.top + innerH} L ${xAt(0)} ${pad.top + innerH} Z`
 
   const onMove = (event: React.PointerEvent<HTMLDivElement>) => {
     const plot = plotRef.current
@@ -198,7 +204,7 @@ export function TimeSeries({
     setHover({
       index,
       x: xAt(index),
-      y: yAt(data[index].views),
+      y: yAt(data[index][curKey]),
     })
   }
 
@@ -259,7 +265,7 @@ export function TimeSeries({
 
         {showCompare && (
           <path
-            d={path('previousViews')}
+            d={path(prevKey)}
             fill="none"
             stroke="var(--color-smoke)"
             strokeWidth={2}
@@ -271,7 +277,7 @@ export function TimeSeries({
 
         <path d={areaPath} fill={`url(#${gradientId})`} />
         <path
-          d={path('views')}
+          d={path(curKey)}
           fill="none"
           stroke={EMBER}
           strokeWidth={2}
@@ -295,7 +301,7 @@ export function TimeSeries({
         {data.length > 0 && (
           <circle
             cx={xAt(data.length - 1)}
-            cy={yAt(data[data.length - 1].views)}
+            cy={yAt(data[data.length - 1][curKey])}
             r={4}
             fill={EMBER}
             stroke={SURFACE}
@@ -305,7 +311,7 @@ export function TimeSeries({
         {hover && (
           <circle
             cx={xAt(hover.index)}
-            cy={yAt(data[hover.index].views)}
+            cy={yAt(data[hover.index][curKey])}
             r={4.5}
             fill={EMBER}
             stroke={SURFACE}
@@ -340,13 +346,14 @@ export function TimeSeries({
             y: hover.y,
             title: point.date,
             rows: [
-              { label: 'visitas', value: String(point.views) },
-              { label: 'visitantes', value: String(point.visitors) },
+              { label: 'sessões (visitas)', value: String(point.sessions) },
+              { label: 'visualizações', value: String(point.views) },
+              { label: 'visitantes únicos', value: String(point.visitors) },
               ...(showCompare
                 ? [
                     {
                       label: 'período anterior',
-                      value: String(point.previousViews),
+                      value: String(point[prevKey]),
                       muted: true,
                     },
                   ]

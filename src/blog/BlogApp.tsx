@@ -51,8 +51,8 @@ function RouteChange() {
 
     if (!sameEditionDocument) {
       window.scrollTo({ top: 0, behavior: 'instant' })
+      trackEvent('pageview')
     }
-    trackEvent('pageview')
   }, [pathname])
   return null
 }
