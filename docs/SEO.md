@@ -24,6 +24,12 @@ arquitetura existente, sem adicionar dependências.
 | Média | Cards do X declarados com `property="twitter:*"` e sem card grande nas páginas estáticas | Todas as páginas usam `name="twitter:*"` e `summary_large_image`. |
 | Baixa | Data de revisão só aparecia no rodapé renderizado por JavaScript | O HTML do edge mostra "Atualizado em" quando a revisão é de um dia posterior à publicação; o índice mostra a data de cada artigo. |
 | Média | Checklist sugeria limites rígidos de SEO | Orientações editoriais, prévias aproximadas e checks de URL, títulos, descrições, imagens e links internos; salvamento continua livre. |
+| Alta | `/ask` e `/en/ask` entregavam o HTML e canonical da home sem JS e estavam fora do sitemap | `blog-meta.ts` passa a renderizar `<head>`, `hreflang` recíproco (`pt-BR`, `en`, `x-default`), `WebPage` + `BreadcrumbList` e HTML semântico para `/ask` e `/en/ask`, sincronizados com `applyAskHead` e presentes no sitemap. |
+| Alta | Capas personalizadas de artigos omitiam `og:image:width/height/type` e dimensões `width`/`height` no HTML do edge | `EdgePost` decodifica largura/altura da capa, emite metadados completos de Open Graph, reserva espaço no `<img>` (CLS = 0) e publica `ImageObject` rico no `BlogPosting` e `<image:image>` no sitemap. |
+| Média | `BlogPosting` e `Blog` omitiam `wordCount`, `timeRequired`, `articleSection` e datas nos itens do índice | Enriquecidos no edge e no cliente com `wordCount`, `timeRequired` (ISO 8601), `articleSection`, `isAccessibleForFree`, `sameAs` do autor e `BreadcrumbList` também no índice. |
+| Média | Sitemap omitia `hreflang` do `/kit/front-end` e não havia feed RSS em inglês | `feeds.ts` e `public/sitemap.xml` agora trazem `hreflang` completo para `/blog`, `/ask` e `/kit/front-end`; `/en/rss.xml` serve o feed dedicado em inglês com `<media:content>` para capas. |
+| Média | Visita direta em `/en/blog/{slug}` mantinha chrome da interface em português e faltava `content-language` para Bing | `BlogPost` sincroniza o idioma da UI ao entrar em `/en/blog/*`, e todas as páginas emitem `<meta http-equiv="content-language">`, `og:site_name` unificado (`Marcus Boni`), `og:image:alt` e Twitter cards completos. |
+| Baixa | Checklist e alertas do painel só conferiam o idioma principal de posts bilíngues | `postIssues()` e `SeoPreview` auditam PT e EN, exibem contagem de caracteres de título/descrição, prévia Desktop/Mobile e resumo de saúde de SEO no Painel. |
 
 ## Contrato de publicação
 

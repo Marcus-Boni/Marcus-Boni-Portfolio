@@ -6,7 +6,7 @@
   database outage returns 503 with Retry-After, preserving previously known
   article URLs instead of replacing the catalog with this static subset.
 -->
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://marcusboni.com.br/</loc>
     <changefreq>monthly</changefreq>
@@ -29,6 +29,22 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://marcusboni.com.br/blog"/>
   </url>
   <url>
+    <loc>https://marcusboni.com.br/ask</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://marcusboni.com.br/ask"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://marcusboni.com.br/en/ask"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://marcusboni.com.br/ask"/>
+  </url>
+  <url>
+    <loc>https://marcusboni.com.br/en/ask</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://marcusboni.com.br/ask"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://marcusboni.com.br/en/ask"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://marcusboni.com.br/ask"/>
+  </url>
+  <url>
     <loc>https://marcusboni.com.br/developers</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
@@ -47,5 +63,21 @@
     <loc>https://marcusboni.com.br/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://marcusboni.com.br/kit/front-end</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://marcusboni.com.br/kit/front-end"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://marcusboni.com.br/en/kit/front-end"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://marcusboni.com.br/kit/front-end"/>
+  </url>
+  <url>
+    <loc>https://marcusboni.com.br/en/kit/front-end</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://marcusboni.com.br/kit/front-end"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://marcusboni.com.br/en/kit/front-end"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://marcusboni.com.br/kit/front-end"/>
   </url>
 </urlset>

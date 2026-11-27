@@ -8,7 +8,12 @@ import type {
   SiteProfile,
   SocialLink,
 } from '@/content/types'
-import { localizedBody, localizedMeta } from '../../../netlify/lib/blog-locale'
+import {
+  availableLangs,
+  isBilingual,
+  localizedBody,
+  localizedMeta,
+} from '../../../netlify/lib/blog-locale'
 
 /**
  * Content checks, in one place.
@@ -181,15 +186,31 @@ export function siteIssues(content: SiteContent): Issue[] {
   return issues
 }
 
-/** Posts with metadata gaps that hurt how they are shared or indexed. */
+/** Posts with metadata gaps that hurt how they are shared or indexed (checked across all populated locales). */
 export function postIssues(posts: PostMeta[]): Issue[] {
   const issues: Issue[] = []
   for (const post of posts) {
     if (post.status !== 'published') continue
     const problems: string[] = []
-    if (!post.excerpt.trim()) problems.push('sem resumo')
-    if (post.cover && !post.cover.alt.trim()) problems.push('capa sem texto alternativo')
-    if (post.tags.length === 0) problems.push('sem tags')
+    const bilingual = isBilingual(post)
+    const langs = availableLangs(post)
+
+    if (!bilingual) {
+      if (!post.excerpt.trim()) problems.push('sem resumo')
+      if (post.cover && !post.cover.alt.trim()) problems.push('capa sem texto alternativo')
+      if (post.tags.length === 0) problems.push('sem tags')
+    } else {
+      for (const loc of langs) {
+        const view = localizedMeta(post, loc)
+        const suffix = ` (${loc.toUpperCase()})`
+        if (!view.excerpt.trim()) problems.push(`sem resumo${suffix}`)
+        if (post.cover && !view.coverAlt.trim()) problems.push(`capa sem texto alternativo${suffix}`)
+        if (view.tags.length === 0) problems.push(`sem tags${suffix}`)
+      }
+    }
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(post.slug)) {
+      problems.push('slug fora do padrão SEO')
+    }
     if (problems.length === 0) continue
     issues.push({
       id: `post:${post.slug}`,
@@ -199,6 +220,27 @@ export function postIssues(posts: PostMeta[]): Issue[] {
     })
   }
   return issues
+}
+
+export interface BlogSeoSummary {
+  published: number
+  bilingual: number
+  withCover: number
+  withCompleteMeta: number
+  issueCount: number
+}
+
+/** At-a-glance SEO readiness of the published journal catalog. */
+export function blogSeoSummary(posts: PostMeta[]): BlogSeoSummary {
+  const publishedPosts = posts.filter((post) => post.status === 'published')
+  const issuesBySlug = new Set(postIssues(publishedPosts).map((issue) => issue.id.replace('post:', '')))
+  return {
+    published: publishedPosts.length,
+    bilingual: publishedPosts.filter((post) => isBilingual(post)).length,
+    withCover: publishedPosts.filter((post) => Boolean(post.cover?.src)).length,
+    withCompleteMeta: publishedPosts.filter((post) => !issuesBySlug.has(post.slug)).length,
+    issueCount: issuesBySlug.size,
+  }
 }
 
 /* ─── Publish checklist, for the post editor ────────────────────────────── */

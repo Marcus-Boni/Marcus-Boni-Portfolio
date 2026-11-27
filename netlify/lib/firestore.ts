@@ -36,6 +36,8 @@ export interface EdgePost {
   excerpt: string
   coverUrl: string | null
   coverAlt?: string
+  coverWidth?: number
+  coverHeight?: number
   tags: string[]
   readingMinutes: number
   publishedAt: string | null
@@ -109,6 +111,9 @@ function decode(name: string, fields: Record<string, FsValue>): EdgePost {
   const slug = name.split('/').pop() ?? ''
   const lang = str(fields.lang) === 'en' ? 'en' : 'pt'
   const locales = decodeLocales(fields.locales)
+  const coverFields = fields.cover?.mapValue?.fields
+  const coverWidth = coverFields?.width ? num(coverFields.width) : 0
+  const coverHeight = coverFields?.height ? num(coverFields.height) : 0
   return {
     slug,
     lang,
@@ -117,8 +122,10 @@ function decode(name: string, fields: Record<string, FsValue>): EdgePost {
     subtitle: str(fields.subtitle),
     excerpt: str(fields.excerpt),
     // The cover is a nested map; `src` is the largest variant.
-    coverUrl: fields.cover?.mapValue?.fields?.src?.stringValue ?? null,
-    coverAlt: fields.cover?.mapValue?.fields?.alt?.stringValue,
+    coverUrl: coverFields?.src?.stringValue ?? null,
+    coverAlt: coverFields?.alt?.stringValue,
+    ...(coverWidth > 0 ? { coverWidth } : {}),
+    ...(coverHeight > 0 ? { coverHeight } : {}),
     tags: strArray(fields.tags),
     readingMinutes: num(fields.readingMinutes, 1),
     publishedAt: fields.publishedAt?.stringValue ?? null,

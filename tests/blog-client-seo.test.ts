@@ -2,6 +2,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { applyAskHead } from '@/agent/ask-seo'
 import { PostBody } from '@/blog/components/PostBody'
 import { applyBlogIndexHead, applyMissingPostHead, applyPostHead, restoreSiteHead } from '@/blog/lib/seo'
 import { extractToc } from '@/blog/lib/text'
@@ -122,6 +123,17 @@ describe('blog client head navigation', () => {
     applyPostHead(article)
     expect(document.getElementById('site-jsonld')).toBeNull()
     expect(document.query('script[type="application/ld+json"]')).toHaveLength(1)
+  })
+
+  it('sets complete canonical, hreflang, OG/Twitter and WebPage schema on /ask and /en/ask', () => {
+    applyAskHead('en')
+    expect(document.documentElement.lang).toBe('en')
+    expect(document.query('link[rel="canonical"]')[0].getAttribute('href')).toBe('https://marcusboni.com.br/en/ask')
+    expect(document.query('link[rel="alternate"][hreflang]')).toHaveLength(3)
+    expect(document.meta('og:locale')).toBe('en_US')
+    expect(document.meta('og:locale:alternate')).toBe('pt_BR')
+    expect(document.meta('twitter:card')).toBe('summary_large_image')
+    expect(document.schema()['@graph'].map((node: { '@type': string }) => node['@type'])).toEqual(['WebPage', 'BreadcrumbList'])
   })
 })
 

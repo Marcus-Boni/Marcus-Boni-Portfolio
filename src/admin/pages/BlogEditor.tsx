@@ -819,10 +819,23 @@ export function BlogEditor() {
       <details className="mt-6 mb-6 border border-line bg-ink-soft/60">
         <summary className={cn('cursor-pointer px-5 py-4 md:px-6', focusRing)}>
           <span className="flex flex-wrap items-center justify-between gap-2">
-            <span className="font-mono text-[11px] tracking-[0.16em] text-bone uppercase">
-              Detalhes da publicação ({activeLang.toUpperCase()} + compartilhados)
+            <span className="flex flex-wrap items-center gap-2.5">
+              <span className="font-mono text-[11px] tracking-[0.16em] text-bone uppercase">
+                SEO & detalhes da publicação ({activeLang.toUpperCase()})
+              </span>
+              <Badge tone={currentMeta.excerpt.trim() ? 'ember' : 'warn'}>
+                {currentMeta.excerpt.trim() ? 'resumo ok' : 'sem resumo'}
+              </Badge>
+              <Badge tone={currentMeta.tags.length > 0 ? 'neutral' : 'warn'}>
+                {currentMeta.tags.length > 0 ? `${currentMeta.tags.length} tag(s)` : 'sem tags'}
+              </Badge>
+              {post.cover && (
+                <Badge tone={activeCoverAlt.trim() ? 'neutral' : 'warn'}>
+                  {activeCoverAlt.trim() ? 'capa ok' : 'capa sem alt'}
+                </Badge>
+              )}
             </span>
-            <span className="text-xs text-smoke">Resumo, tags, capa, URL e data</span>
+            <span className="text-xs text-smoke">Resumo, tags, capa, slug, data e prévia Google/social</span>
           </span>
         </summary>
         <div className="border-t border-line p-5 md:p-6">

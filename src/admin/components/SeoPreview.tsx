@@ -1,7 +1,10 @@
-import { SectionHeader } from '@/admin/components/ui'
+import { useState } from 'react'
+
+import { Badge, SectionHeader, Segmented } from '@/admin/components/ui'
 import { autoExcerpt } from '@/blog/lib/text'
 import type { Post } from '@/blog/types'
 import type { Locale } from '@/i18n/translations'
+import { cn } from '@/lib/utils'
 import { DEFAULT_OG, postUrl, SITE_NAME, SITE_URL } from '../../../netlify/lib/blog-seo'
 
 type PreviewPost = Pick<
@@ -9,8 +12,18 @@ type PreviewPost = Pick<
   'title' | 'slug' | 'excerpt' | 'body' | 'cover' | 'status' | 'lang' | 'locales' | 'bodies'
 >
 
+type SerpDevice = 'desktop' | 'mobile'
+
+function lengthTone(len: number, min: number, max: number): 'ember' | 'neutral' | 'warn' {
+  if (len === 0) return 'warn'
+  if (len >= min && len <= max) return 'ember'
+  return 'neutral'
+}
+
 /** The same editable metadata powers both approximate previews. */
 export function SeoPreview({ post, lang }: { post: PreviewPost; lang?: Locale }) {
+  const [device, setDevice] = useState<SerpDevice>('desktop')
+
   const activeLang = lang ?? post.lang ?? 'pt'
   const entry = post.locales?.[activeLang]
   const rawTitle = entry ? entry.title : activeLang === post.lang ? post.title : ''
@@ -26,6 +39,7 @@ export function SeoPreview({ post, lang }: { post: PreviewPost; lang?: Locale })
   const bilingual = hasPt && hasEn
 
   const title = rawTitle.trim() || (activeLang === 'en' ? 'Article title' : 'Título do artigo')
+  const fullTitle = `${title} — ${SITE_NAME}`
   const description =
     rawExcerpt.trim() ||
     autoExcerpt(rawBody) ||
@@ -36,20 +50,73 @@ export function SeoPreview({ post, lang }: { post: PreviewPost; lang?: Locale })
   const image = post.cover?.src || DEFAULT_OG
   const coverAlt = entry?.coverAlt?.trim() || post.cover?.alt
 
+  const titleChars = rawTitle.trim().length
+  const fullTitleChars = fullTitle.length
+  const descChars = (rawExcerpt.trim() || autoExcerpt(rawBody)).length
+
   return (
     <div className="mt-6 border-t border-line pt-5">
       <SectionHeader
         label={`Prévia de busca e compartilhamento (${activeLang.toUpperCase()})`}
         hint="Atualizada enquanto você escreve. É uma simulação: cada plataforma pode ajustar título, resumo e recorte da imagem."
+        action={
+          <Segmented
+            size="sm"
+            label="Formato da prévia de busca"
+            value={device}
+            onChange={setDevice}
+            options={[
+              { value: 'desktop', label: 'Desktop' },
+              { value: 'mobile', label: 'Mobile' },
+            ]}
+          />
+        }
       />
+
+      {/* Technical SEO & editorial length telemetry */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <Badge tone={lengthTone(fullTitleChars, 35, 65)} title="Com o sufixo da marca (referência ~50–65 caracteres)">
+          Title: {titleChars}c ({fullTitleChars}c c/ marca)
+        </Badge>
+        <Badge tone={lengthTone(descChars, 110, 160)} title="Referência editorial ~120–160 caracteres">
+          Meta desc: {descChars}c
+        </Badge>
+        <Badge tone={post.status === 'published' ? 'ember' : 'muted'}>
+          {post.status === 'published' ? 'index, follow' : post.status === 'unlisted' ? 'noindex, follow' : 'rascunho'}
+        </Badge>
+        {bilingual && <Badge tone="ember">hreflang PT · EN</Badge>}
+        <Badge tone="neutral">BlogPosting + Breadcrumb</Badge>
+        {post.cover && (
+          <Badge tone={coverAlt?.trim() ? 'neutral' : 'warn'}>
+            OG {post.cover.width}×{post.cover.height}
+          </Badge>
+        )}
+      </div>
+
       <div className="grid gap-5 md:grid-cols-2">
         <div className="min-w-0 border border-line bg-ink p-4">
-          <p className="mb-3 font-mono text-[10px] tracking-[0.16em] text-smoke uppercase">
-            Resultado de busca
-          </p>
-          <p className="break-all text-xs text-bone-dim">{url}</p>
-          <p className="mt-2 line-clamp-2 text-lg text-ember">{title} — {SITE_NAME}</p>
-          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-bone-dim">{description}</p>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <p className="font-mono text-[10px] tracking-[0.16em] text-smoke uppercase">
+              Resultado de busca
+            </p>
+            <span className="font-mono text-[9px] tracking-[0.16em] text-smoke uppercase">
+              {device === 'mobile' ? '360px · mobile' : '600px · desktop'}
+            </span>
+          </div>
+          <div className={cn(device === 'mobile' && 'max-w-[21rem] border-l border-line pl-3')}>
+            <p className="break-all text-xs text-bone-dim">{url}</p>
+            <p
+              className={cn(
+                'mt-2 text-ember',
+                device === 'mobile' ? 'line-clamp-2 text-base leading-snug' : 'line-clamp-2 text-lg',
+              )}
+            >
+              {fullTitle}
+            </p>
+            <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-bone-dim">
+              {description}
+            </p>
+          </div>
         </div>
         <div className="min-w-0 overflow-hidden border border-line bg-ink">
           <img

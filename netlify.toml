@@ -70,10 +70,22 @@
   function = "blog-meta"
   path = "/en/blog/*"
 
+[[edge_functions]]
+  function = "blog-meta"
+  path = "/ask"
+
+[[edge_functions]]
+  function = "blog-meta"
+  path = "/en/ask"
+
 # Live RSS + sitemap, generated from Firestore so publishing needs no rebuild.
 [[edge_functions]]
   function = "feeds"
   path = "/rss.xml"
+
+[[edge_functions]]
+  function = "feeds"
+  path = "/en/rss.xml"
 
 [[edge_functions]]
   function = "feeds"

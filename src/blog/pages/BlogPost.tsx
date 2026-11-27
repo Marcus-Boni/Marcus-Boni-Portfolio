@@ -66,6 +66,18 @@ export function BlogPost({ routeLang = 'pt' }: { routeLang?: Locale }) {
     }
   }, [post, routeLang, bilingual, navigate])
 
+  // Visiting `/en/blog/{slug}` directly brings the interface into English on arrival,
+  // preventing mixed PT chrome on an English canonical URL.
+  const syncedRoute = useRef<Locale | null>(null)
+  useEffect(() => {
+    if (routeLang === 'en' && syncedRoute.current !== 'en') {
+      syncedRoute.current = 'en'
+      setLocale?.('en')
+    } else if (routeLang === 'pt') {
+      syncedRoute.current = 'pt'
+    }
+  }, [routeLang, setLocale])
+
   const activeLang: Locale = post ? (bilingual ? routeLang : post.lang) : routeLang
   const view = useMemo(
     () => (post ? localizedMeta(post, activeLang) : null),
@@ -93,7 +105,7 @@ export function BlogPost({ routeLang = 'pt' }: { routeLang?: Locale }) {
     return null
   }, [post, bilingual, activeLang, legacyTranslation])
 
-  usePostHead(post, status, legacyTranslation, locale, pathname, activeLang)
+  usePostHead(post, status, legacyTranslation, locale, pathname, activeLang, body)
   useReleaseServerDocument(status === 'ready')
 
   // Deep-links with `#heading` (e.g. section citations from the Dossier console)
