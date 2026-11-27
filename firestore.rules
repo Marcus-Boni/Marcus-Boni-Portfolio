@@ -3,6 +3,8 @@ rules_version = '2';
 // Security model for the portfolio admin:
 //  • `content/site` — the editable portfolio content. Public read (the site
 //    hydrates from it), authenticated write (only the admin can edit).
+//  • `content/dossier` — editable AI dossier editorial notes & FAQs (falls back
+//    to static defaults in `src/agent/knowledge.ts`). Public read, admin write.
 //  • `messages` — contact-form submissions. Anyone can create, only the admin
 //    can read / update / delete.
 //  • `analytics` — visit + interaction events. Anyone can create, only the

@@ -11,13 +11,24 @@ import type { AgentLens, SlashCommandDef } from './types'
  * technologies, or proficiency bars.
  */
 
+export type KnowledgeNoteTopic =
+  | 'work_model'
+  | 'client_process'
+  | 'ai_philosophy'
+  | 'api_readiness'
+  | 'languages'
+  | 'contact_policy'
+  | 'faq'
+
 export interface KnowledgeNote {
   id: string
-  topic: 'work_model' | 'client_process' | 'ai_philosophy' | 'api_readiness' | 'languages' | 'contact_policy'
+  topic: KnowledgeNoteTopic
   keywords: string[]
   title: Record<Locale, string>
   body: Record<Locale, string>
   href: string
+  /** Allows temporarily hiding a note in `/admin/dossier` without deleting it. Defaults to `true`. */
+  enabled?: boolean
 }
 
 export const KNOWLEDGE_NOTES: readonly KnowledgeNote[] = [

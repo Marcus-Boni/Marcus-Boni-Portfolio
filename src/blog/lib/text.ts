@@ -72,7 +72,7 @@ export function autoExcerpt(markdown: string, max = 200): string {
  * word character / space / hyphen, then spaces to hyphens. Diacritics are
  * *kept* (unlike `slugify` above), so this cannot reuse it.
  */
-function headingId(text: string): string {
+export function headingId(text: string): string {
   return text
     .toLowerCase()
     .trim()

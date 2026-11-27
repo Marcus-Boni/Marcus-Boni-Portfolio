@@ -3,10 +3,12 @@ import type { SiteContent } from '@/content/types'
 import { cvFiles } from '@/data/profile'
 import type { Locale } from '@/i18n/translations'
 
+import type { IndexedPostSection } from './post-index'
 import {
   analyzeJobFit,
   searchEngagements,
   searchPosts,
+  searchPostSections,
   searchProjects,
   searchTechnologies,
   type QuerySignals,
@@ -214,6 +216,7 @@ export function runListPosts(
   posts: PostMeta[],
   signals: QuerySignals,
   locale: Locale,
+  postSections?: readonly IndexedPostSection[],
 ) {
   return measure(
     {
@@ -224,10 +227,23 @@ export function runListPosts(
     },
     () => {
       const items = searchPosts(query, posts, signals)
+      const matchedSections =
+        postSections && postSections.length > 0 && query.trim()
+          ? searchPostSections(query, postSections, signals, locale)
+          : []
+      const uniqueSlugs = new Set(matchedSections.map((sec) => sec.slug))
       return {
         data: {
           publishedCount: posts.length,
+          indexedSections: postSections?.length ?? 0,
           matchedCount: items.length,
+          matchedSections: matchedSections.map((sec) => ({
+            slug: sec.slug,
+            title: sec.postTitle,
+            heading: sec.headingText || null,
+            anchor: sec.headingId ? `#${sec.headingId}` : null,
+            href: sec.href,
+          })),
           items: items.map((post) => {
             const loc = post.locales?.[locale]
             return {
@@ -244,9 +260,13 @@ export function runListPosts(
             ? locale === 'pt'
               ? 'Nenhum registro publicado carregado'
               : 'No published entries loaded'
-            : locale === 'pt'
-              ? `${items.length} registro(s) de ${posts.length} publicados`
-              : `${items.length} of ${posts.length} published entries`,
+            : matchedSections.length > 0
+              ? locale === 'pt'
+                ? `${matchedSections.length} seção(ões) em ${uniqueSlugs.size} artigo(s) (de ${posts.length} publicados)`
+                : `${matchedSections.length} section(s) across ${uniqueSlugs.size} article(s) (of ${posts.length} published)`
+              : locale === 'pt'
+                ? `${items.length} registro(s) de ${posts.length} publicados`
+                : `${items.length} of ${posts.length} published entries`,
       }
     },
   )

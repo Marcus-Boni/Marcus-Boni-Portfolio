@@ -270,7 +270,9 @@ export interface Translation {
       projects: string
       clients: string
       stack: string
+      notes: string
       posts: string
+      sections: string
       turns: string
       runtimeLabel: string
       liveCms: string
@@ -602,7 +604,9 @@ export const translations: Record<Locale, Translation> = {
         projects: 'Projetos públicos',
         clients: 'Entregas em clientes',
         stack: 'Tecnologias',
+        notes: 'Notas do dossiê',
         posts: 'Registros do Diário',
+        sections: 'Seções do Diário',
         turns: 'Turnos na sessão',
         runtimeLabel: 'Local · determinístico',
         liveCms: 'CMS ao vivo',
@@ -932,7 +936,9 @@ export const translations: Record<Locale, Translation> = {
         projects: 'Public projects',
         clients: 'Client deliveries',
         stack: 'Technologies',
+        notes: 'Dossier notes',
         posts: 'Journal entries',
+        sections: 'Journal sections',
         turns: 'Session turns',
         runtimeLabel: 'Local · deterministic',
         liveCms: 'Live CMS',

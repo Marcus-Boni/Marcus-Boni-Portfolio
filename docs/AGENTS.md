@@ -283,6 +283,16 @@ curl -s https://marcusboni.com.br/agent/v1/chat
   `agent_open`, `agent_query`, `agent_fit`, `agent_handoff`, and `agent_share`
   events into KPI tiles and Signal & Ink single-series breakdowns (intents,
   audience lenses, and active runtime/provider) plus RFC 4180 CSV export.
+- **Live Editable Dossier CMS (`/admin/dossier` → `content/dossier`):**
+  Editorial notes (availability, client workflow, applied AI philosophy,
+  languages, API summary, contact channels, and custom FAQs) live in Firestore
+  under the existing `match /content/{docId}` rule with automatic static
+  fallback to `src/agent/knowledge.ts` and zero extra payload on Home.
+- **Blog Body Section Indexing (`src/agent/post-index.ts`):** Lazily fetches
+  published Markdown bodies once per session (`fetchPublishedPostBodies`),
+  splits sections using the exact `headingId` rules shared with `rehype-slug`,
+  and emits section-anchored citations (`/blog/{slug}#{heading-id}`) that
+  scroll directly to the matched heading when clicked.
 
 ---
 

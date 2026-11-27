@@ -2,11 +2,18 @@ import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { activeKnowledgeNotes } from '@/agent/dossier-cms'
 import {
   defaultHybridRuntime,
   probeEdgeCapability,
 } from '@/agent/edge-runtime'
-import { SAMPLE_JOB_DESCRIPTIONS, STARTER_PROMPTS } from '@/agent/knowledge'
+import {
+  KNOWLEDGE_NOTES,
+  SAMPLE_JOB_DESCRIPTIONS,
+  STARTER_PROMPTS,
+  type KnowledgeNote,
+} from '@/agent/knowledge'
+import { buildPostSectionIndex, type IndexedPostSection } from '@/agent/post-index'
 import {
   clearAgentSession,
   getAgentSession,
@@ -78,6 +85,8 @@ export function AgentConsole({
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
   const [posts, setPosts] = useState<PostMeta[]>([])
+  const [postSections, setPostSections] = useState<IndexedPostSection[]>([])
+  const [knowledgeNotes, setKnowledgeNotes] = useState<readonly KnowledgeNote[]>(KNOWLEDGE_NOTES)
   const [copiedTurnId, setCopiedTurnId] = useState<string | null>(null)
   const [sharedTurnId, setSharedTurnId] = useState<string | null>(null)
   const [edgeCapability, setEdgeCapability] = useState<EdgeCapability>({
@@ -114,12 +123,33 @@ export function AgentConsole({
     let cancelled = false
     if (!isFirebaseConfigured) return
     void import('@/blog/service')
-      .then(({ fetchPublishedPosts }) => fetchPublishedPosts(30))
-      .then((list) => {
-        if (!cancelled) setPosts(list)
+      .then(async ({ fetchPublishedPosts, fetchPublishedPostBodies }) => {
+        const list = await fetchPublishedPosts(30)
+        if (cancelled) return
+        setPosts(list)
+        if (list.length === 0) return
+        const bodies = await fetchPublishedPostBodies(list, 15)
+        if (cancelled) return
+        setPostSections(buildPostSectionIndex(list, bodies))
       })
       .catch(() => {
         /* best-effort; portfolio data remains fully searchable */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!isFirebaseConfigured) return
+    void import('@/agent/dossier-service')
+      .then(({ fetchDossierKnowledge }) => fetchDossierKnowledge())
+      .then((config) => {
+        if (!cancelled) setKnowledgeNotes(config.notes)
+      })
+      .catch(() => {
+        /* static KNOWLEDGE_NOTES remain active */
       })
     return () => {
       cancelled = true
@@ -231,6 +261,8 @@ export function AgentConsole({
         for await (const event of defaultHybridRuntime.streamTurn(trimmed, {
           content,
           posts,
+          knowledgeNotes,
+          postSections,
           locale,
           lens: activeLens,
           history,
@@ -337,7 +369,7 @@ export function AgentConsole({
         setStreaming(false)
       }
     },
-    [content, posts, locale, lens, runtimePreference, reduced, variant],
+    [content, posts, knowledgeNotes, postSections, locale, lens, runtimePreference, reduced, variant],
   )
 
   useEffect(() => {
@@ -460,7 +492,9 @@ export function AgentConsole({
       projectCount={content.projects.length}
       engagementCount={content.experience.projects.length}
       techCount={content.techStack.length}
+      noteCount={activeKnowledgeNotes(knowledgeNotes).length}
       postCount={posts.length}
+      sectionCount={postSections.filter((sec) => sec.locale === locale).length}
       turnCount={turns.length}
       source={source}
       runtimePreference={runtimePreference}

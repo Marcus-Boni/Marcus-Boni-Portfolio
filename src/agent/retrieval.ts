@@ -7,13 +7,14 @@ import type {
 } from '@/content/types'
 import type { Locale } from '@/i18n/translations'
 
+import { activeKnowledgeNotes } from './dossier-cms'
 import {
   DOMAIN_ONTOLOGY,
   EXTERNAL_TECH_CATALOG,
-  KNOWLEDGE_NOTES,
   TECH_ONTOLOGY,
   type KnowledgeNote,
 } from './knowledge'
+import type { IndexedPostSection } from './post-index'
 import type { AgentIntent, FitEvidenceItem, FitGapItem, FitReport } from './types'
 
 /**
@@ -250,9 +251,16 @@ const OUT_OF_SCOPE_PATTERNS = [
   /\b(salario|salário|pretensao|pretensão|salary|compensation|rate card|valor hora|hourly rate|cpf|rg|endereco residencial|home address|telefone pessoal|whatsapp|numero de telefone|phone number|idade da mae)\b/i,
 ]
 
+export interface ClassifyIntentOptions {
+  knowledgeNotes?: readonly KnowledgeNote[]
+  postSections?: readonly IndexedPostSection[]
+  locale?: Locale
+}
+
 export function classifyIntent(
   input: string,
   content: SiteContent,
+  options?: ClassifyIntentOptions,
 ): { intent: AgentIntent; signals: QuerySignals; slash: ParsedSlashCommand } {
   const slash = parseSlashCommand(input)
   const body = slash.rest || input
@@ -315,13 +323,24 @@ export function classifyIntent(
   }
 
   // 8. Client work / experience / sectors
-  if (
+  const explicitExperience =
     signals.matchedClients.length > 0 ||
     /\b(optsolv|cliente|clientes|client|clients|empresa|empresas|setor|setores|sector|sectors|industries|trajetoria|trajetória|carreira|career|engagements)\b/i.test(
       norm,
-    ) ||
-    (/\b(entregas|producao|produção)\b/i.test(norm) && signals.matchedTechs.length === 0)
-  ) {
+    )
+  const weakProductionCue =
+    /\b(entregas|producao|produção)\b/i.test(norm) && signals.matchedTechs.length === 0
+  if (explicitExperience) {
+    return { intent: 'experience', signals, slash }
+  }
+  if (weakProductionCue) {
+    const strongBlogSection =
+      options?.postSections && options.postSections.length > 0
+        ? searchPostSectionsScored(body, options.postSections, signals, options.locale ?? 'pt')
+        : []
+    if (strongBlogSection.length > 0 && strongBlogSection[0].score >= 8) {
+      return { intent: 'posts', signals, slash }
+    }
     return { intent: 'experience', signals, slash }
   }
 
@@ -371,9 +390,24 @@ export function classifyIntent(
     return { intent: 'profile', signals, slash }
   }
 
-  // 14. Anything else with zero domain overlap → honest out-of-scope vs general search
-  const noteHits = searchKnowledge(body, 'pt')
-  if (signals.matchedDomains.length === 0 && noteHits.length === 0 && signals.tokens.length >= 2) {
+  // 14. Anything else with zero domain overlap → check live CMS notes & indexed blog sections
+  const noteHitsPt = searchKnowledge(body, 'pt', options?.knowledgeNotes)
+  const noteHitsEn = searchKnowledge(body, 'en', options?.knowledgeNotes)
+  const hasNoteHit = noteHitsPt.length > 0 || noteHitsEn.length > 0
+
+  if (!hasNoteHit && options?.postSections && options.postSections.length > 0) {
+    const sectionHits = searchPostSectionsScored(
+      body,
+      options.postSections,
+      signals,
+      options.locale ?? 'pt',
+    )
+    if (sectionHits.length > 0 && sectionHits[0].score >= 6) {
+      return { intent: 'posts', signals, slash }
+    }
+  }
+
+  if (signals.matchedDomains.length === 0 && !hasNoteHit && signals.tokens.length >= 2) {
     return { intent: 'out_of_scope', signals, slash }
   }
 
@@ -504,17 +538,95 @@ export function searchPosts(
   return scored.slice(0, 4).map((item) => item.post)
 }
 
-export function searchKnowledge(query: string, locale: Locale): KnowledgeNote[] {
+export interface ScoredPostSection {
+  section: IndexedPostSection
+  score: number
+}
+
+/**
+ * Searches indexed Markdown sections across published blog posts, prioritizing
+ * the active locale while still covering monolingual articles in the other language.
+ */
+export function searchPostSectionsScored(
+  query: string,
+  sections: readonly IndexedPostSection[],
+  signals: QuerySignals,
+  locale: Locale,
+): ScoredPostSection[] {
+  if (sections.length === 0 || !query.trim()) return []
+
+  const slugsInLocale = new Set(
+    sections.filter((sec) => sec.locale === locale).map((sec) => sec.slug),
+  )
+
+  const candidates = sections.filter(
+    (sec) => sec.locale === locale || !slugsInLocale.has(sec.slug),
+  )
+
+  const scored = candidates
+    .map((section) => {
+      const headingScore = section.headingText
+        ? scoreDocument(signals.tokens, signals.matchedTechs, section.headingText) * 1.6
+        : 0
+      const bodyScore = scoreDocument(signals.tokens, signals.matchedTechs, section.text)
+      const metaScore =
+        scoreDocument(
+          signals.tokens,
+          signals.matchedTechs,
+          `${section.postTitle} ${section.tags.join(' ')}`,
+        ) * 0.65
+      const anchorBonus = section.headingId && headingScore + bodyScore > 0 ? 1.5 : 0
+      return {
+        section,
+        score: headingScore + bodyScore + metaScore + anchorBonus,
+      }
+    })
+    .filter((entry) => entry.score >= 3)
+    .sort((a, b) => b.score - a.score)
+
+  // Cap at 2 sections per article so a single long essay never crowds out other posts
+  const perSlug = new Map<string, number>()
+  const picked: ScoredPostSection[] = []
+  for (const entry of scored) {
+    const count = perSlug.get(entry.section.slug) ?? 0
+    if (count >= 2) continue
+    perSlug.set(entry.section.slug, count + 1)
+    picked.push(entry)
+    if (picked.length >= 4) break
+  }
+
+  return picked
+}
+
+export function searchPostSections(
+  query: string,
+  sections: readonly IndexedPostSection[],
+  signals: QuerySignals,
+  locale: Locale,
+): IndexedPostSection[] {
+  return searchPostSectionsScored(query, sections, signals, locale).map(
+    (entry) => entry.section,
+  )
+}
+
+export function searchKnowledge(
+  query: string,
+  locale: Locale,
+  notes?: readonly KnowledgeNote[],
+): KnowledgeNote[] {
   const norm = normalizeText(query)
   const tokens = tokenize(query)
-  return KNOWLEDGE_NOTES.map((note) => {
-    let score = 0
-    for (const kw of note.keywords) {
-      if (containsPhrase(norm, kw)) score += 4
-    }
-    score += scoreDocument(tokens, [], `${note.title[locale]} ${note.body[locale]}`) * 0.4
-    return { note, score }
-  })
+  const active = activeKnowledgeNotes(notes)
+  return active
+    .map((note) => {
+      let score = 0
+      for (const kw of note.keywords) {
+        if (containsPhrase(norm, kw)) score += 4
+      }
+      score += scoreDocument(tokens, [], note.title[locale]) * 0.85
+      score += scoreDocument(tokens, [], note.body[locale]) * 0.45
+      return { note, score }
+    })
     .filter((entry) => entry.score >= 3)
     .sort((a, b) => b.score - a.score)
     .map((entry) => entry.note)

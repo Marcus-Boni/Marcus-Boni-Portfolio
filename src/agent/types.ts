@@ -2,6 +2,9 @@ import type { PostMeta } from '@/blog/types'
 import type { SiteContent } from '@/content/types'
 import type { Locale } from '@/i18n/translations'
 
+import type { KnowledgeNote } from './knowledge'
+import type { IndexedPostSection } from './post-index'
+
 /**
  * Core protocol for the portfolio's agentic dossier console.
  *
@@ -196,6 +199,10 @@ export type AgentEvent =
 export interface AgentRuntimeContext {
   content: SiteContent
   posts: PostMeta[]
+  /** Live editorial notes from Firestore (`content/dossier`), falling back to `KNOWLEDGE_NOTES`. */
+  knowledgeNotes?: readonly KnowledgeNote[]
+  /** Indexed Markdown sections from published blog bodies with verified `#heading` anchors. */
+  postSections?: readonly IndexedPostSection[]
   locale: Locale
   lens: AgentLens
   /** Previous turns in the active thread for multi-turn follow-up resolution. */

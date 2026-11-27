@@ -52,7 +52,7 @@ export function BlogPost({ routeLang = 'pt' }: { routeLang?: Locale }) {
   const { locale, setLocale, t } = useLanguage()
   const { post, status, retry } = usePost(slug)
   const { posts } = usePostList()
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
   const navigate = useNavigate()
   const articleRef = useRef<HTMLDivElement>(null)
 
@@ -95,6 +95,26 @@ export function BlogPost({ routeLang = 'pt' }: { routeLang?: Locale }) {
 
   usePostHead(post, status, legacyTranslation, locale, pathname, activeLang)
   useReleaseServerDocument(status === 'ready')
+
+  // Deep-links with `#heading` (e.g. section citations from the Dossier console)
+  // land before Firestore resolves the post body; scroll once the heading mounts.
+  useEffect(() => {
+    if (status !== 'ready' || !hash || hash.length < 2) return
+    let targetId = hash.slice(1)
+    try {
+      targetId = decodeURIComponent(targetId)
+    } catch {
+      /* keep raw id */
+    }
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(targetId)?.scrollIntoView({
+        behavior: reducedMotion ? 'instant' : 'smooth',
+        block: 'start',
+      })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [status, hash, body])
 
   const { setAlternate } = useBlogLocaleSwitch()
   useEffect(() => {

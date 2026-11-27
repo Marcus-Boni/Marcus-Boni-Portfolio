@@ -119,7 +119,9 @@ export function ContextMeter({
   projectCount,
   engagementCount,
   techCount,
+  noteCount = 0,
   postCount,
+  sectionCount = 0,
   turnCount,
   source,
   runtimePreference = 'auto',
@@ -130,7 +132,9 @@ export function ContextMeter({
   projectCount: number
   engagementCount: number
   techCount: number
+  noteCount?: number
   postCount: number
+  sectionCount?: number
   turnCount: number
   source: 'live' | 'static'
   runtimePreference?: RuntimePreference
@@ -172,15 +176,25 @@ export function ContextMeter({
     { id: 'projects', label: t.agent.meter.projects, count: projectCount, weight: projectCount * 3, color: 'bg-ember' },
     { id: 'clients', label: t.agent.meter.clients, count: engagementCount, weight: engagementCount * 3, color: 'bg-bone' },
     { id: 'stack', label: t.agent.meter.stack, count: techCount, weight: Math.round(techCount * 0.8), color: 'bg-bone-dim' },
-    ...(postCount > 0
-      ? [{ id: 'posts', label: t.agent.meter.posts, count: postCount, weight: postCount * 2, color: 'bg-[var(--code-amber)]' }]
+    ...(noteCount > 0
+      ? [{ id: 'notes', label: t.agent.meter.notes, count: noteCount, weight: noteCount * 2, color: 'bg-ember/60' }]
       : []),
+    ...(sectionCount > 0
+      ? [{ id: 'sections', label: t.agent.meter.sections, count: sectionCount, weight: Math.min(24, sectionCount), color: 'bg-[var(--code-amber)]' }]
+      : postCount > 0
+        ? [{ id: 'posts', label: t.agent.meter.posts, count: postCount, weight: postCount * 2, color: 'bg-[var(--code-amber)]' }]
+        : []),
     ...(turnCount > 0
       ? [{ id: 'turns', label: t.agent.meter.turns, count: turnCount, weight: turnCount * 4, color: 'bg-smoke' }]
       : []),
   ]
 
-  const totalDocs = projectCount + engagementCount + techCount + postCount
+  const totalDocs =
+    projectCount +
+    engagementCount +
+    techCount +
+    noteCount +
+    (sectionCount > 0 ? sectionCount : postCount)
   const usedWeight = segments.reduce((sum, s) => sum + s.weight, 0)
   const capacity = Math.max(usedWeight + 24, 100)
   const share = Math.min(0.96, usedWeight / capacity)

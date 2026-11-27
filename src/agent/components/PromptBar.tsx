@@ -86,7 +86,9 @@ export function PromptBar({
   projectCount,
   engagementCount,
   techCount,
+  noteCount = 0,
   postCount,
+  sectionCount = 0,
   turnCount,
   source,
   runtimePreference = 'auto',
@@ -105,7 +107,9 @@ export function PromptBar({
   projectCount: number
   engagementCount: number
   techCount: number
+  noteCount?: number
   postCount: number
+  sectionCount?: number
   turnCount: number
   source: 'live' | 'static'
   runtimePreference?: RuntimePreference
@@ -657,7 +661,9 @@ export function PromptBar({
                     projectCount={projectCount}
                     engagementCount={engagementCount}
                     techCount={techCount}
+                    noteCount={noteCount}
                     postCount={postCount}
+                    sectionCount={sectionCount}
                     turnCount={turnCount}
                     source={source}
                     runtimePreference={runtimePreference}

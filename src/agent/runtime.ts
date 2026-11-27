@@ -3,13 +3,16 @@ import type { ExperienceProject, Project, SiteContent } from '@/content/types'
 import { cvFiles } from '@/data/profile'
 import type { Locale } from '@/i18n/translations'
 
-import { KNOWLEDGE_NOTES } from './knowledge'
+import { activeKnowledgeNotes } from './dossier-cms'
+import type { KnowledgeNote } from './knowledge'
+import { extractRelevantSnippet, type IndexedPostSection } from './post-index'
 import {
   analyzeJobFit,
   classifyIntent,
   searchEngagements,
   searchKnowledge,
   searchPosts,
+  searchPostSections,
   searchProjects,
   searchTechnologies,
   type QuerySignals,
@@ -118,8 +121,47 @@ function postCitation(post: PostMeta, ordinal: number, locale: Locale): Citation
   }
 }
 
-function noteCitation(noteId: string, locale: Locale): Citation | null {
-  const note = KNOWLEDGE_NOTES.find((item) => item.id === noteId)
+function shortSectionChipLabel(heading: string, locale: Locale): string {
+  const clean = heading.trim()
+  if (!clean) return locale === 'pt' ? 'Diário' : 'Notes'
+  if (clean.length <= 24) return clean
+  const cut = clean.slice(0, 22)
+  const space = cut.lastIndexOf(' ')
+  return `${(space > 10 ? cut.slice(0, space) : cut).trimEnd()}…`
+}
+
+function postSectionCitation(
+  section: IndexedPostSection,
+  ordinal: number,
+  locale: Locale,
+  queryTokens: readonly string[] = [],
+): Citation {
+  const headingLabel = section.headingText
+  const excerpt =
+    queryTokens.length > 0
+      ? extractRelevantSnippet(section.text, queryTokens, 460)
+      : section.excerpt
+  return {
+    id: `POST·${String(ordinal).padStart(2, '0')}`,
+    kind: 'post',
+    title: headingLabel ? `${section.postTitle} § ${headingLabel}` : section.postTitle,
+    subtitle: section.headingId
+      ? `#${section.headingId} · ${section.readingMinutes} min`
+      : locale === 'pt'
+        ? `${section.readingMinutes} min de leitura · ${section.tags.join(', ')}`
+        : `${section.readingMinutes} min read · ${section.tags.join(', ')}`,
+    excerpt,
+    href: section.href,
+    meta: shortSectionChipLabel(headingLabel, locale),
+  }
+}
+
+function noteCitation(
+  noteId: string,
+  locale: Locale,
+  notes?: readonly KnowledgeNote[],
+): Citation | null {
+  const note = activeKnowledgeNotes(notes).find((item) => item.id === noteId)
   if (!note) return null
   return {
     id: note.id,
@@ -250,18 +292,35 @@ function composeResponse(params: {
   signals: QuerySignals
   content: SiteContent
   posts: PostMeta[]
+  knowledgeNotes?: readonly KnowledgeNote[]
+  postSections?: readonly IndexedPostSection[]
   locale: Locale
   lens: AgentLens
 }): ComposedTurn {
-  const { intent, query, rawInput, signals, content, posts, locale, lens } = params
+  const {
+    intent,
+    query,
+    rawInput,
+    signals,
+    content,
+    posts,
+    knowledgeNotes,
+    postSections = [],
+    locale,
+    lens,
+  } = params
   const isPt = locale === 'pt'
   const lead = lensLead(lens, locale)
   const citations: Citation[] = []
+  const liveNotes = activeKnowledgeNotes(knowledgeNotes)
 
   const addNote = (id: string) => {
-    const cit = noteCitation(id, locale)
+    const cit = noteCitation(id, locale, liveNotes)
     if (cit) citations.push(cit)
   }
+
+  const findNote = (idOrTopic: string) =>
+    liveNotes.find((item) => item.id === idOrTopic || item.topic === idOrTopic)
 
   const engOrdinal = (id: string) =>
     content.experience.projects.findIndex((item) => item.id === id) + 1
@@ -512,6 +571,32 @@ function composeResponse(params: {
     }
 
     case 'posts': {
+      const sectionHits =
+        postSections.length > 0 && query.trim()
+          ? searchPostSections(query, postSections, signals, locale)
+          : []
+
+      if (sectionHits.length > 0) {
+        const sectionCitations = sectionHits.map((sec, idx) =>
+          postSectionCitation(sec, idx + 1, locale, signals.tokens),
+        )
+        sectionCitations.forEach((cit) => citations.push(cit))
+        const intro = isPt
+          ? `Encontrei **${sectionHits.length} trecho(s)** relevantes no corpo do Diário técnico (com link direto para a seção):`
+          : `Found **${sectionHits.length} relevant passage(s)** inside the technical journal (linked directly to each section):`
+
+        const lines = sectionHits.map((sec, idx) => {
+          const tag = `POST·${String(idx + 1).padStart(2, '0')}`
+          const sectionLabel = sec.headingText ? ` — *${sec.headingText}*` : ''
+          return `- **${sec.postTitle}**${sectionLabel} [${tag}]: ${sectionCitations[idx].excerpt}`
+        })
+
+        return {
+          text: [intro, lines.join('\n')].join('\n\n'),
+          citations: dedupeCitations(citations),
+        }
+      }
+
       const hits = searchPosts(query, posts, signals)
       hits.forEach((post, idx) => citations.push(postCitation(post, idx + 1, locale)))
 
@@ -556,24 +641,42 @@ function composeResponse(params: {
     }
 
     case 'availability': {
-      addNote('DOC·01')
-      addNote('DOC·04')
-      addNote('DOC·06')
+      const workNote = findNote('work_model')
+      const langNote = findNote('languages')
+      const contactNote = findNote('contact_policy')
+      if (workNote) addNote(workNote.id)
+      if (langNote) addNote(langNote.id)
+      if (contactNote) addNote(contactNote.id)
+
+      const workTag = workNote ? ` [${workNote.id}]` : ''
+      const langTag = langNote ? ` [${langNote.id}]` : ''
+      const contactTag = contactNote ? ` [${contactNote.id}]` : ''
+
       const availabilityLine = content.profile.available
         ? isPt
-          ? 'Status atual no site: **aberto a projetos e oportunidades** [DOC·01].'
-          : 'Current public status: **open to projects and opportunities** [DOC·01].'
+          ? `Status atual no site: **aberto a projetos e oportunidades**${workTag}.`
+          : `Current public status: **open to projects and opportunities**${workTag}.`
         : isPt
-          ? 'Status atual no site: agenda reservada no momento, mas aberto a conversas futuras [DOC·01].'
-          : 'Current public status: booked at the moment, though open to future conversations [DOC·01].'
+          ? `Status atual no site: agenda reservada no momento, mas aberto a conversas futuras${workTag}.`
+          : `Current public status: booked at the moment, though open to future conversations${workTag}.`
+
+      const bullets: string[] = [
+        isPt
+          ? `- **Localização & fuso:** ${content.profile.location} (UTC−3)`
+          : `- **Location & timezone:** ${content.profile.location} (UTC−3)`,
+        isPt
+          ? `- **Disponibilidade & formatos:** ${workNote?.body.pt ?? 'efetivo, contrato, freelance, consultoria técnica ou segunda opinião em arquitetura e IA'}${workTag}`
+          : `- **Availability & formats:** ${workNote?.body.en ?? 'full-time, contract, freelance, technical consulting, or architecture/AI second opinion'}${workTag}`,
+        isPt
+          ? `- **Idiomas:** ${langNote?.body.pt ?? 'Português (nativo) e Inglês (profissional)'}${langTag}`
+          : `- **Languages:** ${langNote?.body.en ?? 'Native Portuguese and professional English'}${langTag}`,
+        isPt
+          ? `- **Canal principal:** ${contactNote?.body.pt ?? `${content.profile.email} ou formulário direto abaixo`}${contactTag}`
+          : `- **Front door:** ${contactNote?.body.en ?? `${content.profile.email} or the direct inbox form below`}${contactTag}`,
+      ]
 
       return {
-        text: [
-          availabilityLine,
-          isPt
-            ? `- **Localização & fuso:** ${content.profile.location} (UTC−3)\n- **Idiomas:** Português (nativo) e Inglês (profissional) [DOC·04]\n- **Formatos:** efetivo, contrato, freelance, consultoria técnica ou segunda opinião em arquitetura e IA [DOC·01]\n- **Canal principal:** ${content.profile.email} ou formulário direto abaixo [DOC·06]`
-            : `- **Location & timezone:** ${content.profile.location} (UTC−3)\n- **Languages:** Native Portuguese and professional English [DOC·04]\n- **Formats:** full-time, contract, freelance, technical consulting, or architecture/AI second opinion [DOC·01]\n- **Front door:** ${content.profile.email} or the direct inbox form below [DOC·06]`,
-        ].join('\n\n'),
+        text: [availabilityLine, bullets.join('\n')].join('\n\n'),
         citations: dedupeCitations(citations),
         approval: buildHandoffApproval(
           locale,
@@ -665,12 +768,20 @@ function composeResponse(params: {
 
     case 'general':
     default: {
-      const notes = searchKnowledge(query, locale).slice(0, 2)
+      const notes = searchKnowledge(query, locale, liveNotes).slice(0, 2)
       const projHits = searchProjects(query, content, signals).slice(0, 2)
       const engHits = searchEngagements(query, content, signals).slice(0, 2)
+      const secHits =
+        postSections.length > 0
+          ? searchPostSections(query, postSections, signals, locale).slice(0, 2)
+          : []
       for (const note of notes) addNote(note.id)
       for (const proj of projHits) citations.push(projectCitation(proj, locale))
       for (const eng of engHits) citations.push(engagementCitation(eng, engOrdinal(eng.id), locale))
+      const secCitations = secHits.map((sec, idx) =>
+        postSectionCitation(sec, idx + 1, locale, signals.tokens),
+      )
+      secCitations.forEach((cit) => citations.push(cit))
 
       const parts: string[] = []
       for (const note of notes) {
@@ -691,6 +802,18 @@ function composeResponse(params: {
               .map((e) => {
                 const tag = `EXP·${String(engOrdinal(e.id)).padStart(2, '0')}`
                 return `- **${e.client}** [${tag}] — ${e.scope[locale]}`
+              })
+              .join('\n'),
+        )
+      }
+      if (secHits.length > 0) {
+        parts.push(
+          (isPt ? 'Trechos no Diário técnico:\n' : 'Related journal passages:\n') +
+            secHits
+              .map((sec, idx) => {
+                const tag = `POST·${String(idx + 1).padStart(2, '0')}`
+                const label = sec.headingText ? ` — *${sec.headingText}*` : ''
+                return `- **${sec.postTitle}**${label} [${tag}]: ${secCitations[idx].excerpt}`
               })
               .join('\n'),
         )
@@ -776,11 +899,18 @@ export interface GroundedTurnPlan {
  */
 export function prepareGroundedTurn(
   input: string,
-  context: Pick<AgentRuntimeContext, 'content' | 'posts' | 'locale' | 'lens' | 'history'>,
+  context: Pick<
+    AgentRuntimeContext,
+    'content' | 'posts' | 'knowledgeNotes' | 'postSections' | 'locale' | 'lens' | 'history'
+  >,
 ): GroundedTurnPlan {
-  const { content, posts, locale, lens, history } = context
+  const { content, posts, knowledgeNotes, postSections, locale, lens, history } = context
   const effectiveInput = resolveFollowUpInput(input, history, content)
-  const { intent, signals, slash } = classifyIntent(effectiveInput, content)
+  const { intent, signals, slash } = classifyIntent(effectiveInput, content, {
+    knowledgeNotes,
+    postSections,
+    locale,
+  })
   const query = slash.rest || effectiveInput
 
   const plannedTools: (() => ToolExecutionResult)[] = []
@@ -813,7 +943,7 @@ export function prepareGroundedTurn(
       )
       break
     case 'posts':
-      plannedTools.push(() => runListPosts(query, posts, signals, locale))
+      plannedTools.push(() => runListPosts(query, posts, signals, locale, postSections))
       break
     case 'cv':
     case 'availability':
@@ -839,7 +969,7 @@ export function prepareGroundedTurn(
       plannedTools.push(
         () => runListProjects(query, content, signals, locale),
         () => runGetExperience(query, content, signals, locale),
-        () => runListPosts(query, posts, signals, locale),
+        () => runListPosts(query, posts, signals, locale, postSections),
       )
       break
   }
@@ -851,6 +981,8 @@ export function prepareGroundedTurn(
     signals,
     content,
     posts,
+    knowledgeNotes,
+    postSections,
     locale,
     lens,
   })
