@@ -293,6 +293,16 @@ curl -s https://marcusboni.com.br/agent/v1/chat
   splits sections using the exact `headingId` rules shared with `rehype-slug`,
   and emits section-anchored citations (`/blog/{slug}#{heading-id}`) that
   scroll directly to the matched heading when clicked.
+- **Live GitHub Activity (`GET /agent/v1/github`):** Cached (20 min TTL) Edge
+  Function (`netlify/edge-functions/agent-github.ts` → `netlify/lib/github-activity.ts`)
+  surfacing recent releases and pushed repositories via `getRecentActivity` with
+  optional server-side `GITHUB_TOKEN` and graceful offline fallback.
+- **Message Queue, Follow-ups, Executive PDF & Blog Directives:** Visitors can
+  queue follow-up prompts while streaming (`MessageQueue`), click zero-token
+  contextual follow-ups (`src/agent/followups.ts`), print a dependency-free A4
+  `/fit` one-pager (`src/agent/print-brief.ts`), and trigger dossier prompts or
+  inspect LLM token distributions directly inside `/blog` posts via
+  `::dossier-ask` and `:::ai-tokens`.
 
 ---
 

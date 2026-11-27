@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm'
 
 import { BlogFigure } from '@/blog/components/BlogImage'
 import { CodeBlock, InlineCode } from '@/blog/components/CodeBlock'
+import { DossierAsk, TokenAlternatives } from '@/blog/components/DossierDirectives'
 import { ReportComparison } from '@/blog/components/ReportComparison'
 import {
   Callout,
@@ -279,6 +280,8 @@ function buildComponents(media: Record<string, MediaRef>): Components {
     'x-video': Video,
     'x-repo': RepoCard,
     'x-takeaways': Takeaways,
+    'x-dossier-ask': DossierAsk,
+    'x-ai-tokens': TokenAlternatives,
     'x-report-comparison': ReportComparison,
     'x-steps': Steps,
     'x-steps-stage': StepsStage,

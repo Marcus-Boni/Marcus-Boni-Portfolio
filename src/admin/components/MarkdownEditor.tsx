@@ -103,6 +103,24 @@ const ACTIONS: { label: string; title: string; edit: Edit }[] = [
       caretOffset: 31,
     },
   },
+  {
+    label: 'dossiê',
+    title: 'Prompt contextual que abre o Dossiê IA já preenchido',
+    edit: {
+      kind: 'block',
+      text: '::dossier-ask{lens=engineer q="Como essa arquitetura se conecta aos projetos do Marcus?"}',
+      caretOffset: 31,
+    },
+  },
+  {
+    label: 'tokens',
+    title: 'Explorador interativo de probabilidades de tokens (artigos de IA)',
+    edit: {
+      kind: 'block',
+      text: ':::ai-tokens{prompt="O servidor MCP expõe"}\n16 ferramentas (74% | 12 endpoints:14% | 8 recursos:8%)\npara agentes (82% | a clientes:11% | via HTTP:7%)\n:::',
+      caretOffset: 21,
+    },
+  },
 ]
 
 export function MarkdownEditor({

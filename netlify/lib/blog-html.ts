@@ -11,6 +11,7 @@ import remarkGfm from 'remark-gfm'
 
 import { remarkBlogDirectives } from '../../src/blog/lib/remark-blog.ts'
 import { articleHeadings } from '../../src/blog/lib/article-headings.ts'
+import { parseTokenAlternatives } from '../../src/blog/lib/token-alternatives.ts'
 import {
   blogIndexPath,
   collapseLegacyPairs,
@@ -92,6 +93,31 @@ export function renderMarkdown(body: string, media: BodyMedia = {}, lang: BlogLo
       ? h('p', null, h('a', { href: `https://github.com/${owner}/${name}` }, `${owner}/${name}`),
         typeof desc === 'string' ? ` — ${desc}` : null)
       : h('p', null, en ? 'Invalid repository.' : 'Repositório inválido.'),
+    'x-dossier-ask': ({ q, lens, label, children }: DirectiveProps) => {
+      const prompt = typeof q === 'string' ? q.trim() : ''
+      if (!prompt) return null
+      const safeLens = lens === 'recruiter' || lens === 'client' ? lens : 'engineer'
+      const params = new URLSearchParams({ lens: safeLens, q: prompt })
+      const href = `${en ? '/en/ask' : '/ask'}?${params.toString()}`
+      return h(
+        'aside',
+        null,
+        h('p', null, h('strong', null, prompt)),
+        children,
+        h('p', null, h('a', { href }, typeof label === 'string' && label ? label : (en ? 'Ask Dossier' : 'Perguntar no Dossiê'))),
+      )
+    },
+    'x-ai-tokens': ({ prompt, spec }: DirectiveProps) => {
+      const slots = parseTokenAlternatives(typeof spec === 'string' ? spec : '')
+      if (slots.length === 0) return null
+      const sentence = [
+        typeof prompt === 'string' ? prompt.trim() : '',
+        ...slots.map((slot) => slot.chosen.text),
+      ]
+        .filter(Boolean)
+        .join(' ')
+      return h('figure', null, h('p', null, sentence))
+    },
   }
   return renderToStaticMarkup(h(Markdown, {
     remarkPlugins: [remarkGfm, remarkDirective, remarkBlogDirectives], rehypePlugins: [rehypeSlug, articleHeadings],
